@@ -19,14 +19,14 @@ const useLocation = () => {
             }
           );
 
-          alert(
-            `Latitude: ${position.coords.latitude}, Longitude: ${position.coords.longitude}`
-          );
-
           setLocation({
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
           });
+
+          alert(
+            `Latitude: ${position.coords.latitude}, Longitude: ${position.coords.longitude}`
+          );
         } catch (err) {
           if (err instanceof GeolocationPositionError) {
             switch (err.code) {
