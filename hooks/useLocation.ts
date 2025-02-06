@@ -19,6 +19,10 @@ const useLocation = () => {
             }
           );
 
+          alert(
+            `Latitude: ${position.coords.latitude}, Longitude: ${position.coords.longitude}`
+          );
+
           setLocation({
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
