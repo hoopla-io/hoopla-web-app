@@ -35,7 +35,6 @@ const ShopCard = ({
 
   const { location: userLocation } = useLocation();
 
-  console.log({ userLocation });
   return (
     <div className="bg-background rounded-lg shadow-md overflow-hidden relative">
       <Link href={`/shop/${shopId}`} className="block">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import useTelegramApp from "@/hooks/useTelegramApp";
+import Cookies from "js-cookie";
 
 const useLocation = () => {
   const [location, setLocation] = useState<{
@@ -7,7 +7,6 @@ const useLocation = () => {
     longitude: number;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useTelegramApp();
 
   useEffect(() => {
     const requestLocation = async () => {
@@ -19,14 +18,19 @@ const useLocation = () => {
             }
           );
 
+          const tenMinutes = new Date(new Date().getTime() + 5 * 60 * 1000);
+
+          Cookies.set("latitude", String(position.coords.latitude), {
+            expires: tenMinutes,
+          });
+          Cookies.set("longitude", String(position.coords.longitude), {
+            expires: tenMinutes,
+          });
+
           setLocation({
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
           });
-
-          alert(
-            `Latitude: ${position.coords.latitude}, Longitude: ${position.coords.longitude}`
-          );
         } catch (err) {
           if (err instanceof GeolocationPositionError) {
             switch (err.code) {
@@ -54,10 +58,18 @@ const useLocation = () => {
       }
     };
 
-    if (user && !location) {
+    if (Cookies.get("latitude") && Cookies.get("longitude")) {
+      setLocation({
+        latitude: Number(Cookies.get("latitude")),
+        longitude: Number(Cookies.get("longitude")),
+      });
+      return;
+    }
+
+    if (!location) {
       requestLocation();
     }
-  }, [user]);
+  }, []);
 
   return { location, error };
 };
