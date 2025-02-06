@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import useTelegramApp from "@/hooks/useTelegramApp";
 
@@ -51,7 +50,7 @@ const useLocation = () => {
       }
     };
 
-    if (user) {
+    if (user && !location) {
       requestLocation();
     }
   }, [user]);
