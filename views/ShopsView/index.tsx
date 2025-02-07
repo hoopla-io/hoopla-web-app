@@ -128,7 +128,7 @@ const LoadingComponent = () => {
 export default function ShopsView() {
   const { location, error } = useLocation();
 
-  const { shops } = useShops({
+  const { shops = [] } = useShops({
     lat: location?.latitude || 41.3078601,
     lng: location?.longitude || 69.2305837,
   });
