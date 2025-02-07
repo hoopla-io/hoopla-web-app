@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ShopsApi } from "@/lib/domains/shops";
+import useLocation from "@/hooks/useLocation";
 
 type Module = {
   moduleId: number;
@@ -31,15 +32,23 @@ export function useShops(params: Params) {
   const { lat, lng, name = "" } = params;
   const queryClient = useQueryClient();
 
+  const { location } = useLocation();
+
   const {
     data: shops = [],
     isLoading,
     isError,
   } = useQuery<Shop[]>(
     {
-      queryKey: ["shops"],
-      queryFn: () => ShopsApi.getShops(lat, lng, name),
+      queryKey: ["shops", lat, lng, name],
+      queryFn: () =>
+        ShopsApi.getShops(
+          location?.latitude || lat,
+          location?.longitude || lng,
+          name
+        ),
       staleTime: 300000, // 5 minutes
+      enabled: Boolean(location?.latitude && location?.longitude),
     },
     queryClient
   );
