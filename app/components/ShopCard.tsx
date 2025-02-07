@@ -1,11 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Coffee, Gem, MapPin } from "lucide-react";
-import useLocation from "@/hooks/useLocation";
 
 type Module = {
   moduleId: number;
-  name: string;
+  name: "Lite" | "Pro";
   colour: string;
 };
 
@@ -22,6 +21,11 @@ interface ShopCardProps {
   modules: Module[];
 }
 
+const ModuleIcons = {
+  Lite: <Coffee size={16} />,
+  Pro: <Gem size={16} />,
+};
+
 const ShopCard = ({
   shopId,
   partnerId,
@@ -33,11 +37,9 @@ const ShopCard = ({
 }: ShopCardProps) => {
   console.log(modules, distance, partnerId);
 
-  const { location: userLocation } = useLocation();
-
   return (
     <div className="bg-background rounded-lg shadow-md overflow-hidden relative">
-      <Link href={`/shop/${shopId}`} className="block">
+      <Link href={`/shops/${shopId}`} className="block">
         <Image
           src={pictureUrl}
           alt={name}
@@ -46,9 +48,7 @@ const ShopCard = ({
           className="w-full h-48 object-cover"
         />
         <div className="p-4">
-          <h3 className="text-xl font-semibold mb-2">
-            {name} ({userLocation?.latitude}, {userLocation?.longitude})
-          </h3>
+          <h3 className="text-xl font-semibold mb-2">{name}</h3>
           <p className="text-sm mb-2">
             <strong>Hours:</strong> 10:00 AM - 6:00 PM
           </p>
@@ -64,8 +64,9 @@ const ShopCard = ({
         <div
           className={`absolute top-2 right-2 bg-white/80 text-primary w-16 h-6 rounded-full flex items-center justify-center gap-2`}
         >
-          <Coffee size={16} />
-          <Gem size={16} />
+          {modules?.map((module) => {
+            return ModuleIcons[module.name];
+          })}
         </div>
       </Link>
       <div className="px-4 pb-4">
