@@ -10,7 +10,7 @@ const BottomNav = () => {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50">
-      <nav className="max-w-4xl mx-auto px-6 py-2">
+      <nav className="max-w-2xl mx-auto px-6 py-2">
         <div className="flex items-center justify-between relative">
           <Link
             href="/"

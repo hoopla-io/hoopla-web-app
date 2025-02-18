@@ -2,6 +2,7 @@
 
 import { Share2 } from 'lucide-react';
 import { Fragment, useState } from 'react';
+import toast from 'react-hot-toast';
 
 import { Button } from '@/components/ui/button';
 
@@ -17,6 +18,7 @@ export default function ShareButton() {
           url: window.location.href,
         });
       } catch (error) {
+        toast.error('Error sharing: ' + error);
         console.error('Error sharing:', error);
       }
     } else {

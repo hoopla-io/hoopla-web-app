@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { useAuth } from '@/app/context/auth-context';
+import { useAuth } from '@/context/auth-context';
 import { AuthApi } from '@/lib/domains/auth';
 
 interface QrCode {

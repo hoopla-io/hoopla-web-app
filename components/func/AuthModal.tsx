@@ -3,14 +3,27 @@
 import { Loader2 } from 'lucide-react';
 import type React from 'react';
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import toast from 'react-hot-toast';
 
 import { PhoneInput } from '@/components/base/phone-input';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from 'input-otp';
+import * as z from 'zod';
 
-import { useAuth } from '@/app/context/auth-context';
+import { useAuth } from '@/context/auth-context';
+
+const phoneSchema = z.object({
+  phoneNumber: z.string().min(9, 'Invalid phone number'),
+});
+
+const codeSchema = z.object({
+  code: z.string().length(5, 'Code must be 5 digits'),
+});
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -18,67 +31,108 @@ interface AuthModalProps {
   onSuccess?: () => void;
 }
 
+function PhoneForm({ onSuccess }: { onSuccess: (sessionId: string) => void }) {
+  const { login } = useAuth();
+  const form = useForm({ resolver: zodResolver(phoneSchema) });
+
+  const onSubmit = async (data: { phoneNumber: string }) => {
+    try {
+      const sterilizedPhoneNumber = data.phoneNumber.replace(/\+/g, '');
+      const { sessionId } = await login(sterilizedPhoneNumber);
+      onSuccess(sessionId);
+    } catch {
+      toast.error('Invalid phone number');
+    }
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="phoneNumber"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <PhoneInput
+                  {...field}
+                  placeholder="Phone Number"
+                  countries={['UZ']}
+                  defaultCountry="UZ"
+                  required
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" className="w-full text-white" disabled={form.formState.isSubmitting}>
+          {form.formState.isSubmitting ? (
+            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+          ) : (
+            'Send Code'
+          )}
+        </Button>
+      </form>
+    </Form>
+  );
+}
+
+function CodeForm({ sessionId, onSuccess }: { sessionId: string; onSuccess: () => void }) {
+  const { confirmCode } = useAuth();
+  const form = useForm({ resolver: zodResolver(codeSchema) });
+
+  const onSubmit = async (data: { code: string }) => {
+    try {
+      await confirmCode(sessionId, Number(data.code));
+      onSuccess();
+    } catch {
+      toast.error('Invalid verification code');
+      console.error('Invalid verification code');
+    }
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="code"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <div className="flex justify-center">
+                  <InputOTP maxLength={5} pattern={REGEXP_ONLY_DIGITS_AND_CHARS} {...field}>
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" className="w-full text-white" disabled={form.formState.isSubmitting}>
+          {form.formState.isSubmitting ? (
+            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+          ) : (
+            'Verify'
+          )}
+        </Button>
+      </form>
+    </Form>
+  );
+}
+
 export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
-  const { login, confirmCode } = useAuth();
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [code, setCode] = useState('');
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const handlePhoneSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setIsLoading(true);
-
-    try {
-      const { sessionId } = await login(phoneNumber);
-      setSessionId(sessionId);
-    } catch {
-      setError('Failed to send verification code');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCodeSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!sessionId) return;
-
-    setError(null);
-    setIsLoading(true);
-
-    try {
-      await confirmCode(sessionId, Number(code));
-      onSuccess?.();
-      onClose();
-    } catch {
-      setError('Invalid verification code');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleResendCode = async () => {
-    if (!sessionId) return;
-
-    setError(null);
-    setIsLoading(true);
-
-    console.log('This is not working yet');
-
-    // try {
-    //   await resendSms(sessionId);
-    // } catch (err) {
-    //   setError("Failed to resend code");
-    // } finally {
-    //   setIsLoading(false);
-    // }
-  };
-
-  if (!isOpen) {
-    return null;
-  }
+  if (!isOpen) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -87,59 +141,16 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
           <h2 className="text-2xl font-bold mb-4">
             {sessionId ? 'Enter Verification Code' : 'Enter Phone Number'}
           </h2>
-
-          {error && <div className="mb-4 p-2 bg-red-100 text-red-600 rounded">{error}</div>}
-
           {!sessionId ? (
-            <form onSubmit={handlePhoneSubmit} className="space-y-4">
-              <div>
-                <PhoneInput
-                  type="tel"
-                  placeholder="Phone Number"
-                  defaultCountry="UZ"
-                  countries={['UZ']}
-                  onChange={e => {
-                    const phone = e.replace(/\+/g, '');
-                    setPhoneNumber(phone);
-                  }}
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full text-white" disabled={isLoading}>
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : 'Send Code'}
-              </Button>
-            </form>
+            <PhoneForm onSuccess={setSessionId} />
           ) : (
-            <form onSubmit={handleCodeSubmit} className="space-y-4">
-              <div className="flex justify-center">
-                <InputOTP
-                  maxLength={5}
-                  pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
-                  value={code}
-                  onChange={setCode}
-                >
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                    <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                  </InputOTPGroup>
-                </InputOTP>
-              </div>
-              <Button type="submit" className="w-full text-white" disabled={isLoading}>
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : 'Verify'}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full"
-                onClick={handleResendCode}
-                disabled={isLoading}
-              >
-                Resend Code
-              </Button>
-            </form>
+            <CodeForm
+              sessionId={sessionId}
+              onSuccess={() => {
+                onSuccess?.();
+                onClose();
+              }}
+            />
           )}
         </div>
       </div>

@@ -1,11 +1,15 @@
 'use client';
 
-import { ChevronRight, Coffee, CreditCard, Receipt, User } from 'lucide-react';
+import { ChevronRight, Coffee, CreditCard, LogOut, Receipt, User } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 import Image from 'next/image';
 import Link from 'next/link';
 
+import { useLogOut } from './hooks/useLogOut';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 
 import { useGetMe } from '@/app/profile/hooks/useGetMe';
 import useTelegramApp from '@/hooks/useTelegramApp';
@@ -14,6 +18,12 @@ const ProfilePage = () => {
   const { user } = useTelegramApp();
 
   const { userInfo } = useGetMe();
+
+  const { logout } = useLogOut({
+    onError: error => {
+      toast.error(error.message);
+    },
+  });
 
   return (
     <div className="min-h-screen bg-subtle-bg text-text pb-20 mb-20">
@@ -111,6 +121,13 @@ const ProfilePage = () => {
             </CardContent>
           </Card>
         </div>
+      </div>
+      <Separator className="my-8" />
+      <div className="px-4 flex justify-end">
+        <Button className="text-white" onClick={() => logout()}>
+          <span>Logout</span>
+          <LogOut size={20} />
+        </Button>
       </div>
     </div>
   );

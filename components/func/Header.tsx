@@ -26,7 +26,7 @@ const Header = () => {
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-background shadow-md z-50">
-      <div className="max-w-4xl mx-auto px-4">
+      <div className="max-w-2xl mx-auto px-4">
         <div className="flex justify-between items-center py-4">
           <Link href="/" className="flex items-center space-x-2 font-eugusto text-2xl text-primary">
             hoopla

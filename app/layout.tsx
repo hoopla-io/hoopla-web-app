@@ -4,11 +4,11 @@ import { Toaster } from 'react-hot-toast';
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
 
-import BottomNav from '@/components/func/BottomNav';
-import Header from '@/components/func/Header';
-
 import '@/app/globals.css';
 import Providers from '@/app/providers';
+
+import BottomNav from '@/components/func/BottomNav';
+import Header from '@/components/func/Header';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -28,7 +28,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Header />
           <Toaster />
 
-          <main className="flex-grow overflow-y-auto mb-24 mt-[56px]">{children}</main>
+          <main className="flex-grow overflow-y-auto mb-24 mt-[56px] max-w-2xl mx-auto">
+            {children}
+          </main>
           <BottomNav />
         </body>
       </html>

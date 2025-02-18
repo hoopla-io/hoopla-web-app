@@ -49,7 +49,7 @@ const ErrorComponent = (props: { error: string }) => {
 export default function Page() {
   const { location, error } = useLocation();
 
-  const { shops = [], isLoading } = useShops({
+  const { shops = [] } = useShops({
     lat: Number(location?.latitude),
     lng: Number(location?.longitude),
   });

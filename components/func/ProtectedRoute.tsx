@@ -3,9 +3,9 @@
 import type React from 'react';
 import { useEffect, useState } from 'react';
 
-import AuthModal from '@/components/func/AuthModal';
+import { useAuth } from '@/context/auth-context';
 
-import { useAuth } from '@/app/context/auth-context';
+import AuthModal from '@/components/func/AuthModal';
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();

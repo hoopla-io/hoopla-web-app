@@ -2,7 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-import { AuthProvider } from '@/app/context/auth-context';
+import { AuthProvider } from '@/context/auth-context';
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const queryClient = new QueryClient();

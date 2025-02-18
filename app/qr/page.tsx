@@ -5,9 +5,9 @@ import { RefreshCw } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import QRCode from 'react-qr-code';
 
-import ProtectedRoute from '@/components/func/ProtectedRoute';
-
 import { useQr } from '@/app/qr/hooks/useQr';
+
+import ProtectedRoute from '@/components/func/ProtectedRoute';
 
 const QRPage = () => {
   const [qrValue, setQrValue] = useState('');
@@ -49,8 +49,6 @@ const QRPage = () => {
   if (isLoading) {
     return <p>Loading...</p>;
   }
-
-  // console.log(orders);
 
   return (
     <ProtectedRoute>
