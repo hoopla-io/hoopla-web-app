@@ -1,26 +1,21 @@
-FROM node:18-alpine AS builder
-
-WORKDIR /app
-
-COPY package.json package-lock.json ./
-
-RUN npm ci --legacy-peer-deps
-
-COPY . .
-
-RUN npm run build
-
+# Use a single-stage build to speed up the process
 FROM node:18-alpine
 
 WORKDIR /app
 
-COPY --from=builder /app/package.json /app/package-lock.json ./ 
+# Copy only necessary files for installing dependencies
+COPY package.json package-lock.json ./
 
-RUN npm ci --only=production --legacy-peer-deps
+RUN npm install --legacy-peer-deps
 
-COPY --from=builder /app/.next /app/.next
-COPY --from=builder /app/public /app/public
+# Copy the rest of the application
+COPY . .
 
+# Build the Next.js application
+RUN npm run build
+
+# Expose the necessary port
 EXPOSE 3002
 
-CMD ["npm", "start"]
+# Run the Next.js application
+CMD ["npm", "run", "start"]
