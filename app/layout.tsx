@@ -1,37 +1,34 @@
-import "./globals.css";
-import { Inter } from "next/font/google";
-import Header from "./components/Header";
-import BottomNav from "./components/BottomNav";
-import Script from "next/script";
-import type React from "react"; // Added import for React
-import Providers from "./providers";
+import type React from 'react';
+import { Toaster } from 'react-hot-toast';
 
-const inter = Inter({ subsets: ["latin"] });
+import { Inter } from 'next/font/google';
+import Script from 'next/script';
+
+import BottomNav from '@/components/func/BottomNav';
+import Header from '@/components/func/Header';
+
+import '@/app/globals.css';
+import Providers from '@/app/providers';
+
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: "Coffee Subscription App",
-  description: "Get your daily coffee fix with ease",
+  title: 'Coffee Subscription App',
+  description: 'Get your daily coffee fix with ease',
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <Providers>
       <html lang="en">
         <head>
-          <Script
-            src="https://telegram.org/js/telegram-web-app.js"
-            strategy="beforeInteractive"
-          />
+          <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
         </head>
         <body className={`${inter.className}`}>
           <Header />
-          <main className="flex-grow overflow-y-auto mb-24 mt-[56px]">
-            {children}
-          </main>
+          <Toaster />
+
+          <main className="flex-grow overflow-y-auto mb-24 mt-[56px]">{children}</main>
           <BottomNav />
         </body>
       </html>

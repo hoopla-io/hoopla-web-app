@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
 declare global {
   interface Window {
@@ -22,7 +22,7 @@ declare global {
           onClick: (callback: () => void) => void;
         };
         requestLocation: (
-          callback: (location: { latitude: number; longitude: number }) => void
+          callback: (location: { latitude: number; longitude: number }) => void,
         ) => void;
       };
     };
@@ -36,6 +36,7 @@ const useTelegramApp = () => {
     last_name?: string;
     username?: string;
     language_code?: string;
+    photo_url?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -54,10 +55,10 @@ const useTelegramApp = () => {
 
   const sendMessage = async (text: string) => {
     try {
-      const response = await fetch("/api/telegram", {
-        method: "POST",
+      const response = await fetch('/api/telegram', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           message: {
@@ -67,10 +68,10 @@ const useTelegramApp = () => {
         }),
       });
       if (!response.ok) {
-        throw new Error("Failed to send message");
+        throw new Error('Failed to send message');
       }
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error('Error sending message:', error);
     }
   };
 
@@ -80,17 +81,15 @@ const useTelegramApp = () => {
   }> => {
     return new Promise((resolve, reject) => {
       if (window.Telegram.WebApp.requestLocation) {
-        window.Telegram.WebApp.requestLocation((location) => {
+        window.Telegram.WebApp.requestLocation(location => {
           if (location) {
             resolve(location);
           } else {
-            reject(new Error("Location request was denied"));
+            reject(new Error('Location request was denied'));
           }
         });
       } else {
-        reject(
-          new Error("Location request is not supported in this Telegram client")
-        );
+        reject(new Error('Location request is not supported in this Telegram client'));
       }
     });
   };

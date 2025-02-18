@@ -1,10 +1,11 @@
-import Image from "next/image";
-import Link from "next/link";
-import { Coffee, Gem, MapPin } from "lucide-react";
+import { Coffee, Gem, MapPin } from 'lucide-react';
+
+import Image from 'next/image';
+import Link from 'next/link';
 
 type Module = {
   moduleId: number;
-  name: "Lite" | "Pro";
+  name: 'Lite' | 'Pro';
   colour: string;
 };
 
@@ -28,15 +29,12 @@ const ModuleIcons = {
 
 const ShopCard = ({
   shopId,
-  partnerId,
   name,
   pictureUrl,
   distance,
   location,
   modules: modules,
 }: ShopCardProps) => {
-  console.log(modules, distance, partnerId);
-
   return (
     <div className="bg-background rounded-lg shadow-md overflow-hidden relative">
       <Link href={`/shops/${shopId}`} className="block">
@@ -49,9 +47,6 @@ const ShopCard = ({
         />
         <div className="p-4">
           <h3 className="text-xl font-semibold mb-2">{name}</h3>
-          <p className="text-sm mb-2">
-            <strong>Hours:</strong> 10:00 AM - 6:00 PM
-          </p>
           <div className="flex items-center text-sm">
             <MapPin size={16} className="mr-1" />
             <p>
@@ -64,8 +59,12 @@ const ShopCard = ({
         <div
           className={`absolute top-2 right-2 bg-white/80 text-primary w-16 h-6 rounded-full flex items-center justify-center gap-2`}
         >
-          {modules?.map((module) => {
-            return ModuleIcons[module.name];
+          {modules?.map(module => {
+            return (
+              <div key={module.moduleId} className={`w-4 h-4 rounded-full`}>
+                {ModuleIcons[module.name]}
+              </div>
+            );
           })}
         </div>
       </Link>
@@ -74,7 +73,7 @@ const ShopCard = ({
           href={`https://www.yandex.uz/maps?ll=${location.lng},${location.lat}&z=18`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block mt-2 bg-primary text-background px-3 py-1 rounded text-sm font-medium"
+          className="inline-block bg-primary text-background px-3 py-1 rounded text-sm font-medium"
         >
           Get Directions
         </a>

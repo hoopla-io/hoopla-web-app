@@ -1,10 +1,12 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { Bell } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
-import useTelegramApp from "@/hooks/useTelegramApp";
-import { useEffect } from "react";
+import { Bell } from 'lucide-react';
+import { useEffect } from 'react';
+
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+
+import useTelegramApp from '@/hooks/useTelegramApp';
 
 const Header = () => {
   const router = useRouter();
@@ -13,7 +15,7 @@ const Header = () => {
 
   useEffect(() => {
     if (window.Telegram?.WebApp) {
-      if (pathname === "/") {
+      if (pathname === '/') {
         window.Telegram.WebApp.BackButton.hide();
       } else {
         window.Telegram.WebApp.BackButton.show();
@@ -26,7 +28,7 @@ const Header = () => {
     <header className="fixed top-0 left-0 right-0 bg-background shadow-md z-50">
       <div className="max-w-4xl mx-auto px-4">
         <div className="flex justify-between items-center py-4">
-          <Link href="/" className="flex items-center space-x-2">
+          <Link href="/" className="flex items-center space-x-2 font-eugusto text-2xl text-primary">
             hoopla
           </Link>
           <div className="flex items-center space-x-4">

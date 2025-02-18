@@ -1,47 +1,28 @@
-"use client";
+'use client';
 
-import { useShop } from "@/views/ShopDetailView/hooks/useShop";
-import { use, useState } from "react";
+import { ArrowLeft, MapPin, Clock, Phone, Globe, Instagram } from 'lucide-react';
+import { use, useState } from 'react';
 
-import {
-  ArrowLeft,
-  Heart,
-  Share2,
-  MapPin,
-  Clock,
-  Phone,
-  Globe,
-  Instagram,
-} from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
+import Image from 'next/image';
+import Link from 'next/link';
 
-interface WorkingHours {
-  weekDay: string;
-  openAt: string;
-  closeAt: string;
-}
+import ShareButton from '@/components/base/share-button';
 
-const formatWorkingHours = (hours: WorkingHours[]) => {
-  const today = new Date()
-    .toLocaleString("en-US", { weekday: "long" })
-    .toLowerCase();
-  const todayHours = hours.find((h) => h.weekDay === today);
-  return todayHours ? `${todayHours.openAt} - ${todayHours.closeAt}` : "Closed";
-};
+import { useFormatHours } from '@/app/shops/hooks/useFormatHours';
+import { useShop } from '@/app/shops/hooks/useShop';
+import useLocation from '@/hooks/useLocation';
 
-export default function Page({
-  params,
-}: {
-  params: Promise<{ shopId: string }>;
-}) {
+export default function Page({ params }: { params: Promise<{ shopId: string }> }) {
   const { shopId } = use(params);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
+
+  const { location } = useLocation();
 
   const handleImageChange = (index: number) => {
     setCurrentImageIndex(index);
   };
+
+  const { formatWorkingHours } = useFormatHours();
 
   const { shopDetail, isLoading, isError } = useShop({
     shopId: Number(shopId),
@@ -52,14 +33,10 @@ export default function Page({
   if (isLoading || !shopDetail) return <div>Loading...</div>;
 
   return (
-    <div className="min-h-screen bg-subtle-bg pb-20">
-      {/* Header Image Section */}
-      <div className="relative h-[32vh]">
+    <div className="bg-subtle-bg pb-20">
+      <div className="relative h-[36vh]">
         <Image
-          src={
-            shopDetail.pictures[currentImageIndex]?.pictureUrl ||
-            "/placeholder.svg"
-          }
+          src={shopDetail.pictures[currentImageIndex]?.pictureUrl || '/placeholder.svg'}
           alt={shopDetail.name!}
           fill
           className="object-cover"
@@ -72,19 +49,7 @@ export default function Page({
             <ArrowLeft className="text-text" />
           </Link>
           <div className="flex gap-2">
-            <button
-              onClick={() => setIsFavorite(!isFavorite)}
-              className="w-10 h-10 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center"
-            >
-              <Heart
-                className={
-                  isFavorite ? "fill-primary text-primary" : "text-text"
-                }
-              />
-            </button>
-            <button className="w-10 h-10 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center">
-              <Share2 className="text-text" />
-            </button>
+            <ShareButton />
           </div>
         </div>
         <div className="absolute bottom-4 right-4 bg-white/80 backdrop-blur-sm px-2 py-1 rounded-md text-sm">
@@ -100,13 +65,11 @@ export default function Page({
               key={index}
               onClick={() => handleImageChange(index)}
               className={`flex-shrink-0 rounded-lg overflow-hidden border-2 relative h-16 w-24 ${
-                currentImageIndex === index
-                  ? "border-primary"
-                  : "border-transparent"
+                currentImageIndex === index ? 'border-primary' : 'border-transparent'
               }`}
             >
               <Image
-                src={picture.pictureUrl || "/placeholder.svg"}
+                src={picture.pictureUrl || '/placeholder.svg'}
                 alt={`${shopDetail.name} ${index + 1}`}
                 fill
                 className="object-cover"
@@ -125,16 +88,12 @@ export default function Page({
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Clock size={20} className="text-primary" />
-              <p className="text-sm">
-                Open today: {formatWorkingHours(shopDetail.workingHours)}
-              </p>
+              <p className="text-sm">Open today: {formatWorkingHours(shopDetail.workingHours)}</p>
             </div>
             <div className="flex items-center gap-2">
               <MapPin size={20} className="text-primary" />
               <a
-                href={`https://www.google.com/maps/search/?api=1&query=${
-                  shopDetail.location!.lat
-                },${shopDetail.location!.lng}`}
+                href={`https://yandex.uz/maps/?ll=${shopDetail.location?.lng},${shopDetail.location?.lat}&z=16&mode=routes&rtext=${location?.latitude},${location?.longitude}~${shopDetail.location?.lat},${shopDetail.location?.lng}&ruri=~&rtt=auto`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm underline"
@@ -162,11 +121,7 @@ export default function Page({
                 rel="noopener noreferrer"
                 className="text-primary hover:opacity-80"
               >
-                {url.urlType === "web" ? (
-                  <Globe size={24} />
-                ) : (
-                  <Instagram size={24} />
-                )}
+                {url.urlType === 'web' ? <Globe size={24} /> : <Instagram size={24} />}
               </a>
             ))}
           </div>
@@ -176,13 +131,10 @@ export default function Page({
         <div>
           <h2 className="text-xl font-semibold mb-4">Available Drinks</h2>
           <div className="grid grid-cols-2 gap-4">
-            {shopDetail.drinks!.map((drink) => (
-              <div
-                key={drink.id}
-                className="bg-background rounded-lg overflow-hidden shadow-md"
-              >
+            {shopDetail.drinks!.map(drink => (
+              <div key={drink.id} className="bg-background rounded-lg overflow-hidden shadow-md">
                 <Image
-                  src={drink.pictureUrl || "/placeholder.svg"}
+                  src={drink.pictureUrl || '/placeholder.svg'}
                   alt={drink.name}
                   width={200}
                   height={200}

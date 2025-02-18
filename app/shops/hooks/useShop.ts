@@ -1,6 +1,6 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { ShopsApi } from "@/lib/domains/shops";
+import { ShopsApi } from '@/lib/domains/shops';
 
 interface Location {
   lat: number;
@@ -69,12 +69,12 @@ export function useShop(params: Params) {
     isError,
   } = useQuery<ShopDetail>(
     {
-      queryKey: ["shop-detail", shopId],
+      queryKey: ['shop-detail', shopId],
       queryFn: () => ShopsApi.getShop(shopId),
       staleTime: 300000, // 5 minutes
       enabled: Boolean(shopId),
     },
-    queryClient
+    queryClient,
   );
 
   return {

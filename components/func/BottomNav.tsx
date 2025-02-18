@@ -1,8 +1,9 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Home, User, QrCode } from "lucide-react";
+import { Home, User, QrCode } from 'lucide-react';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 const BottomNav = () => {
   const pathname = usePathname();
@@ -14,7 +15,7 @@ const BottomNav = () => {
           <Link
             href="/"
             className={`flex flex-col items-center p-2 ${
-              pathname === "/" ? "text-primary" : "text-text"
+              pathname === '/' ? 'text-primary' : 'text-text'
             }`}
           >
             <Home size={20} />
@@ -33,7 +34,7 @@ const BottomNav = () => {
           <Link
             href="/profile"
             className={`flex flex-col items-center p-2 ${
-              pathname === "/profile" ? "text-primary" : "text-text"
+              pathname === '/profile' ? 'text-primary' : 'text-text'
             }`}
           >
             <User size={20} />

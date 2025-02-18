@@ -7,9 +7,80 @@
   --color-background: #ffffff;
   --color-text: #1a1a1a;
   --color-subtle-bg: #f8f8f8;
+
+  --background: 0 0% 100%;
+  --foreground: 222.2 47.4% 11.2%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 47.4% 11.2%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 47.4% 11.2%;
+  --primary: 222.2 47.4% 11.2%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+  --destructive: 0 100% 50%;
+  --destructive-foreground: 210 40% 98%;
+  --ring: 215 20.2% 65.1%;
+  --radius: 0.5rem;
+}
+
+@layer base {
+  @font-face {
+    font-family: 'Sofia';
+    src: url('/fonts/Sofia-Pro-Light-Az.otf') format('truetype-variations');
+    font-weight: 200 300;
+    font-style: normal;
+  }
+
+  @font-face {
+    font-family: 'Sofia';
+    src: url('/fonts/Sofia-Pro-Regular-Az.otf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+  }
+
+  @font-face {
+    font-family: 'Sofia';
+    src: url('/fonts/Sofia-Pro-Semi-Bold-Az.otf') format('truetype');
+    font-weight: 600;
+    font-style: normal;
+  }
+
+  @font-face {
+    font-family: 'Sofia';
+    src: url('/fonts/SofiaPro-Bold-Az.otf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+  }
+
+  @font-face {
+    font-family: 'Eugusto';
+    src: url('/fonts/eugusto-eugusto-regular-400.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+  }
+
+  @font-face {
+    font-family: 'Eugusto';
+    src: url('/fonts/eugusto-eugusto-bold-700.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+  }
+
+  @font-face {
+    font-family: 'Eugusto';
+    src: url('/fonts/eugusto-eugusto-light-200.ttf') format('truetype');
+    font-weight: 200;
+    font-style: normal;
+  }
 }
 
 body {
   @apply bg-subtle-bg text-text;
 }
-

@@ -1,22 +1,53 @@
-import axios from "axios";
-import type { AxiosError, AxiosInstance, AxiosResponse } from "axios";
+import axios from 'axios';
+import type { AxiosError, AxiosInstance, AxiosResponse } from 'axios';
 
 export const extractorResponseInterceptor = (response: AxiosResponse) => {
   return Object.assign(response, response.data);
 };
 
-export const applyExtractorResponseInterceptor = (
-  axiosInstance: AxiosInstance
-) => {
+export const applyExtractorResponseInterceptor = (axiosInstance: AxiosInstance) => {
   axiosInstance.interceptors.response.use(
     (response: AxiosResponse) => {
       return extractorResponseInterceptor(response);
     },
-    (error: AxiosError) => {
-      return Promise.reject(
-        error.response ? extractorResponseInterceptor(error.response) : error
-      );
-    }
+    async (error: AxiosError) => {
+      if (error.response?.status === 412) {
+        const refreshToken = localStorage.getItem('refresh_token');
+        if (refreshToken) {
+          try {
+            const { data } = await axiosInstance.patch(
+              `/user/refresh-token?refreshToken=${refreshToken}`,
+            );
+            localStorage.setItem('access_token', data.accessToken);
+            localStorage.setItem('refresh_token', data.refreshToken);
+            if (error.config) {
+              error.config.headers.Authorization = `Bearer ${data.accessToken}`;
+              return axios(error.config);
+            } else {
+              throw new Error('Error config is undefined');
+            }
+          } catch (refreshError) {
+            return Promise.reject(refreshError);
+          }
+        }
+      }
+      return Promise.reject(error.response ? extractorResponseInterceptor(error.response) : error);
+    },
+  );
+
+  return axiosInstance;
+};
+
+export const applyAuthorizationInterceptor = (axiosInstance: AxiosInstance) => {
+  axiosInstance.interceptors.request.use(
+    config => {
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    },
+    error => Promise.reject(error),
   );
 
   return axiosInstance;
@@ -25,10 +56,11 @@ export const applyExtractorResponseInterceptor = (
 export const httpClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
   headers: {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
   },
   withCredentials: true,
   timeout: 10000,
 });
 
 applyExtractorResponseInterceptor(httpClient);
+applyAuthorizationInterceptor(httpClient);

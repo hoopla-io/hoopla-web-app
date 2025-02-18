@@ -1,8 +1,8 @@
-import { httpClient } from "../http/http-client";
+import { httpClient } from '@/lib/http/http-client';
 
 export const ShopsApi = {
-  getShops: async (lat: number, long: number, name: string = "") => {
-    const response = await httpClient.get("/shops/near-shops", {
+  getShops: async (lat: number, long: number, name: string = '') => {
+    const response = await httpClient.get('/shops/near-shops', {
       params: { lat, long, name },
     });
 

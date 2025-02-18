@@ -1,0 +1,30 @@
+{
+  "tabWidth": 2,
+  "printWidth": 100,
+  "useTabs": false,
+  "semi": true,
+  "singleQuote": true,
+  "quoteProps": "as-needed",
+  "jsxSingleQuote": false,
+  "trailingComma": "all",
+  "bracketSpacing": true,
+  "bracketSameLine": false,
+  "arrowParens": "avoid",
+  "endOfLine": "lf",
+  "plugins": ["@trivago/prettier-plugin-sort-imports"],
+  "importOrder": [
+    "^(?!@/).*(react)(.(?!.*css$|.*scss$))*$",
+    "^(?!@/).*(next)(.(?!.*css$|.*scss$))*$",
+    "<THIRD_PARTY_MODULES>",
+    "^(@/)(?!pages|components|layouts|contexts|public|guards|views)(.(?!.*/use[\\w]*$))*$",
+    "^(@/).*/use[\\w]*$",
+    "^(@/app/layouts)(.*)$",
+    "^(@/components/func/|@/App)(.*)$",
+    "^(@/lib)(.*)$",
+    "^(@/public)(.*)$",
+    "(svg|jpg|jpeg|png)$",
+    "^(?!@|\\./).*(scss|css)$",
+    "(scss|css)$"
+  ],
+  "importOrderSeparation": true
+}
