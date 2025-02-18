@@ -16,7 +16,7 @@ WORKDIR /app
 
 COPY --from=builder /app/package.json /app/package-lock.json ./ 
 
-RUN npm ci --only=production
+RUN npm ci --only=production --legacy-peer-deps
 
 COPY --from=builder /app/.next /app/.next
 COPY --from=builder /app/public /app/public
