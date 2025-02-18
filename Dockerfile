@@ -21,6 +21,6 @@ RUN npm ci --only=production
 COPY --from=builder /app/.next /app/.next
 COPY --from=builder /app/public /app/public
 
-EXPOSE 3001
+EXPOSE 3002
 
 CMD ["npm", "start"]
