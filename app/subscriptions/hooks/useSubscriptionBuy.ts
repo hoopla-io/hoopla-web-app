@@ -2,8 +2,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import SubscriptionApi from '@/lib/domains/subscription';
 
+type ErrorType = {
+  message: string;
+  code: number;
+};
 interface Props {
-  onError: (error: { message: string }) => void;
+  onError: (error: ErrorType) => void;
 }
 
 export function useSubscriptionBuy(props: Props) {
@@ -18,7 +22,7 @@ export function useSubscriptionBuy(props: Props) {
     onSuccess: () => {
       queryClient.refetchQueries({ queryKey: ['subscriptions'] });
     },
-    onError: error => {
+    onError: (error: ErrorType) => {
       props.onError(error);
     },
   });
