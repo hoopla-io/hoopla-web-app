@@ -3,7 +3,7 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   /* config options here */
   images: {
-    domains: ['api.hoopla.uz'],
+    domains: ['api.hoopla.uz', 'files.itv.uz'],
   },
 };
 
