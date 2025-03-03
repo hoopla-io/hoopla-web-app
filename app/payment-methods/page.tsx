@@ -105,15 +105,17 @@ export default function PaymentSystemsPage() {
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-6">Payment Systems</h1>
-      <div className="mb-4">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Choose a Payment System</AlertTitle>
-          <AlertDescription>
-            To continue, you must top up your account with this amount: {amountFromQuery}
-          </AlertDescription>
-        </Alert>
-      </div>
+      {Boolean(amountFromQuery) && (
+        <div className="mb-4">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Choose a Payment System</AlertTitle>
+            <AlertDescription>
+              To continue, you must top up your account with this amount: {amountFromQuery}
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {paymentSystems.map(system => (
           <div
