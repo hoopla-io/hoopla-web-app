@@ -1,12 +1,14 @@
 'use client';
 
-import { Bell, Settings2, Wallet } from 'lucide-react';
+import { Settings2 } from 'lucide-react';
 import { useEffect } from 'react';
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
 import useTelegramApp from '@/hooks/useTelegramApp';
+
+import DebuggerToggle from '@/components/func/Debugger';
 
 const Header = () => {
   const router = useRouter();
@@ -31,6 +33,8 @@ const Header = () => {
           <Link href="/" className="flex items-center space-x-2 font-eugusto text-2xl text-primary">
             hoopla
           </Link>
+          <DebuggerToggle />
+
           <div className="flex items-center space-x-4">
             <Link
               href="/subscriptions"
