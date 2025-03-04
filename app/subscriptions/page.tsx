@@ -75,7 +75,6 @@ const SubscriptionsPage = () => {
 
   return (
     <div className="px-4 py-8 space-y-6">
-      <h2 className="text-2xl font-bold mb-4">Subscription Plans</h2>
       {subscriptions.map(subscription => (
         <SubscriptionCard key={subscription.id} {...subscription} />
       ))}

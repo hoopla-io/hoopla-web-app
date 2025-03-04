@@ -106,7 +106,6 @@ export default function PaymentSystemsPage() {
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-6">Payment Systems</h1>
       {Boolean(amountFromQuery) && (
         <div className="mb-4">
           <Alert variant="destructive">
