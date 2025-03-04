@@ -79,7 +79,6 @@ export default function Page() {
   const debouncedClearInput = debounce(() => {
     if (searchRef.current) {
       searchRef.current.value = '';
-      searchRef.current.focus();
     }
     setSearchText('');
   }, 500);
@@ -95,7 +94,7 @@ export default function Page() {
           className="py-6"
         />
         <X
-          className="h-6 w-6 absolute right-2 top-1/2 transform -translate-y-1/2"
+          className="h-6 w-6 absolute right-2 top-1/2 transform -translate-y-1/2 cursor-pointer hover:text-primary"
           onClick={debouncedClearInput}
         />
       </div>
