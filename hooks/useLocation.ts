@@ -17,7 +17,7 @@ const useLocation = () => {
             navigator.geolocation.getCurrentPosition(resolve, reject);
           });
 
-          const tenMinutes = new Date(new Date().getTime() + 5 * 60 * 1000);
+          const tenMinutes = new Date(new Date().getTime() + 20 * 60 * 1000);
 
           Cookies.set('latitude', String(position.coords.latitude), {
             expires: tenMinutes,

@@ -160,7 +160,7 @@ export default function Page() {
   return (
     <div className="fixed inset-0 bg-black/10 z-51 flex items-center justify-center">
       <div className="bg-background p-6 rounded-lg w-full max-w-md mx-4">
-        <h2 className="text-2xl font-bold mb-4">
+        <h2 className="text-2xl font-bold mb-6">
           {sessionId ? 'Enter Verification Code' : 'Enter Phone Number'}
         </h2>
         {!sessionId ? (

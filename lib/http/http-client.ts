@@ -34,6 +34,12 @@ export const applyExtractorResponseInterceptor = (axiosInstance: AxiosInstance) 
           }
         }
       }
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+      }
+
       return Promise.reject(error.response ? extractorResponseInterceptor(error.response) : error);
     },
   );

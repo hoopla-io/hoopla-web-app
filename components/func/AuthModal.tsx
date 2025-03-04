@@ -47,7 +47,7 @@ function PhoneForm({ onSuccess }: { onSuccess: (sessionId: string) => void }) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <FormField
           control={form.control}
           name="phoneNumber"
@@ -66,7 +66,7 @@ function PhoneForm({ onSuccess }: { onSuccess: (sessionId: string) => void }) {
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full text-white" disabled={form.formState.isSubmitting}>
+        <Button type="submit" className="w-full text-white py-6" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting ? (
             <Loader2 className="w-4 h-4 animate-spin mr-2" />
           ) : (
@@ -93,7 +93,7 @@ function CodeForm({ sessionId, onSuccess }: { sessionId: string; onSuccess: () =
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <FormField
           control={form.control}
           name="code"
@@ -109,9 +109,17 @@ function CodeForm({ sessionId, onSuccess }: { sessionId: string; onSuccess: () =
                   >
                     <InputOTPGroup>
                       <InputOTPSlot index={0} />
+                    </InputOTPGroup>
+                    <InputOTPGroup>
                       <InputOTPSlot index={1} />
+                    </InputOTPGroup>
+                    <InputOTPGroup>
                       <InputOTPSlot index={2} />
+                    </InputOTPGroup>
+                    <InputOTPGroup>
                       <InputOTPSlot index={3} />
+                    </InputOTPGroup>
+                    <InputOTPGroup>
                       <InputOTPSlot index={4} />
                     </InputOTPGroup>
                   </InputOTP>
@@ -121,7 +129,7 @@ function CodeForm({ sessionId, onSuccess }: { sessionId: string; onSuccess: () =
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full text-white" disabled={form.formState.isSubmitting}>
+        <Button type="submit" className="w-full text-white py-6" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting ? (
             <Loader2 className="w-4 h-4 animate-spin mr-2" />
           ) : (
@@ -142,7 +150,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
     <Dialog open={isOpen} onOpenChange={onClose}>
       <div className="fixed inset-0 bg-black/10 z-51 flex items-center justify-center">
         <div className="bg-background p-6 rounded-lg w-full max-w-md mx-4">
-          <h2 className="text-2xl font-bold mb-4">
+          <h2 className="text-2xl font-bold mb-6 text-center">
             {sessionId ? 'Enter Verification Code' : 'Enter Phone Number'}
           </h2>
           {!sessionId ? (
