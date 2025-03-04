@@ -3,6 +3,7 @@
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import toast from 'react-hot-toast';
 import QRCode from 'react-qr-code';
 
 import Image from 'next/image';
@@ -82,6 +83,7 @@ export default function PaymentSystemsPage() {
       setIsPaymentDrawerOpen(false);
       setIsCheckoutDrawerOpen(true);
     } catch (error) {
+      toast.error('Failed to top up via payment system');
       console.error(error);
     }
   };

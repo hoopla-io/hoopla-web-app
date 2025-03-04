@@ -1,12 +1,23 @@
 'use client';
 
-import { ChevronRight, Coffee, CreditCard, LogOut, Receipt, User } from 'lucide-react';
+import {
+  AlertCircle,
+  ChevronRight,
+  Coffee,
+  CreditCard,
+  LogOut,
+  Receipt,
+  ReceiptText,
+  ShieldEllipsis,
+  User,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import Image from 'next/image';
 import Link from 'next/link';
 
 import { useLogOut } from './hooks/useLogOut';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -72,32 +83,40 @@ const ProfilePage = () => {
       </Card>
 
       {!userInfo?.subscription && (
-        <Card className="mx-4 mt-8 bg-primary text-background">
-          <CardContent className="p-6">
-            <Link href="/subscriptions" className="flex justify-between items-center">
-              <div>
-                <h3 className="text-xl font-semibold">Subscriptions</h3>
-              </div>
-              <ChevronRight size={24} />
-            </Link>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="px-4 mt-8">
-        <h2 className="text-xl text-gray-500 mb-4">Manage Subscriptions</h2>
-        <div className="space-y-4">
-          <Card>
-            <CardContent className="p-4">
-              <Link href="/subscriptions" className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Coffee className="text-primary" size={24} />
-                  <span>My subscriptions</span>
+        <div className="mx-4 mt-8 flex flex-col gap-4">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Buy a subscription</AlertTitle>
+            <AlertDescription>You don&apos;t have any active subscription.</AlertDescription>
+          </Alert>
+          <Card className=" bg-primary text-background">
+            <CardContent className="p-6">
+              <Link href="/subscriptions" className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-xl font-semibold">Subscriptions</h3>
                 </div>
-                <ChevronRight size={20} className="text-gray-400" />
+                <ChevronRight size={24} />
               </Link>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      <div className="px-4 mt-8">
+        <div className="space-y-4">
+          {userInfo?.subscription && (
+            <Card>
+              <CardContent className="p-4">
+                <Link href="/subscriptions" className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Coffee className="text-primary" size={24} />
+                    <span>My subscriptions</span>
+                  </div>
+                  <ChevronRight size={20} className="text-gray-400" />
+                </Link>
+              </CardContent>
+            </Card>
+          )}
           <Card>
             <CardContent className="p-4">
               <Link href="/payment-methods" className="flex items-center justify-between">
@@ -109,12 +128,40 @@ const ProfilePage = () => {
               </Link>
             </CardContent>
           </Card>
-          <Card>
+          {/* <Card>
             <CardContent className="p-4">
               <Link href="/payment-history" className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Receipt className="text-primary" size={24} />
                   <span>Payment History</span>
+                </div>
+                <ChevronRight size={20} className="text-gray-400" />
+              </Link>
+            </CardContent>
+          </Card> */}
+          <Card>
+            <CardContent className="p-4">
+              <Link
+                href="https://hoopla.uz/en/privacy-policy"
+                className="flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <ShieldEllipsis className="text-primary" size={24} />
+                  <span>Privacy Policy</span>
+                </div>
+                <ChevronRight size={20} className="text-gray-400" />
+              </Link>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <Link
+                href="https://hoopla.uz/en/terms-of-use"
+                className="flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <ReceiptText className="text-primary" size={24} />
+                  <span>Terms of Use</span>
                 </div>
                 <ChevronRight size={20} className="text-gray-400" />
               </Link>

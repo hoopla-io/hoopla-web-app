@@ -34,7 +34,7 @@ export default function Page({ params }: { params: Promise<{ shopId: string }> }
 
   return (
     <div className="bg-subtle-bg pb-20">
-      <div className="relative h-[36vh]">
+      <div className="relative h-[24vh]">
         <Image
           src={shopDetail.pictures[currentImageIndex]?.pictureUrl || '/placeholder.svg'}
           alt={shopDetail.name!}
@@ -131,7 +131,7 @@ export default function Page({ params }: { params: Promise<{ shopId: string }> }
         <div>
           <h2 className="text-xl font-semibold mb-4">Available Drinks</h2>
           <div className="grid grid-cols-2 gap-4">
-            {shopDetail.drinks!.map(drink => (
+            {shopDetail.drinks?.map(drink => (
               <div key={drink.id} className="bg-background rounded-lg overflow-hidden shadow-md">
                 <Image
                   src={drink.pictureUrl || '/placeholder.svg'}

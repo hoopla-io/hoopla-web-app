@@ -19,7 +19,6 @@ export default function ShareButton() {
         });
       } catch (error) {
         toast.error('Error sharing: ' + error);
-        console.error('Error sharing:', error);
       }
     } else {
       setShowOptions(true);

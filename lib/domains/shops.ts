@@ -6,7 +6,7 @@ export const ShopsApi = {
       params: { lat, long, name },
     });
 
-    return response.data;
+    return response.data ?? [];
   },
 
   getShop: async (shopId: number) => {

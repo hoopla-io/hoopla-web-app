@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell } from 'lucide-react';
+import { Bell, Settings2, Wallet } from 'lucide-react';
 import { useEffect } from 'react';
 
 import Link from 'next/link';
@@ -32,9 +32,12 @@ const Header = () => {
             hoopla
           </Link>
           <div className="flex items-center space-x-4">
-            <button className="text-text hover:text-primary transition-colors">
-              <Bell size={24} />
-            </button>
+            <Link
+              href="/subscriptions"
+              className="text-text hover:text-primary transition-colors  p-2"
+            >
+              <Settings2 size={24} />
+            </Link>
           </div>
         </div>
       </div>

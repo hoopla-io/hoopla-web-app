@@ -21,6 +21,7 @@ export function useSubscriptionBuy(props: Props) {
     mutationFn: SubscriptionApi.buySubscription,
     onSuccess: () => {
       queryClient.refetchQueries({ queryKey: ['subscriptions'] });
+      queryClient.refetchQueries({ queryKey: ['get-me'] });
     },
     onError: (error: ErrorType) => {
       props.onError(error);

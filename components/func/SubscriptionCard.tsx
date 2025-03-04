@@ -25,12 +25,11 @@ const SubscriptionCard = ({ id, name, price, currency, features }: SubscriptionC
 
   const { buySubscription } = useSubscriptionBuy({
     onError: error => {
-      console.log({ error });
-
-      toast.error(error.message);
-
       if (error.code === 422) {
+        toast.error(error.message);
         router.push('/payment-methods?amount=' + price);
+      } else if (error.code === 412) {
+        router.push('/login?from=/subscriptions');
       }
     },
   });

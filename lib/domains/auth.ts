@@ -67,7 +67,7 @@ export const AuthApi = {
   },
 
   getOrdersHistory: async () => {
-    const response = await httpClient.get('/user/orders-history');
+    const response = await httpClient.get('/user/orders/orders-list');
 
     return response.data;
   },

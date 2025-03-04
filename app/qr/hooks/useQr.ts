@@ -8,6 +8,14 @@ interface QrCode {
   expireAt: number;
 }
 
+interface Order {
+  id: number;
+  partnerName: string;
+  purchasedAt: string;
+  purchasedAtUnix: number;
+  shopName: string;
+}
+
 export function useQr() {
   const queryClient = useQueryClient();
 
@@ -27,26 +35,26 @@ export function useQr() {
     queryClient,
   );
 
-  // const {
-  //   data: orders = [],
-  //   isLoading: isLoadingOrders,
-  //   isError: isErrorOrders,
-  // } = useQuery(
-  //   {
-  //     queryKey: ["orders"],
-  //     queryFn: AuthApi.getOrdersHistory,
-  //     staleTime: 300000, // 5 minutes
-  //     enabled: isAuthenticated,
-  //   },
-  //   queryClient
-  // );
+  const {
+    data: orders = [],
+    isLoading: isLoadingOrders,
+    isError: isErrorOrders,
+  } = useQuery<Order[]>(
+    {
+      queryKey: ['orders'],
+      queryFn: AuthApi.getOrdersHistory,
+      staleTime: 300000, // 5 minutes
+      enabled: isAuthenticated,
+    },
+    queryClient,
+  );
 
   return {
     qrCode,
     isLoading,
     isError,
-    // orders,
-    // isLoadingOrders,
-    // isErrorOrders,
+    orders,
+    isLoadingOrders,
+    isErrorOrders,
   };
 }

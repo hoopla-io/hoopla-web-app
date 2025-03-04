@@ -28,7 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Header />
           <Toaster />
 
-          <main className="flex-grow overflow-y-auto mb-24 mt-[56px] max-w-2xl mx-auto">
+          <main className="flex-grow overflow-y-auto mb-24 mt-[72px] max-w-2xl mx-auto">
             {children}
           </main>
           <BottomNav />

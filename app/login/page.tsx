@@ -6,6 +6,8 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 
+import { useRouter, useSearchParams } from 'next/navigation';
+
 import { PhoneInput } from '@/components/base/phone-input';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
@@ -78,14 +80,14 @@ function PhoneForm({ onSuccess }: { onSuccess: (sessionId: string) => void }) {
   );
 }
 
-function CodeForm({ sessionId, onSuccess }: { sessionId: string; onSuccess: () => void }) {
+function CodeForm({ sessionId, onSuccess }: { sessionId: string; onSuccess?: () => void }) {
   const { confirmCode } = useAuth();
   const form = useForm({ resolver: zodResolver(codeSchema) });
 
   const onSubmit = async (data: { code: string }) => {
     try {
       await confirmCode(sessionId, Number(data.code));
-      onSuccess();
+      onSuccess?.();
     } catch {
       toast.error('Invalid verification code');
     }
@@ -133,31 +135,40 @@ function CodeForm({ sessionId, onSuccess }: { sessionId: string; onSuccess: () =
   );
 }
 
-export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
+export default function Page() {
   const [sessionId, setSessionId] = useState<string | null>(null);
 
-  if (!isOpen) return null;
+  const router = useRouter();
+
+  const params = useSearchParams();
+  const redirectUrl = params.get('from');
+
+  const { isAuthenticated } = useAuth();
+
+  const handleNavigateAfterLogin = (redirectUrl?: string | null) => {
+    if (redirectUrl) {
+      router.replace(redirectUrl);
+    } else {
+      router.replace('/profile');
+    }
+  };
+
+  if (isAuthenticated) {
+    handleNavigateAfterLogin(redirectUrl);
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <div className="fixed inset-0 bg-black/10 z-51 flex items-center justify-center">
-        <div className="bg-background p-6 rounded-lg w-full max-w-md mx-4">
-          <h2 className="text-2xl font-bold mb-4">
-            {sessionId ? 'Enter Verification Code' : 'Enter Phone Number'}
-          </h2>
-          {!sessionId ? (
-            <PhoneForm onSuccess={setSessionId} />
-          ) : (
-            <CodeForm
-              sessionId={sessionId}
-              onSuccess={() => {
-                onSuccess?.();
-                onClose();
-              }}
-            />
-          )}
-        </div>
+    <div className="fixed inset-0 bg-black/10 z-51 flex items-center justify-center">
+      <div className="bg-background p-6 rounded-lg w-full max-w-md mx-4">
+        <h2 className="text-2xl font-bold mb-4">
+          {sessionId ? 'Enter Verification Code' : 'Enter Phone Number'}
+        </h2>
+        {!sessionId ? (
+          <PhoneForm onSuccess={setSessionId} />
+        ) : (
+          <CodeForm sessionId={sessionId} onSuccess={() => handleNavigateAfterLogin(redirectUrl)} />
+        )}
       </div>
-    </Dialog>
+    </div>
   );
 }
