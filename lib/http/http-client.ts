@@ -11,6 +11,7 @@ export const applyExtractorResponseInterceptor = (axiosInstance: AxiosInstance) 
       return extractorResponseInterceptor(response);
     },
     async (error: AxiosError) => {
+      alert(error.code);
       if (error.code === '412') {
         const refreshToken = localStorage.getItem('refresh_token');
 
