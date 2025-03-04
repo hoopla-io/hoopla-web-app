@@ -11,7 +11,7 @@ export const applyExtractorResponseInterceptor = (axiosInstance: AxiosInstance) 
       return extractorResponseInterceptor(response);
     },
     async (error: AxiosError) => {
-      if (error.code === '412') {
+      if (error.response?.status === 412) {
         const refreshToken = localStorage.getItem('refresh_token');
 
         if (refreshToken) {
@@ -32,6 +32,9 @@ export const applyExtractorResponseInterceptor = (axiosInstance: AxiosInstance) 
             localStorage.removeItem('refresh_token');
             return Promise.reject(refreshError);
           }
+        } else {
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
         }
       }
       return Promise.reject(error.response ? extractorResponseInterceptor(error.response) : error);
