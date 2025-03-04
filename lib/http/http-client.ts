@@ -32,9 +32,6 @@ export const applyExtractorResponseInterceptor = (axiosInstance: AxiosInstance) 
             localStorage.removeItem('refresh_token');
             return Promise.reject(refreshError);
           }
-        } else {
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
         }
       }
       return Promise.reject(error.response ? extractorResponseInterceptor(error.response) : error);
