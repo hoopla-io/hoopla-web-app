@@ -13,6 +13,7 @@ export const applyExtractorResponseInterceptor = (axiosInstance: AxiosInstance) 
     async (error: AxiosError) => {
       if (error.response?.status === 412) {
         const refreshToken = localStorage.getItem('refresh_token');
+
         if (refreshToken) {
           try {
             const { data } = await axiosInstance.patch(
@@ -27,6 +28,8 @@ export const applyExtractorResponseInterceptor = (axiosInstance: AxiosInstance) 
               throw new Error('Error config is undefined');
             }
           } catch (refreshError) {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
             return Promise.reject(refreshError);
           }
         }
