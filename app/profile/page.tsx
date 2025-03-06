@@ -6,9 +6,9 @@ import {
   Coffee,
   CreditCard,
   LogOut,
-  Receipt,
   ReceiptText,
   ShieldEllipsis,
+  Trash,
   User,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -16,13 +16,25 @@ import toast from 'react-hot-toast';
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { useLogOut } from './hooks/useLogOut';
+import { useDeleteAccount } from './hooks/useDeleteAccount';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 
 import { useGetMe } from '@/app/profile/hooks/useGetMe';
+import { useLogOut } from '@/app/profile/hooks/useLogOut';
 import useTelegramApp from '@/hooks/useTelegramApp';
 
 const ProfilePage = () => {
@@ -31,6 +43,12 @@ const ProfilePage = () => {
   const { userInfo } = useGetMe();
 
   const { logout } = useLogOut({
+    onError: error => {
+      toast.error(error.message);
+    },
+  });
+
+  const { deleteAccount } = useDeleteAccount({
     onError: error => {
       toast.error(error.message);
     },
@@ -170,11 +188,34 @@ const ProfilePage = () => {
         </div>
       </div>
       <Separator className="my-8" />
-      <div className="px-4 flex justify-end">
+      <div className="px-4 flex justify-end gap-4 ">
         <Button className="text-white" onClick={() => logout()}>
           <span>Logout</span>
           <LogOut size={20} />
         </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button className="text-white">
+              <span>Delete account</span>
+              <Trash size={20} />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete your account and remove
+                your data from our servers.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction className="text-white" onClick={() => deleteAccount()}>
+                Continue
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

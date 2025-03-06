@@ -54,6 +54,10 @@ export const AuthApi = {
     await httpClient.post('/user/logout');
   },
 
+  deleteAccount: async () => {
+    await httpClient.delete('/user/deactivate');
+  },
+
   getUser: async () => {
     const response = await httpClient.get('/user/get-me');
 

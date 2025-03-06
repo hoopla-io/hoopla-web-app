@@ -1,3 +1,5 @@
+import { redirect } from 'next/navigation';
+
 import axios from 'axios';
 import type { AxiosError, AxiosInstance, AxiosResponse } from 'axios';
 
@@ -12,6 +14,7 @@ export const applyExtractorResponseInterceptor = (axiosInstance: AxiosInstance) 
     },
     async (error: AxiosError) => {
       if (error.response?.status === 412) {
+        console.log('works');
         const refreshToken = localStorage.getItem('refresh_token');
 
         if (refreshToken) {
@@ -32,6 +35,9 @@ export const applyExtractorResponseInterceptor = (axiosInstance: AxiosInstance) 
             localStorage.removeItem('refresh_token');
             return Promise.reject(refreshError);
           }
+        } else {
+          console.log('no refresh token', window.location.pathname);
+          // window.location.href = `/login?redirect=${window.location.pathname}`;
         }
       }
 
