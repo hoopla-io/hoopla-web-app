@@ -1,6 +1,12 @@
 # Use a single-stage build to speed up the process
 FROM node:18-alpine
 
+# Set build arguments (these will be passed from GitHub Actions)
+ARG NEXT_PUBLIC_API_URL
+
+# Set the environment variables
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
 WORKDIR /app
 
 # Copy only necessary files for installing dependencies
