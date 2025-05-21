@@ -30,6 +30,8 @@ const SubscriptionCard = ({ id, name, price, currency, features }: SubscriptionC
         router.push('/payment-methods?amount=' + price);
       } else if (error.code === 412) {
         router.push('/login?from=/subscriptions');
+      } else {
+        toast.error(error.message);
       }
     },
   });

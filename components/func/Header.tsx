@@ -6,6 +6,8 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
+import { Button } from '../ui/button';
+
 import useTelegramApp from '@/hooks/useTelegramApp';
 
 // import DebuggerToggle from '@/components/func/Debugger';
@@ -33,15 +35,11 @@ const Header = () => {
           <Link href="/" className="flex items-center space-x-2 font-eugusto text-2xl text-primary">
             hoopla
           </Link>
-          {/* <DebuggerToggle /> */}
-          <div className="flex items-center space-x-4">
-            <Link
-              href="/subscriptions"
-              className="text-text hover:text-primary transition-colors  p-2"
-            >
-              <Settings2 size={24} />
+          <Button className="flex items-center space-x-4">
+            <Link href="/subscriptions" className="text-white transition-colors  p-2 font-bold">
+              Subscriptions
             </Link>
-          </div>
+          </Button>
         </div>
       </div>
     </header>

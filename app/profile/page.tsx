@@ -32,14 +32,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { format } from 'date-fns';
 
 import { useGetMe } from '@/app/profile/hooks/useGetMe';
 import { useLogOut } from '@/app/profile/hooks/useLogOut';
-import useTelegramApp from '@/hooks/useTelegramApp';
 
 const ProfilePage = () => {
-  const { user } = useTelegramApp();
-
   const { userInfo } = useGetMe();
 
   const { logout } = useLogOut({
@@ -54,54 +52,46 @@ const ProfilePage = () => {
     },
   });
 
+  if (!userInfo) return <div>Loading...</div>;
+
   return (
     <div className="min-h-screen bg-subtle-bg text-text pb-20 mb-20">
-      <Card className="rounded-none shadow-none bg-background">
-        <CardContent className="pt-6 flex gap-4">
-          <div className="flex flex-col items-start">
-            <div className="relative">
-              <div className="w-32 h-32 rounded-full overflow-hidden flex items-center justify-center bg-gray-400/10">
-                {user?.photo_url ? (
-                  <Image
-                    src={user.photo_url}
-                    alt="Profile Picture"
-                    width={400}
-                    height={400}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <User size={40} />
-                )}
-              </div>
-            </div>
-          </div>
+      <Card className="shadow-md bg-background m-4 rounded-md">
+        <CardContent className="pt-6 flex flex-col gap-4">
           <div className="flex flex-col gap-1 justify-center">
+            <p className="font-semibold text-lg">{userInfo.name}</p>
             <p>
-              <span className="font-semibold text-primary">Name: </span>
-              <span>{user ? `${user.first_name} ${user.last_name || ''}` : userInfo?.name}</span>
+              <span className="font-light ">Phone Number: </span>
+              <span className="font-semibold">+{userInfo.phoneNumber}</span>
             </p>
             <p>
-              <span className="font-semibold text-primary">Phone: </span>
-              <span>+{userInfo?.phoneNumber}</span>
-            </p>
-            <p>
-              <span className="font-semibold text-primary">Balance: </span>
-              <span>
+              <span className="font-light">Balance: </span>
+              <span className="font-semibold">
                 {userInfo?.balance} {userInfo?.currency}
               </span>
             </p>
-            {user?.username && (
-              <p>
-                <span className="font-semibold text-primary">Username: </span>
-                <span>{`@${user.username}`}</span>
-              </p>
-            )}
           </div>
+          {userInfo?.subscription && (
+            <div className="border-t border-x-stone-950 pt-4">
+              <div className="flex flex-col justify-between gap-2">
+                <div className="flex items-center gap-3">
+                  <span>Your subscription:</span>
+                </div>
+                <div className="flex justify-between">
+                  <p className="text-xl font-bold">{userInfo.subscription?.name}</p>
+                  <p>
+                    (Active to:
+                    {format(userInfo.subscription?.endDateUnix * 1000, 'dd.MM.yyyy, HH:mm')})
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       {!userInfo?.subscription && (
-        <div className="mx-4 mt-8 flex flex-col gap-4">
+        <div className="mx-4 flex flex-col gap-4">
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Buy a subscription</AlertTitle>
@@ -120,21 +110,8 @@ const ProfilePage = () => {
         </div>
       )}
 
-      <div className="px-4 mt-8">
+      <div className="px-4 mt-2">
         <div className="space-y-4">
-          {userInfo?.subscription && (
-            <Card>
-              <CardContent className="p-4">
-                <Link href="/subscriptions" className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Coffee className="text-primary" size={24} />
-                    <span>My subscriptions</span>
-                  </div>
-                  <ChevronRight size={20} className="text-gray-400" />
-                </Link>
-              </CardContent>
-            </Card>
-          )}
           <Card>
             <CardContent className="p-4">
               <Link href="/payment-methods" className="flex items-center justify-between">
@@ -146,17 +123,7 @@ const ProfilePage = () => {
               </Link>
             </CardContent>
           </Card>
-          {/* <Card>
-            <CardContent className="p-4">
-              <Link href="/payment-history" className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Receipt className="text-primary" size={24} />
-                  <span>Payment History</span>
-                </div>
-                <ChevronRight size={20} className="text-gray-400" />
-              </Link>
-            </CardContent>
-          </Card> */}
+
           <Card>
             <CardContent className="p-4">
               <Link

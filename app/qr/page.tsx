@@ -1,10 +1,13 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
-import { RotateCw } from 'lucide-react';
-import { useState, useEffect, Fragment } from 'react';
+import { Coffee, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import QRCode from 'react-qr-code';
 
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 
 import { useQr } from '@/app/qr/hooks/useQr';
@@ -13,73 +16,37 @@ import ProtectedRoute from '@/components/func/ProtectedRoute';
 
 const QRPage = () => {
   const [qrValue, setQrValue] = useState('');
-  const [timeLeft, setTimeLeft] = useState(0);
-  const [isExpired, setIsExpired] = useState(false);
 
-  const queryClient = useQueryClient();
-
-  const { qrCode, isLoading, orders } = useQr();
+  const { qrCode, orders } = useQr();
 
   const generateQR = () => {
     if (!qrCode) return;
 
     setQrValue(qrCode.qrCode);
-    const timeDifference = (qrCode.expireAt - new Date().getTime() / 1000) << 0;
-    setTimeLeft(timeDifference);
-    setIsExpired(false);
-  };
-
-  const regenerateQR = () => {
-    queryClient.refetchQueries({
-      queryKey: ['qr'],
-    });
   };
 
   useEffect(() => {
     generateQR();
   }, [qrCode]);
 
-  useEffect(() => {
-    if (timeLeft > 0) {
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setIsExpired(true);
-    }
-  }, [timeLeft]);
-
-  if (isLoading) {
+  if (!qrCode) {
     return <p>Loading...</p>;
   }
 
   return (
     <ProtectedRoute>
-      <div className="px-4 py-6 space-y-6">
-        <div className="bg-background p-8 rounded-lg shadow-md flex flex-col items-center">
-          {isExpired ? (
-            <div className="text-center">
-              <p className="text-xl mb-6 font-semibold">QR code expired</p>
-              <div className="relative overflow-hidden rounded-md">
-                <QRCode
-                  value={'Regenerate qr code, bro)'}
-                  size={200}
-                  className="p-2 blur-sm opacity-50"
-                />
-                <button
-                  onClick={regenerateQR}
-                  className="w-full h-full text-primary p-4 rounded-md flex items-center justify-center absolute top-[50%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-10"
-                >
-                  <RotateCw size={80} />
-                </button>
-              </div>
-            </div>
-          ) : (
-            <Fragment>
-              <QRCode value={qrValue} size={200} />
-              <p className="mt-4 text-lg font-semibold">Time remaining: {timeLeft}s</p>
-            </Fragment>
-          )}
+      <div className="px-4 py-6 space-y-4">
+        <div className="bg-background p-4 rounded-lg shadow-md flex items-center justify-between">
+          <div className="w-1/2 mr-4 border-2 border-x-slate-700/10 p-6 rounded-md">
+            <div>Subscription:</div>
+            <p className="font-bold text-3xl">Rootine</p>
+            <Separator className="my-2 w-full" />
+            <div className="text-md">Active until:</div>
+            <p className="font-bold text-xl">{format(qrCode.expireAt * 1000, 'dd.MM.yyyy')}</p>
+          </div>
+          <QRCode value={qrValue} size={200} />
         </div>
+        <CoffeeStatusSection dailyLimit={1} drankCoffees={1} />
         <div className="mt-8">
           <h3 className="text-xl font-bold mb-4">Purchase History</h3>
           <div className="space-y-4">
@@ -102,3 +69,44 @@ const QRPage = () => {
 };
 
 export default QRPage;
+
+type CoffeeStatusProps = {
+  dailyLimit: number;
+  drankCoffees: number;
+};
+
+export function CoffeeStatusSection({ dailyLimit, drankCoffees }: CoffeeStatusProps) {
+  const percentage = Math.min((drankCoffees / dailyLimit) * 100, 100);
+  const remaining = Math.max(dailyLimit - drankCoffees, 0);
+  const dailyLimitReached = drankCoffees >= dailyLimit;
+
+  return (
+    <section className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Coffee className="w-5 h-5 text-brown-600" />
+            Daily Coffee Usage
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex justify-between text-sm text-muted-foreground">
+            <span>{drankCoffees} drank</span>
+            <span>{remaining} left</span>
+          </div>
+          <Progress value={percentage} />
+        </CardContent>
+      </Card>
+
+      {dailyLimitReached && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-5 w-5" />
+          <AlertTitle>Daily Limit Reached</AlertTitle>
+          <AlertDescription>
+            You've already had {dailyLimit} cups today. Time to chill ☕
+          </AlertDescription>
+        </Alert>
+      )}
+    </section>
+  );
+}

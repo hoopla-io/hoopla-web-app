@@ -41,17 +41,7 @@ export default function Page({ params }: { params: Promise<{ shopId: string }> }
           fill
           className="object-cover"
         />
-        <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start">
-          <Link
-            href="/"
-            className="w-10 h-10 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center"
-          >
-            <ArrowLeft className="text-text" />
-          </Link>
-          <div className="flex gap-2">
-            <ShareButton />
-          </div>
-        </div>
+
         <div className="absolute bottom-4 right-4 bg-white/80 backdrop-blur-sm px-2 py-1 rounded-md text-sm">
           {currentImageIndex + 1}/{shopDetail.pictures.length}
         </div>

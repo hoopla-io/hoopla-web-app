@@ -30,6 +30,8 @@ interface User {
   subscription: {
     id: number;
     name: string;
+    endDate: string;
+    endDateUnix: number;
   };
 }
 export const AuthApi = {
