@@ -112,7 +112,7 @@ export const ShopsPage: FC = () => {
         />
       </List>
       {shops.length > 0 && (
-        <Section header="Nearby Shops" className="pb-32">
+        <Section header="Nearby Shops">
           {shops.map((shop, index) => (
             <div key={index} className="m-0 bg-transparent px-6 mb-4">
               <ShopCard key={index} {...shop} />
