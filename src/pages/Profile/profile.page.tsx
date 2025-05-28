@@ -79,7 +79,7 @@ export const ProfilePage: FC = () => {
         <div className="grid grid-cols-2 gap-2 items-start">
           <Card className="shadow-md rounded-md w-full bg-[var(--tg-theme-bg-color)] mt-2">
             <CardContent className="py-2 px-2 flex flex-col gap-4">
-              {/* {userInfo.subscription && (
+              {userInfo.subscription && (
                 <div className="flex flex-col justify-between gap-2">
                   <div className="text-lg font-bold">Subscription:</div>
                   <div className="flex flex-col justify-between gap-2">
@@ -98,8 +98,8 @@ export const ProfilePage: FC = () => {
                     </div>
                   </div>
                 </div>
-              )} */}
-              {userInfo.subscription && (
+              )}
+              {!userInfo.subscription && (
                 <div className="flex flex-col justify-between gap-2">
                   <div className="text-lg font-bold">Subscription:</div>
                   <div className="flex flex-col justify-between gap-5">
