@@ -36,7 +36,7 @@ export const applyExtractorResponseInterceptor = (
           }
         } else {
           console.log("no refresh token", window.location.pathname);
-          // window.location.href = `/login?redirect=${window.location.pathname}`;
+          window.location.href = `/login?redirect=${window.location.pathname}`;
           return Promise.reject(error);
         }
       }
@@ -44,7 +44,7 @@ export const applyExtractorResponseInterceptor = (
       if (error.response?.status === 401) {
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
-        // window.location.href = `/login?redirect=${window.location.pathname}`;
+        window.location.href = `/login?redirect=${window.location.pathname}`;
       }
 
       return Promise.reject(

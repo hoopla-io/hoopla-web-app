@@ -62,7 +62,7 @@ export const ProfilePage: FC = () => {
 
   return (
     <Page>
-      <div className="min-h-screen my-24 mx-4">
+      <div className="min-h-screen mt-24 mb-32 mx-4">
         <Card className="shadow-md rounded-md w-full bg-[var(--tg-theme-bg-color)]">
           <CardContent className="py-4 px-4 flex flex-col gap-4">
             <div className="flex flex-col gap-1 justify-center">
@@ -78,7 +78,7 @@ export const ProfilePage: FC = () => {
         </Card>
         <div className="grid grid-cols-2 gap-2 items-start">
           <Card className="shadow-md rounded-md w-full bg-[var(--tg-theme-bg-color)] mt-2">
-            <CardContent className="py-2 px-2 flex flex-col gap-4">
+            <CardContent className="py-2 px-3 flex flex-col gap-4">
               {userInfo.subscription && (
                 <div className="flex flex-col justify-between gap-2">
                   <div className="text-lg font-bold">Subscription:</div>
@@ -121,7 +121,7 @@ export const ProfilePage: FC = () => {
             </CardContent>
           </Card>
           <Card className="shadow-md rounded-md w-full bg-[var(--tg-theme-bg-color)] mt-2">
-            <CardContent className="py-2 px-2 flex flex-col gap-4">
+            <CardContent className="py-2 px-3 flex flex-col gap-4">
               <div className="flex flex-col justify-between gap-2 p-0">
                 <div className="text-lg font-bold">Balance:</div>
                 <div className="flex flex-col justify-between gap-5">

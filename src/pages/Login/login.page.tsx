@@ -22,6 +22,7 @@ import { useAuth } from "@/context/auth.context";
 import { PhoneInput } from "@/components/func/PhoneInput";
 import { Button } from "@telegram-apps/telegram-ui";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { Page } from "@/components/Page";
 
 const phoneSchema = z.object({
   phoneNumber: z.string().min(9, "Invalid phone number"),
@@ -171,20 +172,22 @@ export const LoginPage: FC = () => {
   }
 
   return (
-    <div className="fixed inset-0 z-[999] w-full h-[100vh] bg-[var(--tg-theme-secondary-bg-color)]  flex items-center justify-center shadow-2xl">
-      <div className="bg-[var(--tg-theme-bg-color)] p-6 rounded-lg w-full max-w-md mx-4">
-        <h2 className="text-2xl font-bold mb-6 text-center">
-          {sessionId ? "Enter Verification Code" : "Enter Phone Number"}
-        </h2>
-        {!sessionId ? (
-          <PhoneForm onSuccess={setSessionId} />
-        ) : (
-          <CodeForm
-            sessionId={sessionId}
-            onSuccess={() => handleNavigateAfterLogin(redirectUrl)}
-          />
-        )}
+    <Page>
+      <div className="fixed inset-0 z-[999] w-full h-[100vh] bg-[var(--tg-theme-secondary-bg-color)]  flex items-center justify-center shadow-2xl">
+        <div className="bg-[var(--tg-theme-bg-color)] p-6 rounded-lg w-full max-w-md mx-4">
+          <h2 className="text-2xl font-bold mb-6 text-center">
+            {sessionId ? "Enter Verification Code" : "Enter Phone Number"}
+          </h2>
+          {!sessionId ? (
+            <PhoneForm onSuccess={setSessionId} />
+          ) : (
+            <CodeForm
+              sessionId={sessionId}
+              onSuccess={() => handleNavigateAfterLogin(redirectUrl)}
+            />
+          )}
+        </div>
       </div>
-    </div>
+    </Page>
   );
 };

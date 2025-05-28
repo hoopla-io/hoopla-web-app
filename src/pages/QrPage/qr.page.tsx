@@ -50,9 +50,11 @@ export const QRPage = () => {
               <h1 className="text-3xl font-bold font-eugusto">Hoopla</h1>
               {userInfo && (
                 <div>
-                  <p className="font-semibold text-2xl font-eugusto">
-                    {userInfo.subscription.name}
-                  </p>
+                  {userInfo.subscription && (
+                    <p className="font-semibold text-2xl font-eugusto">
+                      {userInfo.subscription.name}
+                    </p>
+                  )}
                   <p className="text-sm">+{userInfo.phoneNumber}</p>
                 </div>
               )}
