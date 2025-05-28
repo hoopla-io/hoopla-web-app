@@ -34,6 +34,7 @@ import { useNavigate } from "react-router-dom";
 import { Page } from "@/components/Page";
 import { formatBalance } from "@/helpers/utils";
 import { LoadingScreen } from "@/components/func/Loading";
+import { Link as RouterLink } from "react-router-dom";
 
 export const ProfilePage: FC = () => {
   const { userInfo, isLoading } = useGetMe();
@@ -63,7 +64,7 @@ export const ProfilePage: FC = () => {
     <Page>
       <div className="min-h-screen my-24 mx-4">
         <Card className="shadow-md rounded-md w-full bg-[var(--tg-theme-bg-color)]">
-          <CardContent className="pt-6 flex flex-col gap-4">
+          <CardContent className="py-4 px-4 flex flex-col gap-4">
             <div className="flex flex-col gap-1 justify-center">
               <p className="font-semibold text-xl">{userInfo.name}</p>
               <p>
@@ -75,10 +76,10 @@ export const ProfilePage: FC = () => {
             </div>
           </CardContent>
         </Card>
-        <div className="grid grid-cols-2 gap-4 items-start">
+        <div className="grid grid-cols-2 gap-2 items-start">
           <Card className="shadow-md rounded-md w-full bg-[var(--tg-theme-bg-color)] mt-2">
-            <CardContent className="py-4 flex flex-col gap-4">
-              {userInfo?.subscription && (
+            <CardContent className="py-2 px-2 flex flex-col gap-4">
+              {/* {userInfo.subscription && (
                 <div className="flex flex-col justify-between gap-2">
                   <div className="text-lg font-bold">Subscription:</div>
                   <div className="flex flex-col justify-between gap-2">
@@ -97,11 +98,30 @@ export const ProfilePage: FC = () => {
                     </div>
                   </div>
                 </div>
+              )} */}
+              {userInfo.subscription && (
+                <div className="flex flex-col justify-between gap-2">
+                  <div className="text-lg font-bold">Subscription:</div>
+                  <div className="flex flex-col justify-between gap-5">
+                    <p className="text-lg font-bold text-[var(--tg-theme-link-color)]">
+                      Free
+                    </p>
+                    <Button
+                      mode="gray"
+                      before={<PlusCircle />}
+                      onClick={() => {
+                        navigate("/subscriptions");
+                      }}
+                    >
+                      Select Plan
+                    </Button>
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>
           <Card className="shadow-md rounded-md w-full bg-[var(--tg-theme-bg-color)] mt-2">
-            <CardContent className="py-4 flex flex-col gap-4">
+            <CardContent className="py-2 px-2 flex flex-col gap-4">
               <div className="flex flex-col justify-between gap-2 p-0">
                 <div className="text-lg font-bold">Balance:</div>
                 <div className="flex flex-col justify-between gap-5">
@@ -168,6 +188,21 @@ export const ProfilePage: FC = () => {
                   Terms of use
                 </Cell>
               </Link>
+              <RouterLink
+                to="https://t.me/alphazzet"
+                target="_blank"
+                className="text-[var(--tg-theme-text-color)]"
+              >
+                <Cell
+                  before={<CreditCard />}
+                  subtitle="Contact us if you have any questions"
+                  onClick={() => {
+                    navigate("/payment-methods");
+                  }}
+                >
+                  Help
+                </Cell>
+              </RouterLink>
               <div className="grid grid-cols-2 gap-2">
                 <ButtonCell
                   before={<LogOut />}

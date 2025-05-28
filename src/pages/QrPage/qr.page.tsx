@@ -46,12 +46,14 @@ export const QRPage = () => {
             className="absolute top-0 left-0 rounded-lg max-h-[240px] min-h-[220px] w-full"
           />
           <div className="flex items-center justify-between relative w-full h-full">
-            <div className="flex flex-col justify-between h-[180px] w-[180px] md:h-[200px] md:w-[200px]">
+            <div className="flex flex-col justify-between h-[180px] w-[180px] md:h-[200px] md:w-[200px] text-white">
               <h1 className="text-3xl font-bold font-eugusto">Hoopla</h1>
               {userInfo && (
                 <div>
-                  <p className="font-semibold text-2xl font-eugusto">Rootine</p>
-                  <p className="text-sm">+998 90 000 00 00</p>
+                  <p className="font-semibold text-2xl font-eugusto">
+                    {userInfo.subscription.name}
+                  </p>
+                  <p className="text-sm">+{userInfo.phoneNumber}</p>
                 </div>
               )}
             </div>
@@ -105,9 +107,9 @@ export function CoffeeStatusSection() {
 
   return (
     <section className="space-y-6">
-      <Card className="bg-[var(--tg-theme-bg-color)] text-white border-none">
+      <Card className="bg-[var(--tg-theme-bg-color)] border-none">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-[var(--tg-theme-text-color)]">
             <Coffee className="w-5 h-5 text-brown-600" />
             Daily Coffee Usage
           </CardTitle>

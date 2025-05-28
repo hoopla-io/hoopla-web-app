@@ -112,13 +112,13 @@ export const ShopsPage: FC = () => {
         />
       </List>
       {shops.length > 0 && (
-        <Section header="Nearby Shops">
+        <div className="py-6">
           {shops.map((shop, index) => (
             <div key={index} className="m-0 bg-transparent px-6 mb-4">
               <ShopCard key={index} {...shop} />
             </div>
           ))}
-        </Section>
+        </div>
       )}
 
       {shops.length === 0 && (
