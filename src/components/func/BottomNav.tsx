@@ -1,15 +1,9 @@
-import { cn, useKeyboardOpen } from "@/helpers/utils";
+import { cn } from "@/helpers/utils";
 import { FixedLayout } from "@telegram-apps/telegram-ui";
 import { Home, User, QrCode } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 const BottomNav = () => {
-  const isKeyboardOpen = useKeyboardOpen();
-
-  if (isKeyboardOpen) {
-    return null;
-  }
-
   return (
     <FixedLayout
       style={{
