@@ -45,26 +45,13 @@ interface Order {
   purchasedAt: string;
   purchasedAtUnix: number;
   shopName: string;
+  orderStatus: "created" | "pending" | "preparing" | "completed" | "canceled";
 }
 
-export function useQr() {
+export function useOrders() {
   const queryClient = useQueryClient();
 
   const { isAuthenticated } = useAuth();
-
-  const {
-    data: qrCode,
-    isLoading,
-    isError,
-  } = useQuery<QrCode>(
-    {
-      queryKey: ["qr"],
-      queryFn: AuthApi.getQrCode,
-      staleTime: 300000, // 5 minutes
-      enabled: isAuthenticated,
-    },
-    queryClient
-  );
 
   const {
     data: orders = [],
@@ -74,16 +61,14 @@ export function useQr() {
     {
       queryKey: ["orders"],
       queryFn: AuthApi.getOrdersHistory,
-      staleTime: 300000, // 5 minutes
+      staleTime: 10000, // 10 seconds
+      refetchInterval: 10000,
       enabled: isAuthenticated,
     },
     queryClient
   );
 
   return {
-    qrCode,
-    isLoading,
-    isError,
     orders,
     isLoadingOrders,
     isErrorOrders,

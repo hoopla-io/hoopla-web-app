@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
-import { Coffee } from "lucide-react";
+import { Camera, Coffee } from "lucide-react";
 import QRCode from "react-qr-code";
 import { format } from "date-fns";
-import { Progress } from "@telegram-apps/telegram-ui";
+import { Badge, Button, Progress } from "@telegram-apps/telegram-ui";
 import "swiper/css/pagination";
 import "swiper/css";
 
@@ -10,29 +9,26 @@ import { Page } from "@/components/Page";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingScreen } from "@/components/func/Loading";
 
-import { useQr } from "@/api/hooks/payments.hook";
+import { useOrders } from "@/api/hooks/payments.hook";
 import { useGetDrinksStat } from "@/api/hooks/subscriptions.hook";
 
 import BgImage from "@/assets/images/bg_card.png";
 import { useGetMe } from "@/api/hooks/profile.hook";
+import { cn } from "@/helpers/utils";
+
+const statusColors = {
+  created: "bg-gray-400",
+  pending: "bg-yellow-400",
+  preparing: "bg-blue-400",
+  completed: "bg-green-400",
+  canceled: "bg-red-400",
+};
 
 export const QRPage = () => {
-  const [qrValue, setQrValue] = useState("");
-
-  const { qrCode, orders } = useQr();
+  const { orders } = useOrders();
   const { userInfo } = useGetMe();
 
-  const generateQR = () => {
-    if (!qrCode) return;
-
-    setQrValue(qrCode.qrCode);
-  };
-
-  useEffect(() => {
-    generateQR();
-  }, [qrCode]);
-
-  if (!qrCode) {
+  if (!userInfo) {
     return <LoadingScreen header="Loading..." description="Please wait..." />;
   }
 
@@ -59,28 +55,44 @@ export const QRPage = () => {
                 </div>
               )}
             </div>
-            <QRCode
-              value={qrValue}
-              className="p-4 h-[180px] w-[180px] bg-white rounded-md"
-            />
+            {userInfo && userInfo.qrCode && (
+              <QRCode
+                value={userInfo.qrCode}
+                className="p-4 h-[180px] w-[180px] bg-white rounded-md"
+              />
+            )}
           </div>
         </div>
-        <div className="flex"></div>
-        <CoffeeStatusSection />
+        <FloatingButton />
+        {/* <CoffeeStatusSection /> */}
         <div className="mt-8">
           <h3 className="text-xl font-bold mb-4">Purchase History</h3>
           {orders && (
             <div className="space-y-4">
               {orders.map((order) => (
-                <div
-                  key={order.id}
-                  className="bg-[var(--tg-theme-bg-color)] p-4 rounded-lg shadow-md"
-                >
-                  <p className="font-semibold text-lg">{order.partnerName}</p>
-                  <p className="text-sm text-gray-600">
-                    {format(order.purchasedAtUnix * 1000, "HH:mm, dd.MM.yyyy")}
-                  </p>
-                  <p className="text-sm">{order.shopName}</p>
+                <div>
+                  <div
+                    key={order.id}
+                    className="bg-[var(--tg-theme-bg-color)] p-4 rounded-lg shadow-md relative "
+                  >
+                    <p className="font-semibold text-lg">{order.partnerName}</p>
+                    <p className="text-sm text-gray-600">
+                      {format(
+                        order.purchasedAtUnix * 1000,
+                        "HH:mm, dd.MM.yyyy"
+                      )}
+                    </p>
+                    <p className="text-sm">{order.shopName}</p>
+                    <Badge
+                      type="number"
+                      className={cn(
+                        "mt-2 absolute top-4 right-4 p-2",
+                        statusColors[order.orderStatus]
+                      )}
+                    >
+                      {order.orderStatus.toUpperCase()}
+                    </Badge>
+                  </div>
                 </div>
               ))}
 
@@ -125,5 +137,17 @@ export function CoffeeStatusSection() {
         </CardContent>
       </Card>
     </section>
+  );
+}
+
+export function FloatingButton() {
+  return (
+    <button
+      type="button"
+      onClick={() => console.log("Camera clicked")}
+      className="fixed bottom-20 right-4 z-50 p-4 rounded-full bg-[var(--tg-theme-button-color)] shadow-lg transition-colors"
+    >
+      <Camera className="w-6 h-6" />
+    </button>
   );
 }

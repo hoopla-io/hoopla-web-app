@@ -9,6 +9,7 @@ import TermsOfUse from "@/pages/TermsOfUse/terms-of-use.page";
 import { PaymentSystemsPage } from "@/pages/PaymentMethods/payment-methods.page";
 import { QRPage } from "@/pages/QrPage/qr.page";
 import { ShopDetailPage } from "@/pages/Shops/shops-detail.page";
+import Invoice from "@/pages/Shops/invoice.page";
 
 interface Route {
   path: string;
@@ -61,5 +62,9 @@ export const routes: Route[] = [
   {
     path: "/shops/:shopId",
     Component: ShopDetailPage,
+  },
+  {
+    path: "/invoice",
+    element: <Invoice />,
   },
 ];

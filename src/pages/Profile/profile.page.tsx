@@ -35,6 +35,7 @@ import { Page } from "@/components/Page";
 import { formatBalance } from "@/helpers/utils";
 import { LoadingScreen } from "@/components/func/Loading";
 import { Link as RouterLink } from "react-router-dom";
+import { openTelegramLink } from "@telegram-apps/sdk-react";
 
 export const ProfilePage: FC = () => {
   const { userInfo, isLoading } = useGetMe();
@@ -126,7 +127,7 @@ export const ProfilePage: FC = () => {
                 <div className="text-lg font-bold">Balance:</div>
                 <div className="flex flex-col justify-between gap-5">
                   <p className="text-lg font-bold text-[var(--tg-theme-link-color)]">
-                    {formatBalance(userInfo?.balance)} {userInfo?.currency}
+                    {formatBalance(userInfo?.balance || 0)} {userInfo?.currency}
                   </p>
                   <Button
                     mode="gray"
@@ -188,9 +189,14 @@ export const ProfilePage: FC = () => {
                   Terms of use
                 </Cell>
               </Link>
-              <RouterLink
-                to="https://t.me/alphazzet"
-                target="_blank"
+              <div
+                onClick={() => {
+                  if (openTelegramLink.isAvailable()) {
+                    openTelegramLink("https://t.me/alphazzet");
+                  } else {
+                    window.open("https://t.me/alphazzet", "_blank");
+                  }
+                }}
                 className="text-[var(--tg-theme-text-color)]"
               >
                 <Cell
@@ -202,7 +208,7 @@ export const ProfilePage: FC = () => {
                 >
                   Help
                 </Cell>
-              </RouterLink>
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 <ButtonCell
                   before={<LogOut />}

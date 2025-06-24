@@ -27,6 +27,7 @@ interface User {
   name: string;
   balance: number;
   currency: "uzs" | "usd";
+  qrCode: string;
   subscription: {
     id: number;
     name: string;

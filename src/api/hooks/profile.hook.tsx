@@ -49,7 +49,6 @@ export function useGetMe() {
   } = useQuery({
     queryKey: ["get-me"],
     queryFn: AuthApi.getUser,
-    staleTime: 300000, // 5 minutes
     enabled: isAuthenticated,
   });
 
@@ -89,5 +88,3 @@ export function useLogOut(props: Props) {
     isSuccess,
   };
 }
-
-

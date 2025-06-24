@@ -62,18 +62,18 @@ export const ShopsPage: FC = () => {
     name: searchText,
   });
 
-  if (error && !location) {
-    return <ErrorComponent error={error} />;
-  }
+  // if (error && !location) {
+  //   return <ErrorComponent error={error} />;
+  // }
 
-  if (!location) {
-    return (
-      <LoadingScreen
-        header="Discovering Coffee Shops"
-        description="Finding the perfect brew near you..."
-      />
-    );
-  }
+  // if (!location) {
+  //   return (
+  //     <LoadingScreen
+  //       header="Discovering Coffee Shops"
+  //       description="Finding the perfect brew near you..."
+  //     />
+  //   );
+  // }
 
   const debouncedInputChange = debounce(
     (event: React.ChangeEvent<HTMLInputElement>) => {

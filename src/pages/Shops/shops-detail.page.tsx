@@ -1,9 +1,13 @@
+import { useCreateOrder } from "@/api/hooks/orders.hook";
 import { useShop } from "@/api/hooks/shops.hook";
 import { Page } from "@/components/Page";
 import { useLocation } from "@/context/location.context";
 import { useFormatHours } from "@/helpers/utils";
+import { request } from "@telegram-apps/bridge";
+import { Button } from "@telegram-apps/telegram-ui";
 import { MapPin, Clock, Phone, Globe, Instagram } from "lucide-react";
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { useParams } from "react-router-dom";
 
 export const ShopDetailPage = () => {
@@ -23,6 +27,8 @@ export const ShopDetailPage = () => {
   const { shopDetail, isLoading, isError } = useShop({
     shopId: Number(shopId),
   });
+
+  const { mutate: createOrder, isPending } = useCreateOrder();
 
   if (isError) return <div>Error: {isError}</div>;
 
@@ -143,6 +149,48 @@ export const ShopDetailPage = () => {
                     <h3 className="font-medium text-center text-[var(--tg-theme-text-color)]">
                       {drink.name}
                     </h3>
+                    <Button
+                      mode="filled"
+                      className="w-full mt-2"
+                      onClick={() => {
+                        request("web_app_open_popup", "popup_closed", {
+                          params: {
+                            title: "Confirm Order",
+                            message: `Do you want to order a cup of ${drink.name}?`,
+                            buttons: [
+                              { id: "yes", type: "ok" },
+                              { id: "no", type: "cancel" },
+                            ],
+                          },
+                        }).then((result) => {
+                          if (result.button_id === "yes") {
+                            console.log(`Ordering ${drink.name}...`);
+                            createOrder(
+                              {
+                                drink_id: drink.id,
+                                shop_id: Number(shopId),
+                              },
+                              {
+                                onSuccess: (data) => {
+                                  console.log("Order created:", data);
+                                  // Optionally: show toast or close mini app
+
+                                  toast.success(`Order status: ${data.Status}`);
+                                },
+                                onError: (error) => {
+                                  console.error("Order failed:", error);
+                                  // Optionally: show error toast
+                                },
+                              }
+                            );
+                          } else {
+                            console.log("User canceled the order.");
+                          }
+                        });
+                      }}
+                    >
+                      Order
+                    </Button>
                   </div>
                 </div>
               ))}
