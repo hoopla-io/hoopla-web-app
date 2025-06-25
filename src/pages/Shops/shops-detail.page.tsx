@@ -173,13 +173,13 @@ export const ShopDetailPage = () => {
                               {
                                 onSuccess: (data) => {
                                   console.log("Order created:", data);
-                                  // Optionally: show toast or close mini app
 
                                   toast.success(`Order status: ${data.Status}`);
                                 },
                                 onError: (error) => {
                                   console.error("Order failed:", error);
                                   // Optionally: show error toast
+                                  toast.error(error.message);
                                 },
                               }
                             );
