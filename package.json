@@ -5,14 +5,10 @@
   "type": "module",
   "homepage": "https://web.hoopla.uz/hoopla-web-app",
   "scripts": {
-    "deploy": "gh-pages -d dist",
-    "dev": "vite",
-    "dev:https": "cross-env HTTPS=true vite",
-    "build": "tsc --noEmit && vite build",
-    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "lint:fix": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --fix",
-    "preview": "vite preview",
-    "predeploy": "npm run build"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
