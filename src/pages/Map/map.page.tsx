@@ -1,5 +1,6 @@
 import { FC, useEffect, useRef, useState } from "react";
-import { MapPin, X } from "lucide-react";
+import { MapPin, X, ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import { useShops, type Shop } from "@/api/hooks/shops.hook";
 import { formatDistance } from "@/components/func/ShopCard";
@@ -51,6 +52,7 @@ export const MapPage: FC = () => {
     lng: number;
   } | null>(null);
   const [mapReady, setMapReady] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if ("geolocation" in navigator) {
@@ -176,12 +178,23 @@ export const MapPage: FC = () => {
               />
             </AspectRatio>
             <div className="p-4">
-              <h3 className="font-semibold text-lg text-gray-900">
-                {selectedShop.name}
-              </h3>
-              <div className="flex items-center gap-1.5 mt-1.5 text-sm text-gray-500">
-                <MapPin size={16} />
-                <span>{formatDistance(selectedShop.distance)}</span>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-lg text-gray-900">
+                    {selectedShop.name}
+                  </h3>
+                  <div className="flex items-center gap-1.5 mt-1.5 text-sm text-gray-500">
+                    <MapPin size={16} />
+                    <span>{formatDistance(selectedShop.distance)}</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate(`/shops/${selectedShop.shopId}`)}
+                  className="flex items-center gap-1 px-3 py-2 rounded-xl bg-[var(--color-primary)] text-white text-sm font-medium hover:bg-[var(--color-primary-dark)] transition-colors"
+                >
+                  Details
+                  <ChevronRight size={16} />
+                </button>
               </div>
             </div>
           </div>
