@@ -90,7 +90,7 @@ const CountrySelect = ({
         <Button
           type="button"
           variant="outline"
-          className="flex gap-1 rounded-e-none rounded-s-lg border-r-0 px-3 py-6 focus:z-10 bg-[var(--tg-theme-bg-color)] "
+          className="flex gap-1 rounded-e-none rounded-s-lg border-r-0 px-3 py-6 focus:z-10"
           disabled={disabled}
         >
           <FlagComponent
@@ -106,10 +106,9 @@ const CountrySelect = ({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[300px] p-0">
-        <Command className=" bg-[var(--tg-theme-bg-color)]">
+        <Command>
           <CommandInput
             placeholder="Search country..."
-            className="text-white"
           />
           <CommandList className="border-none">
             <ScrollArea className="h-72">

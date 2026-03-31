@@ -1,25 +1,6 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 
-import { ShopsApi } from "@/api/domains/shops";
-
-type Module = {
-  moduleId: number;
-  name: "Lite" | "Pro";
-  colour: string;
-};
-
-interface Shop {
-  shopId: number;
-  partnerId: number;
-  name: string;
-  pictureUrl: string;
-  distance: number;
-  location: {
-    lat: number;
-    lng: number;
-  };
-  modules: Module[];
-}
+import { ShopsApi, type Shop } from "@/api/domains/shops";
 
 type Params = {
   name?: string;
@@ -27,31 +8,54 @@ type Params = {
   longitude?: number;
 };
 
+const ITEMS_PER_PAGE = 10;
+
 export function useShops(params: Params) {
-  const { name = "", latitude = 1, longitude = 1 } = params;
+  const { name = "", latitude = 41.2995, longitude = 69.2401 } = params;
   const queryClient = useQueryClient();
 
   const {
-    data: shops = [],
+    data,
     isLoading,
     isError,
-  } = useQuery<Shop[]>(
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery<Shop[]>(
     {
       queryKey: ["shops", latitude, longitude, name],
-      queryFn: () =>
-        ShopsApi.getShops(Number(latitude), Number(longitude), name),
-      staleTime: 300000, // 5 minutes
-      // enabled: Boolean(location?.latitude && location?.longitude),
+      queryFn: async ({ pageParam = 0 }) => {
+        const allShops = await ShopsApi.getShops(
+          Number(latitude),
+          Number(longitude),
+          name
+        );
+        const start = (pageParam as number) * ITEMS_PER_PAGE;
+        return allShops.slice(start, start + ITEMS_PER_PAGE);
+      },
+      getNextPageParam: (lastPage, allPages) => {
+        if (lastPage.length < ITEMS_PER_PAGE) return undefined;
+        return allPages.length;
+      },
+      initialPageParam: 0,
+      staleTime: 300000,
     },
     queryClient
   );
+
+  const shops = data?.pages.flat() ?? [];
 
   return {
     shops,
     isLoading,
     isError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
   };
 }
+
+export type { Shop };
 
 interface Location {
   lat: number;
@@ -81,6 +85,8 @@ interface Drink {
   id: number;
   name: string;
   pictureUrl: string;
+  productPrice: number;
+  categoryName: string | null;
 }
 
 export interface ShopDetail {
@@ -122,7 +128,7 @@ export function useShop(params: ShopDetailParams) {
     {
       queryKey: ["shop-detail", shopId],
       queryFn: () => ShopsApi.getShop(shopId),
-      staleTime: 300000, // 5 minutes
+      staleTime: 300000,
       enabled: Boolean(shopId),
     },
     queryClient

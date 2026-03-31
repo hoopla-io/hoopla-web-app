@@ -1,58 +1,113 @@
 import {
-  CreditCard,
   LogOut,
-  PlusCircle,
-  ReceiptText,
-  ShieldEllipsis,
   Trash,
+  User,
+  CreditCard,
+  Crown,
+  Pencil,
+  Wallet,
+  ShieldCheck,
+  FileText,
+  Loader2,
+  ChevronRight,
 } from "lucide-react";
 import toast from "react-hot-toast";
-
 import { format } from "date-fns";
+import { FC, useState } from "react";
+import { Link } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import {
   useDeleteAccount,
   useGetMe,
   useLogOut,
 } from "@/api/hooks/profile.hook";
-import { FC, useState } from "react";
+import { usePaymentSystems } from "@/api/hooks/payments.hook";
+import { AuthApi } from "@/api/domains/auth";
+import PaymentApi from "@/api/domains/payment";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
-  Button,
-  ButtonCell,
-  Card,
-  Cell,
-  Divider,
-  List,
-  Modal,
-  Placeholder,
-  Section,
-} from "@telegram-apps/telegram-ui";
-import { CardContent } from "@/components/ui/card";
-import { Link } from "@/components/Link/Link";
-import { ModalHeader } from "@telegram-apps/telegram-ui/dist/components/Overlays/Modal/components/ModalHeader/ModalHeader";
-import { useNavigate } from "react-router-dom";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Page } from "@/components/Page";
 import { formatBalance } from "@/helpers/utils";
 import { LoadingScreen } from "@/components/func/Loading";
-import { Link as RouterLink } from "react-router-dom";
 
 export const ProfilePage: FC = () => {
   const { userInfo, isLoading } = useGetMe();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { logout } = useLogOut({
-    onError: (error) => {
-      toast.error(error.message);
-    },
+    onError: (error) => toast.error(error.message),
   });
 
   const { deleteAccount } = useDeleteAccount({
-    onError: (error) => {
-      toast.error(error.message);
-    },
+    onError: (error) => toast.error(error.message),
   });
+
+  // Edit profile state
+  const [editName, setEditName] = useState("");
+  const [editGender, setEditGender] = useState("");
+  const [editDob, setEditDob] = useState("");
+  const [editOpen, setEditOpen] = useState(false);
+
+  const updateProfile = useMutation({
+    mutationFn: () =>
+      AuthApi.updateProfile({
+        name: editName || undefined,
+        gender: editGender || undefined,
+        dateOfBirth: editDob || undefined,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["get-me"] });
+      toast.success("Profile updated");
+      setEditOpen(false);
+    },
+    onError: () => toast.error("Failed to update profile"),
+  });
+
+  // Top-up state
+  const { paymentSystems } = usePaymentSystems();
+  const [topUpAmount, setTopUpAmount] = useState("");
+  const [topUpOpen, setTopUpOpen] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+
+  const handleTopUp = async (paymentId: number) => {
+    const amount = Number(topUpAmount);
+    if (!amount || amount < 1000) {
+      toast.error("Minimum amount is 1,000 UZS");
+      return;
+    }
+    try {
+      const result: any = await PaymentApi.topUpViaPaymentSystem(
+        paymentId,
+        amount
+      );
+      if (result?.checkoutUrl) {
+        window.open(result.checkoutUrl, "_blank");
+        setTopUpOpen(false);
+        setTopUpAmount("");
+      }
+    } catch {
+      toast.error("Failed to initiate payment");
+    }
+  };
 
   if (isLoading || !userInfo) {
     return (
@@ -60,187 +115,360 @@ export const ProfilePage: FC = () => {
     );
   }
 
+  const openEditDialog = async () => {
+    setEditLoading(true);
+    setEditOpen(true);
+    try {
+      const data = await AuthApi.getEditProfile();
+      setEditName(data.name || "");
+      setEditGender(data.gender || "");
+      setEditDob(data.dateOfBirth || "");
+    } catch {
+      setEditName(userInfo.name || "");
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   return (
     <Page>
-      <div className="min-h-screen mt-24 mb-32 mx-4">
-        <Card className="shadow-md rounded-md w-full bg-[var(--tg-theme-bg-color)]">
-          <CardContent className="py-4 px-4 flex flex-col gap-4">
-            <div className="flex flex-col gap-1 justify-center">
-              <p className="font-semibold text-xl">{userInfo.name}</p>
-              <p>
-                <span className="font-light ">Phone Number: </span>
-                <span className="font-semibold text-[var(--tg-theme-link-color)]">
-                  +{userInfo.phoneNumber}
-                </span>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        <div className="grid grid-cols-2 gap-2 items-start">
-          <Card className="shadow-md rounded-md w-full bg-[var(--tg-theme-bg-color)] mt-2">
-            <CardContent className="py-2 px-3 flex flex-col gap-4">
-              {userInfo.subscription && (
-                <div className="flex flex-col justify-between gap-2">
-                  <div className="text-lg font-bold">Subscription:</div>
-                  <div className="flex flex-col justify-between gap-2">
-                    <p className="text-lg font-bold text-[var(--tg-theme-link-color)]">
-                      {userInfo.subscription?.name}
-                    </p>
-                    <Divider />
-                    <div>
-                      <p> Active to:</p>
-                      <p>
-                        {format(
-                          userInfo.subscription?.endDateUnix * 1000,
-                          "MMM d, yyyy"
-                        )}
-                      </p>
-                    </div>
-                  </div>
+      <div className="max-w-lg mx-auto px-4 pt-2 pb-32">
+        {/* Profile Header */}
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <div className="bg-gradient-to-r from-[var(--color-primary-dark)] to-[var(--color-primary)] px-6 py-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center">
+                  <User size={28} className="text-white" />
                 </div>
-              )}
-              {!userInfo.subscription && (
-                <div className="flex flex-col justify-between gap-2">
-                  <div className="text-lg font-bold">Subscription:</div>
-                  <div className="flex flex-col justify-between gap-5">
-                    <p className="text-lg font-bold text-[var(--tg-theme-link-color)]">
-                      Free
-                    </p>
-                    <Button
-                      mode="gray"
-                      before={<PlusCircle />}
-                      onClick={() => {
-                        navigate("/subscriptions");
-                      }}
-                    >
-                      Select Plan
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          <Card className="shadow-md rounded-md w-full bg-[var(--tg-theme-bg-color)] mt-2">
-            <CardContent className="py-2 px-3 flex flex-col gap-4">
-              <div className="flex flex-col justify-between gap-2 p-0">
-                <div className="text-lg font-bold">Balance:</div>
-                <div className="flex flex-col justify-between gap-5">
-                  <p className="text-lg font-bold text-[var(--tg-theme-link-color)]">
-                    {formatBalance(userInfo?.balance)} {userInfo?.currency}
+                <div>
+                  <h2 className="text-xl font-semibold text-white">
+                    {userInfo.name}
+                  </h2>
+                  <p className="text-white/80 text-sm mt-0.5">
+                    +{userInfo.phoneNumber}
                   </p>
-                  <Button
-                    mode="gray"
-                    before={<PlusCircle />}
-                    onClick={() => {
-                      navigate("/payment-methods");
-                    }}
-                  >
-                    Top Up
-                  </Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+              <button
+                onClick={openEditDialog}
+                className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+              >
+                <Pencil size={18} className="text-white" />
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div className=" mt-2">
-          <List
-            style={{
-              background: "var(--tgui--bg_color)",
-              padding: 2,
-            }}
-            className="rounded-md"
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 gap-3 mt-3">
+          <div className="bg-white rounded-2xl shadow-sm p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-[var(--color-primary)]/10 flex items-center justify-center">
+                <Crown size={16} className="text-[var(--color-primary)]" />
+              </div>
+              <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                Plan
+              </span>
+            </div>
+            {userInfo.subscription ? (
+              <>
+                <p className="text-lg font-bold text-[var(--color-primary)]">
+                  {userInfo.subscription.name}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Until{" "}
+                  {format(
+                    userInfo.subscription.endDateUnix * 1000,
+                    "MMM d, yyyy"
+                  )}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-lg font-bold text-gray-400">Free</p>
+                <span className="inline-block mt-2 px-2.5 py-1 rounded-full bg-gray-100 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+                  Coming soon
+                </span>
+              </>
+            )}
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-[var(--color-primary)]/10 flex items-center justify-center">
+                <CreditCard
+                  size={16}
+                  className="text-[var(--color-primary)]"
+                />
+              </div>
+              <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                Balance
+              </span>
+            </div>
+            <p className="text-lg font-bold text-[var(--color-primary)]">
+              {formatBalance(userInfo?.balance)}
+            </p>
+            <p className="text-xs text-gray-400 mt-1 uppercase">
+              {userInfo?.currency}
+            </p>
+            <button
+              onClick={() => setTopUpOpen(true)}
+              className="mt-3 w-full h-9 rounded-xl text-sm font-medium bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)] transition-colors"
+            >
+              + Top Up
+            </button>
+          </div>
+        </div>
+
+        {/* Menu items */}
+        <div className="mt-3 space-y-2">
+          <Button
+            variant="outline"
+            className="w-full h-12 justify-between rounded-2xl bg-white border-none shadow-sm text-gray-700 hover:bg-gray-50"
+            onClick={() => setTopUpOpen(true)}
           >
-            <Section header="Main Settings">
-              <Link
-                to="/payment-methods"
-                className="text-[var(--tg-theme-text-color)]"
+            <span className="flex items-center gap-3">
+              <Wallet size={18} className="text-gray-400" />
+              Top up balance
+            </span>
+            <ChevronRight size={18} className="text-gray-400" />
+          </Button>
+
+          <Link to="/privacy-policy">
+            <Button
+              variant="outline"
+              className="w-full h-12 justify-between rounded-2xl bg-white border-none shadow-sm text-gray-700 hover:bg-gray-50 mt-2"
+            >
+              <span className="flex items-center gap-3">
+                <ShieldCheck size={18} className="text-gray-400" />
+                Privacy Policy
+              </span>
+              <ChevronRight size={18} className="text-gray-400" />
+            </Button>
+          </Link>
+
+          <Link to="/terms-of-use">
+            <Button
+              variant="outline"
+              className="w-full h-12 justify-between rounded-2xl bg-white border-none shadow-sm text-gray-700 hover:bg-gray-50 mt-2"
+            >
+              <span className="flex items-center gap-3">
+                <FileText size={18} className="text-gray-400" />
+                Terms of Use
+              </span>
+              <ChevronRight size={18} className="text-gray-400" />
+            </Button>
+          </Link>
+        </div>
+
+        {/* Danger zone */}
+        <div className="mt-3 space-y-2">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-full h-12 justify-start gap-3 rounded-2xl bg-white border-none shadow-sm text-gray-700 hover:bg-gray-50"
               >
-                <Cell
-                  before={<CreditCard />}
-                  subtitle="You can top up your balance here"
-                  onClick={() => {
-                    navigate("/payment-methods");
-                  }}
-                >
-                  Payment Methods
-                </Cell>
-              </Link>
-              <Link
-                to="/privacy-policy"
-                className="text-[var(--tg-theme-text-color)]"
-              >
-                <Cell
-                  before={<ShieldEllipsis />}
-                  subtitle="You can read more about our privacy policy here"
-                >
-                  Privacy policy
-                </Cell>
-              </Link>
-              <Link
-                to="/terms-of-use"
-                className="text-[var(--tg-theme-text-color)]"
-              >
-                <Cell
-                  before={<ReceiptText />}
-                  subtitle="You can read more about our terms of use here"
-                >
-                  Terms of use
-                </Cell>
-              </Link>
-              <RouterLink
-                to="https://t.me/alphazzet"
-                target="_blank"
-                className="text-[var(--tg-theme-text-color)]"
-              >
-                <Cell
-                  before={<CreditCard />}
-                  subtitle="Contact us if you have any questions"
-                  onClick={() => {
-                    navigate("/payment-methods");
-                  }}
-                >
-                  Help
-                </Cell>
-              </RouterLink>
-              <div className="grid grid-cols-2 gap-2">
-                <ButtonCell
-                  before={<LogOut />}
-                  mode="destructive"
+                <LogOut size={18} className="text-gray-400" />
+                Log out
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="rounded-2xl max-w-sm mx-4">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Log out?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to log out of your account?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="rounded-xl">
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  className="rounded-xl text-white"
                   onClick={() => logout()}
                 >
                   Log out
-                </ButtonCell>
-                <Modal
-                  header={<ModalHeader>Delete Account</ModalHeader>}
-                  trigger={
-                    <ButtonCell before={<Trash />} mode="destructive">
-                      Delete
-                    </ButtonCell>
-                  }
-                  open={isModalOpen}
-                  onOpenChange={setIsModalOpen}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-full h-12 justify-start gap-3 rounded-2xl bg-white border-none shadow-sm text-red-500 hover:bg-red-50 hover:text-red-600"
+              >
+                <Trash size={18} />
+                Delete account
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="rounded-2xl max-w-sm mx-4">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. Your account and all data will be
+                  permanently removed from our servers.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="rounded-xl">
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  className="rounded-xl bg-red-500 text-white hover:bg-red-600"
+                  onClick={() => deleteAccount()}
                 >
-                  <Placeholder
-                    header="Are you sure ?"
-                    description="This action cannot be undone. This will permanently delete your account and remove your data from our servers."
-                  />
-                  <div className="grid grid-cols-2 gap-4 p-4">
-                    <Button
-                      mode="bezeled"
-                      onClick={() => setIsModalOpen(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button mode="filled" onClick={() => deleteAccount()}>
-                      Continue
-                    </Button>
-                  </div>
-                </Modal>
-              </div>
-            </Section>
-          </List>
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
+
+        {/* Edit Profile Dialog */}
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent className="rounded-2xl max-w-sm mx-4">
+            <DialogHeader>
+              <DialogTitle>Edit Profile</DialogTitle>
+              <DialogDescription>
+                Update your personal information
+              </DialogDescription>
+            </DialogHeader>
+            {editLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+              </div>
+            ) : (
+              <div className="space-y-4 pt-2">
+                <div>
+                  <label className="text-sm font-medium text-gray-700">
+                    Name
+                  </label>
+                  <Input
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="Your name"
+                    className="h-11 rounded-xl mt-1"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700">
+                    Gender
+                  </label>
+                  <div className="flex gap-2 mt-1">
+                    {["male", "female"].map((g) => (
+                      <button
+                        key={g}
+                        onClick={() => setEditGender(g)}
+                        className={`flex-1 h-11 rounded-xl text-sm font-medium border transition-colors ${
+                          editGender === g
+                            ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]"
+                            : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                        }`}
+                      >
+                        {g.charAt(0).toUpperCase() + g.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700">
+                    Date of Birth
+                  </label>
+                  <Input
+                    type="date"
+                    value={editDob}
+                    onChange={(e) => setEditDob(e.target.value)}
+                    className="h-11 rounded-xl mt-1"
+                  />
+                </div>
+                <Button
+                  className="w-full h-11 rounded-xl text-white"
+                  disabled={updateProfile.isPending}
+                  onClick={() => updateProfile.mutate()}
+                >
+                  {updateProfile.isPending ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    "Save"
+                  )}
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Top Up Dialog */}
+        <Dialog open={topUpOpen} onOpenChange={setTopUpOpen}>
+          <DialogContent className="rounded-2xl max-w-sm mx-4">
+            <DialogHeader>
+              <DialogTitle>Top Up Balance</DialogTitle>
+              <DialogDescription>
+                Enter amount and select payment method
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 pt-2">
+              <div>
+                <label className="text-sm font-medium text-gray-700">
+                  Amount (UZS)
+                </label>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  value={topUpAmount}
+                  onChange={(e) => setTopUpAmount(e.target.value)}
+                  placeholder="10000"
+                  className="h-11 rounded-xl mt-1 text-base"
+                />
+              </div>
+              <div className="flex gap-2">
+                {[10000, 25000, 50000].map((amt) => (
+                  <button
+                    key={amt}
+                    onClick={() => setTopUpAmount(String(amt))}
+                    className={`flex-1 h-9 rounded-lg text-xs font-medium border transition-colors ${
+                      topUpAmount === String(amt)
+                        ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]"
+                        : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    {formatBalance(amt)}
+                  </button>
+                ))}
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">
+                  Payment Method
+                </label>
+                <div className="space-y-2 mt-2">
+                  {paymentSystems.map((ps) => (
+                    <button
+                      key={ps.id}
+                      onClick={() => handleTopUp(ps.id)}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
+                    >
+                      <img
+                        src={ps.logoUrl}
+                        alt={ps.name}
+                        className="w-10 h-10 rounded-lg object-contain"
+                      />
+                      <span className="text-sm font-medium text-gray-900">
+                        Pay with {ps.name}
+                      </span>
+                      <ChevronRight
+                        size={16}
+                        className="text-gray-400 ml-auto"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Page>
   );

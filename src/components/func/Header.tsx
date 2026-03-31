@@ -1,33 +1,26 @@
 import { FC } from "react";
-import { Button, FixedLayout } from "@telegram-apps/telegram-ui";
-import { Link } from "@/components/Link/Link";
+import { Link } from "react-router-dom";
+import { Bell } from "lucide-react";
 
 export const Header: FC = () => {
   return (
-    <FixedLayout
-      vertical="top"
-      style={{
-        backgroundColor: "var(--tg-theme-bg-color)",
-        zIndex: 10,
-      }}
-      className="shadow-md"
-    >
-      <div className="max-w-2xl mx-auto px-4">
+    <header className="fixed top-0 left-0 right-0 bg-white shadow-sm z-10">
+      <div className="max-w-lg mx-auto px-4">
         <div className="flex justify-between items-center py-4">
           <Link
             to="/"
-            className="flex items-center space-x-2 font-eugusto text-2xl text-[var(--tg-theme-text-color)]"
+            className="font-eugusto text-2xl text-[var(--color-primary)] tracking-wide"
           >
             hoopla
           </Link>
           <Link
-            to="/subscriptions"
-            className="text-white transition-colors font-bold"
+            to="/notifications"
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
           >
-            <Button mode="filled">Subscriptions</Button>
+            <Bell size={22} className="text-gray-600" />
           </Link>
         </div>
       </div>
-    </FixedLayout>
+    </header>
   );
 };

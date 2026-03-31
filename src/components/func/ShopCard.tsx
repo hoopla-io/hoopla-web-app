@@ -1,80 +1,39 @@
-import { Card } from "@telegram-apps/telegram-ui";
-import { Coffee, Gem, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
+import { Link } from "react-router-dom";
+import type { Shop } from "@/api/domains/shops";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
-import { Link } from "@/components/Link/Link";
-import { CardChip } from "@telegram-apps/telegram-ui/dist/components/Blocks/Card/components/CardChip/CardChip";
-import { CardCell } from "@telegram-apps/telegram-ui/dist/components/Blocks/Card/components/CardCell/CardCell";
-
-type Module = {
-  moduleId: number;
-  name: "Lite" | "Pro";
-  colour: string;
-};
-
-interface ShopCardProps {
-  shopId: number;
-  partnerId: number;
-  name: string;
-  pictureUrl: string;
-  distance: number;
-  location: {
-    lat: number;
-    lng: number;
-  };
-  modules: Module[];
+function formatDistance(distance: number): string {
+  if (distance >= 1) return `${distance.toFixed(1)} km`;
+  return `${(distance * 1000).toFixed(0)} m`;
 }
 
-const ModuleIcons = {
-  Lite: <Coffee size={16} />,
-  Pro: <Gem size={16} />,
-};
+interface ShopCardProps {
+  shop: Shop;
+}
 
-const ShopCard = ({
-  shopId,
-  name,
-  pictureUrl,
-  distance,
-  modules,
-}: ShopCardProps) => {
+const ShopCard = ({ shop }: ShopCardProps) => {
   return (
-    <Link to={`/shops/${shopId}`}>
-      <Card type="plain">
-        {modules && (
-          <CardChip readOnly className="bg-[var(--tg-theme-bg-color)]">
-            {modules.map((module) => {
-              return (
-                <div key={module.moduleId} className={`w-4 h-4 rounded-full`}>
-                  {ModuleIcons[module.name]}
-                </div>
-              );
-            })}
-          </CardChip>
-        )}
-        <img
-          alt={name}
-          src={pictureUrl}
-          style={{
-            display: "block",
-            height: 308,
-            objectFit: "cover",
-          }}
-        />
-        <CardCell readOnly className="bg-[var(--tg-theme-bg-color)]">
-          <h3 className="text-xl font-semibold mb-1 text-[var(--tg-theme-text-color)]">
-            {name}
-          </h3>
-          <div className="flex items-center text-sm text-muted-foreground">
-            <MapPin size={16} className="mr-1" />
-            <p>
-              {distance > 1
-                ? `${distance.toFixed(1)} km from you`
-                : `${(distance * 100).toFixed(1)}m from you`}
-            </p>
+    <Link to={`/shops/${shop.shopId}`}>
+      <div className="bg-white rounded-2xl shadow-sm overflow-hidden active:scale-[0.98] transition-transform">
+        <AspectRatio ratio={480 / 320}>
+          <img
+            src={shop.pictureUrl}
+            alt={shop.name}
+            className="w-full h-full object-cover"
+          />
+        </AspectRatio>
+        <div className="p-3">
+          <h3 className="font-semibold text-base text-gray-900">{shop.name}</h3>
+          <div className="flex items-center gap-1 mt-1 text-sm text-gray-500">
+            <MapPin size={14} />
+            <span>{formatDistance(shop.distance)}</span>
           </div>
-        </CardCell>
-      </Card>
+        </div>
+      </div>
     </Link>
   );
 };
 
 export default ShopCard;
+export { formatDistance };
