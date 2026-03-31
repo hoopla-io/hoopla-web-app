@@ -1,4 +1,4 @@
-import { Spinner } from "@telegram-apps/telegram-ui";
+import { Loader2 } from "lucide-react";
 
 type LoadingScreenProps = {
   header: string;
@@ -13,7 +13,7 @@ export const LoadingScreen = (props: LoadingScreenProps) => {
         <p className="text-sm text-gray-500">{props.description}</p>
       </div>
 
-      <Spinner size="m" />
+      <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
     </div>
   );
 };

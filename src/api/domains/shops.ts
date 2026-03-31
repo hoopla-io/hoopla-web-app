@@ -1,12 +1,34 @@
 import { httpClient } from '@/api/http-client';
 
+export interface Shop {
+  shopId: number;
+  partnerId: number;
+  name: string;
+  pictureUrl: string;
+  distance: number;
+  location: {
+    lat: number;
+    lng: number;
+  };
+  modules: {
+    moduleId: number;
+    name: "Lite" | "Pro";
+    colour: string;
+  }[];
+  workingHours?: {
+    weekDay: string;
+    openAt: string;
+    closeAt: string;
+  }[];
+}
+
 export const ShopsApi = {
   getShops: async (lat: number, long: number, name: string = '') => {
     const response = await httpClient.get('/shops/near-shops', {
       params: { lat, long, name },
     });
 
-    return response.data ?? [];
+    return (response.data ?? []) as Shop[];
   },
 
   getShop: async (shopId: number) => {
@@ -16,6 +38,4 @@ export const ShopsApi = {
 
     return response.data;
   },
-
-  
 };

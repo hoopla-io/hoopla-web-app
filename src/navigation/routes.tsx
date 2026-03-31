@@ -1,14 +1,16 @@
 import type { ComponentType, JSX } from "react";
 
 import { ProfilePage } from "@/pages/Profile/profile.page";
-import { ShopsPage } from "@/pages/Shops/shops.page";
-import { SubscriptionsPage } from "@/pages/Subscriptions/subscriptions.page";
 import { LoginPage } from "@/pages/Login/login.page";
 import { PrivacyPolicyPage } from "@/pages/PrivacyPolicy/privacy-policy.page";
 import TermsOfUse from "@/pages/TermsOfUse/terms-of-use.page";
-import { PaymentSystemsPage } from "@/pages/PaymentMethods/payment-methods.page";
-import { QRPage } from "@/pages/QrPage/qr.page";
-import { ShopDetailPage } from "@/pages/Shops/shops-detail.page";
+import { HomePage } from "@/pages/Home/home.page";
+import { MapPage } from "@/pages/Map/map.page";
+import { NotificationsPage } from "@/pages/Notifications/notifications.page";
+import { NotificationDetailPage } from "@/pages/Notifications/notification-detail.page";
+import { ShopDetailPage } from "@/pages/ShopDetail/shop-detail.page";
+import { OrdersPage } from "@/pages/Orders/orders.page";
+import { OrderDetailPage } from "@/pages/Orders/order-detail.page";
 
 interface Route {
   path: string;
@@ -20,7 +22,30 @@ interface Route {
 }
 
 export const routes: Route[] = [
-  { path: "/", Component: ShopsPage },
+  {
+    path: "/",
+    Component: HomePage,
+  },
+  {
+    path: "/map",
+    Component: MapPage,
+    title: "Map",
+  },
+  {
+    path: "/shops/:shopId",
+    Component: ShopDetailPage,
+  },
+  {
+    path: "/orders",
+    protected: true,
+    element: <OrdersPage />,
+    title: "Orders",
+  },
+  {
+    path: "/orders/:orderId",
+    protected: true,
+    element: <OrderDetailPage />,
+  },
   {
     path: "/profile",
     protected: true,
@@ -28,18 +53,13 @@ export const routes: Route[] = [
     title: "Profile",
   },
   {
-    path: "/shops",
-    Component: ShopsPage,
-    title: "Shops",
+    path: "/notifications",
+    Component: NotificationsPage,
+    title: "Notifications",
   },
   {
-    path: "/subscriptions",
-    Component: SubscriptionsPage,
-    title: "Subscriptions",
-  },
-  {
-    path: "/login",
-    Component: LoginPage,
+    path: "/notifications/:notificationId",
+    Component: NotificationDetailPage,
   },
   {
     path: "/privacy-policy",
@@ -50,16 +70,7 @@ export const routes: Route[] = [
     Component: TermsOfUse,
   },
   {
-    path: "/payment-methods",
-    Component: PaymentSystemsPage,
-  },
-  {
-    path: "/qr",
-    protected: true,
-    element: <QRPage />,
-  },
-  {
-    path: "/shops/:shopId",
-    Component: ShopDetailPage,
+    path: "/login",
+    Component: LoginPage,
   },
 ];

@@ -66,6 +66,16 @@ export const AuthApi = {
     return response.data as User;
   },
 
+  getEditProfile: async () => {
+    const response = await httpClient.get("/user/edit-me");
+    return response.data as { name: string; dateOfBirth: string; gender: string };
+  },
+
+  updateProfile: async (data: { name?: string; gender?: string; dateOfBirth?: string }) => {
+    const response = await httpClient.put("/user/update-me", data);
+    return response.data;
+  },
+
   getQrCode: async () => {
     const response = await httpClient.get("/user/generate-qr-code");
 
