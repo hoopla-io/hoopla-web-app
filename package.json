@@ -5,9 +5,9 @@
   "type": "module",
   "homepage": "https://web.hoopla.uz/hoopla-web-app",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "vite",
+    "build": "vite build",
+    "start": "serve -s dist -p 3000",
     "lint": "eslint"
   },
   "dependencies": {
