@@ -14,7 +14,7 @@ interface ShopCardProps {
 
 const ShopCard = ({ shop }: ShopCardProps) => {
   return (
-    <Link to={`/shops/${shop.shopId}`}>
+    <Link to={`/shops/${shop.shopId}`} className="block">
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden active:scale-[0.98] transition-transform">
         <AspectRatio ratio={480 / 320}>
           <img
