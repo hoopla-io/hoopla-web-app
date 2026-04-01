@@ -5,7 +5,7 @@ export interface Order {
   shopName: string;
   shopIconUrl: string;
   drinkName: string;
-  orderStatus: "completed" | "cancelled" | "pending_payment";
+  orderStatus: "completed" | "cancelled" | "pending_payment" | "pending" | "error";
   productPrice: number;
   purchasedAt: string;
   purchasedAtUnix: number;
@@ -17,7 +17,7 @@ export interface OrderDetail {
   shopName: string;
   drinkName: string;
   drinkImageUrl: string;
-  orderStatus: "completed" | "cancelled" | "pending_payment";
+  orderStatus: "completed" | "cancelled" | "pending_payment" | "pending" | "error";
   productPrice: number;
   purchasedAt: string;
   purchasedAtUnix: number;
@@ -36,6 +36,52 @@ export interface OrderListMeta {
   totalItems: number;
   currentPage: number;
   lastPage: number;
+}
+
+export interface ValidateOrderResponse {
+  partner: {
+    id: number;
+    name: string;
+  };
+  shop: {
+    id: number;
+    name: string;
+  };
+  drink: {
+    id: number;
+    name: string;
+    amount: number;
+    imageUrl: string;
+  };
+  validatedAt: string;
+  validatedAtUnix: number;
+  modifications: Record<string, any>;
+  cashback_percent: number;
+}
+
+export interface SelectedModifier {
+  modifierGroupId: string;
+  modifierId: string;
+  modifierKey: string;
+  modifierPrice: number;
+  modifierName?: string;
+}
+
+export interface CreateOrderRequest {
+  cashback_amount: number;
+  drinkId: number;
+  modifiers: SelectedModifier[];
+  shopId: number;
+  use_cashback: boolean;
+}
+
+export interface CreateOrderResponse {
+  order_id: number;
+  amount: number;
+  checkout_url?: string;
+  deeplink?: string;
+  short_link?: string;
+  expires_at?: string;
 }
 
 export const OrdersApi = {
@@ -77,5 +123,28 @@ export const OrdersApi = {
     });
 
     return response.data;
+  },
+
+  validateOrder: async (drinkId: number, shopId: number) => {
+    const response: any = await httpClient.post("/user/orders/validate-order", {
+      drinkId,
+      shopId,
+    });
+
+    return (response.data ?? response) as ValidateOrderResponse;
+  },
+
+  createOrder: async (data: CreateOrderRequest) => {
+    try {
+      const response: any = await httpClient.post("/user/orders/create-rahmat", data);
+      return (response.data ?? response) as CreateOrderResponse;
+    } catch (error: any) {
+      // API returns 402 with payment data — treat as success
+      const errorData = error?.data ?? error?.response?.data?.data;
+      if (errorData?.checkout_url) {
+        return errorData as CreateOrderResponse;
+      }
+      throw error;
+    }
   },
 };

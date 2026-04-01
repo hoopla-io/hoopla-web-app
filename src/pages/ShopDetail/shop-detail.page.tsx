@@ -8,13 +8,19 @@ import {
   Instagram,
   ArrowLeft,
   Coffee,
+  ChevronRight,
+  Loader2,
 } from "lucide-react";
+import toast from "react-hot-toast";
 
 import { useShop } from "@/api/hooks/shops.hook";
+import { useValidateOrder } from "@/api/hooks/orders.hook";
+import { useAuth } from "@/context/auth.context";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Page } from "@/components/Page";
 import { LoadingScreen } from "@/components/func/Loading";
 import { formatBalance, cn } from "@/helpers/utils";
+import type { SelectedModifier } from "@/api/domains/orders";
 
 function formatWorkingHours(
   hours: { weekDay: string; openAt: string; closeAt: string }[]
@@ -36,10 +42,77 @@ const ALL_CATEGORY = "All";
 export const ShopDetailPage: FC = () => {
   const { shopId } = useParams();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const validateOrder = useValidateOrder();
+  const [validatingDrinkId, setValidatingDrinkId] = useState<number | null>(null);
 
   const { shopDetail, isLoading } = useShop({
     shopId: Number(shopId),
   });
+
+  const handleDrinkClick = (drinkId: number) => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+
+    const numericShopId = Number(shopId);
+    setValidatingDrinkId(drinkId);
+
+    validateOrder.mutate(
+      { drinkId, shopId: numericShopId },
+      {
+        onSuccess: (data) => {
+          setValidatingDrinkId(null);
+
+          const modifications = data.modifications ?? {};
+          const modKeys = Object.keys(modifications);
+
+          // Check if any modification group has multiple options
+          const needsModifierSelection = modKeys.some(
+            (key) =>
+              Array.isArray(modifications[key]) &&
+              modifications[key].length > 1
+          );
+
+          if (needsModifierSelection) {
+            navigate(`/shops/${numericShopId}/order/modifiers`, {
+              state: { validatedOrder: data },
+            });
+          } else {
+            // Auto-select single modifiers
+            const autoSelectedModifiers: SelectedModifier[] = modKeys
+              .filter(
+                (key) =>
+                  Array.isArray(modifications[key]) &&
+                  modifications[key].length === 1
+              )
+              .map((key) => {
+                const mod = modifications[key][0];
+                return {
+                  modifierGroupId: String(mod.modificationGroupId ?? key),
+                  modifierId: String(mod.modificationId ?? ""),
+                  modifierKey: String(mod.modificationKey ?? key),
+                  modifierPrice: mod.modificationPrice ?? 0,
+                  modifierName: mod.modificationName ?? "",
+                };
+              });
+
+            navigate(`/shops/${numericShopId}/order/receipt`, {
+              state: {
+                validatedOrder: data,
+                selectedModifiers: autoSelectedModifiers,
+              },
+            });
+          }
+        },
+        onError: () => {
+          setValidatingDrinkId(null);
+          toast.error("Failed to validate order. Please try again.");
+        },
+      }
+    );
+  };
 
   // Build categories from drinks
   const { categories, drinksByCategory, hasRealCategories } = useMemo(() => {
@@ -259,7 +332,7 @@ export const ShopDetailPage: FC = () => {
                       </h3>
                       <div className="grid grid-cols-2 gap-3">
                         {drinksByCategory[cat].map((drink) => (
-                          <DrinkCard key={drink.id} drink={drink} />
+                          <DrinkCard key={drink.id} drink={drink} onOrderClick={handleDrinkClick} isValidating={validatingDrinkId === drink.id} />
                         ))}
                       </div>
                     </div>
@@ -268,7 +341,7 @@ export const ShopDetailPage: FC = () => {
               ) : (
                 <div className="grid grid-cols-2 gap-3">
                   {shopDetail.drinks.map((drink) => (
-                    <DrinkCard key={drink.id} drink={drink} />
+                    <DrinkCard key={drink.id} drink={drink} onOrderClick={handleDrinkClick} isValidating={validatingDrinkId === drink.id} />
                   ))}
                 </div>
               )}
@@ -282,6 +355,8 @@ export const ShopDetailPage: FC = () => {
 
 function DrinkCard({
   drink,
+  onOrderClick,
+  isValidating,
 }: {
   drink: {
     id: number;
@@ -289,9 +364,14 @@ function DrinkCard({
     pictureUrl: string;
     productPrice: number;
   };
+  onOrderClick: (drinkId: number) => void;
+  isValidating: boolean;
 }) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+    <div
+      className="bg-white rounded-2xl shadow-sm overflow-hidden active:scale-[0.98] transition-transform cursor-pointer"
+      onClick={() => !isValidating && onOrderClick(drink.id)}
+    >
       {drink.pictureUrl ? (
         <AspectRatio ratio={1}>
           <img
@@ -307,13 +387,22 @@ function DrinkCard({
           </div>
         </AspectRatio>
       )}
-      <div className="p-2.5">
-        <h3 className="font-medium text-sm text-gray-900 leading-tight">
-          {drink.name}
-        </h3>
-        <p className="text-sm font-semibold text-[var(--color-primary)] mt-1">
-          {formatPrice(drink.productPrice)}
-        </p>
+      <div className="p-2.5 flex items-end justify-between">
+        <div>
+          <h3 className="font-medium text-sm text-gray-900 leading-tight">
+            {drink.name}
+          </h3>
+          <p className="text-sm font-semibold text-[var(--color-primary)] mt-1">
+            {formatPrice(drink.productPrice)}
+          </p>
+        </div>
+        <div className="w-8 h-8 rounded-full bg-[var(--color-primary)] flex items-center justify-center flex-shrink-0">
+          {isValidating ? (
+            <Loader2 size={16} className="text-white animate-spin" />
+          ) : (
+            <ChevronRight size={16} className="text-white" />
+          )}
+        </div>
       </div>
     </div>
   );
