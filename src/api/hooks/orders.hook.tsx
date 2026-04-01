@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { OrdersApi, type Order, type OrderDetail } from "@/api/domains/orders";
 import { useAuth } from "@/context/auth.context";
@@ -66,4 +66,16 @@ export function useOrderDetail(orderId: number) {
   );
 
   return { order, isLoading, isError };
+}
+
+export function useCancelOrder() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (orderId: number) => OrdersApi.cancelOrder(orderId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["order-detail"] });
+    },
+  });
 }
