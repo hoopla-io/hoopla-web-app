@@ -9,6 +9,8 @@ import { MapPage } from "@/pages/Map/map.page";
 import { NotificationsPage } from "@/pages/Notifications/notifications.page";
 import { NotificationDetailPage } from "@/pages/Notifications/notification-detail.page";
 import { ShopDetailPage } from "@/pages/ShopDetail/shop-detail.page";
+import { ModifierSelectionPage } from "@/pages/MakeOrder/modifier-selection.page";
+import { OrderReceiptPage } from "@/pages/MakeOrder/order-receipt.page";
 import { OrdersPage } from "@/pages/Orders/orders.page";
 import { OrderDetailPage } from "@/pages/Orders/order-detail.page";
 
@@ -34,6 +36,16 @@ export const routes: Route[] = [
   {
     path: "/shops/:shopId",
     Component: ShopDetailPage,
+  },
+  {
+    path: "/shops/:shopId/order/modifiers",
+    protected: true,
+    element: <ModifierSelectionPage />,
+  },
+  {
+    path: "/shops/:shopId/order/receipt",
+    protected: true,
+    element: <OrderReceiptPage />,
   },
   {
     path: "/orders",

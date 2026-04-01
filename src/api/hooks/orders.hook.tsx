@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { OrdersApi, type Order, type OrderDetail } from "@/api/domains/orders";
+import { OrdersApi, type Order, type OrderDetail, type CreateOrderRequest } from "@/api/domains/orders";
 import { useAuth } from "@/context/auth.context";
 
 const ITEMS_PER_PAGE = 10;
@@ -76,6 +76,25 @@ export function useCancelOrder() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       queryClient.invalidateQueries({ queryKey: ["order-detail"] });
+    },
+  });
+}
+
+export function useValidateOrder() {
+  return useMutation({
+    mutationFn: ({ drinkId, shopId }: { drinkId: number; shopId: number }) =>
+      OrdersApi.validateOrder(drinkId, shopId),
+  });
+}
+
+export function useCreateOrder() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateOrderRequest) => OrdersApi.createOrder(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["get-me"] });
     },
   });
 }

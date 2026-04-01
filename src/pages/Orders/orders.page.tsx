@@ -1,6 +1,6 @@
 import { FC, useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ReceiptText, Loader2, CheckCircle, XCircle, Clock } from "lucide-react";
+import { ReceiptText, Loader2, CheckCircle, XCircle, Clock, AlertCircle, Coffee } from "lucide-react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 
@@ -20,7 +20,7 @@ import { Page } from "@/components/Page";
 import { LoadingScreen } from "@/components/func/Loading";
 import { formatBalance } from "@/helpers/utils";
 
-const statusConfig = {
+const statusConfig: Record<string, { label: string; icon: typeof CheckCircle; color: string; bg: string }> = {
   completed: {
     label: "Completed",
     icon: CheckCircle,
@@ -34,10 +34,22 @@ const statusConfig = {
     bg: "bg-red-50",
   },
   pending_payment: {
-    label: "Pending",
+    label: "Awaiting Payment",
     icon: Clock,
     color: "text-yellow-600",
     bg: "bg-yellow-50",
+  },
+  pending: {
+    label: "Preparing",
+    icon: Coffee,
+    color: "text-blue-600",
+    bg: "bg-blue-50",
+  },
+  error: {
+    label: "Error",
+    icon: AlertCircle,
+    color: "text-red-500",
+    bg: "bg-red-50",
   },
 };
 
