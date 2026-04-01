@@ -1,9 +1,21 @@
-import { FC, useEffect, useRef } from "react";
+import { FC, useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ReceiptText, Loader2, CheckCircle, XCircle, Clock } from "lucide-react";
 import { format } from "date-fns";
+import toast from "react-hot-toast";
 
-import { useOrders } from "@/api/hooks/orders.hook";
+import { useOrders, useCancelOrder } from "@/api/hooks/orders.hook";
+import type { Order } from "@/api/domains/orders";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Page } from "@/components/Page";
 import { LoadingScreen } from "@/components/func/Loading";
 import { formatBalance } from "@/helpers/utils";
@@ -21,13 +33,15 @@ const statusConfig = {
     color: "text-red-500",
     bg: "bg-red-50",
   },
-  pending: {
+  pending_payment: {
     label: "Pending",
     icon: Clock,
     color: "text-yellow-600",
     bg: "bg-yellow-50",
   },
 };
+
+const LONG_PRESS_MS = 500;
 
 export const OrdersPage: FC = () => {
   const {
@@ -37,7 +51,38 @@ export const OrdersPage: FC = () => {
     hasNextPage,
     isFetchingNextPage,
   } = useOrders();
+  const cancelOrder = useCancelOrder();
   const observerRef = useRef<HTMLDivElement>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressTriggered = useRef(false);
+  const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
+
+  const handleCancelConfirm = () => {
+    if (!cancelTarget) return;
+    cancelOrder.mutate(cancelTarget.id, {
+      onSuccess: () => {
+        toast.success("Order cancelled");
+        setCancelTarget(null);
+      },
+      onError: () => toast.error("Failed to cancel order"),
+    });
+  };
+
+  const startLongPress = useCallback((order: Order) => {
+    if (order.orderStatus !== "pending_payment") return;
+    longPressTriggered.current = false;
+    longPressTimer.current = setTimeout(() => {
+      longPressTriggered.current = true;
+      setCancelTarget(order);
+    }, LONG_PRESS_MS);
+  }, []);
+
+  const clearLongPress = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     if (!observerRef.current || !hasNextPage) return;
@@ -85,14 +130,29 @@ export const OrdersPage: FC = () => {
         {orders.length > 0 && (
           <div className="space-y-2">
             {orders.map((order) => {
-              const status = statusConfig[order.orderStatus] ?? statusConfig.pending;
+              const status = statusConfig[order.orderStatus] ?? statusConfig.pending_payment;
               const StatusIcon = status.icon;
 
               return (
                 <Link
                   key={order.id}
                   to={`/orders/${order.id}`}
-                  className="bg-white rounded-2xl shadow-sm p-3 flex items-center gap-3 active:scale-[0.98] transition-transform block"
+                  className="bg-white rounded-2xl shadow-sm p-3 flex items-center gap-3 active:scale-[0.98] transition-transform block select-none"
+                  onTouchStart={() => startLongPress(order)}
+                  onTouchEnd={clearLongPress}
+                  onTouchMove={clearLongPress}
+                  onMouseDown={() => startLongPress(order)}
+                  onMouseUp={clearLongPress}
+                  onMouseLeave={clearLongPress}
+                  onContextMenu={(e) => {
+                    if (order.orderStatus === "pending_payment") e.preventDefault();
+                  }}
+                  onClick={(e) => {
+                    if (longPressTriggered.current) {
+                      e.preventDefault();
+                      longPressTriggered.current = false;
+                    }
+                  }}
                 >
                   <img
                     src={order.shopIconUrl}
@@ -133,6 +193,28 @@ export const OrdersPage: FC = () => {
           </div>
         )}
       </div>
+
+      <AlertDialog open={!!cancelTarget} onOpenChange={(open) => !open && setCancelTarget(null)}>
+        <AlertDialogContent className="rounded-2xl max-w-sm mx-4">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel this order?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel your order
+              {cancelTarget ? ` "${cancelTarget.drinkName}"` : ""}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Go back</AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-xl bg-red-500 text-white hover:bg-red-600"
+              onClick={handleCancelConfirm}
+              disabled={cancelOrder.isPending}
+            >
+              {cancelOrder.isPending ? "Cancelling..." : "Yes, cancel"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Page>
   );
 };

@@ -14,10 +14,21 @@ import {
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 
-import { useOrderDetail } from "@/api/hooks/orders.hook";
+import { useOrderDetail, useCancelOrder } from "@/api/hooks/orders.hook";
 import { OrdersApi } from "@/api/domains/orders";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Page } from "@/components/Page";
 import { LoadingScreen } from "@/components/func/Loading";
 import { formatBalance } from "@/helpers/utils";
@@ -35,7 +46,7 @@ const statusConfig = {
     color: "text-red-500",
     bg: "bg-red-50",
   },
-  pending: {
+  pending_payment: {
     label: "Pending",
     icon: Clock,
     color: "text-yellow-600",
@@ -48,6 +59,7 @@ export const OrderDetailPage: FC = () => {
   const navigate = useNavigate();
 
   const { order, isLoading } = useOrderDetail(Number(orderId));
+  const cancelOrder = useCancelOrder();
 
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
@@ -57,14 +69,21 @@ export const OrderDetailPage: FC = () => {
   const [feedbackLoaded, setFeedbackLoaded] = useState(false);
 
   useEffect(() => {
-    if (!orderId) return;
+    if (!orderId || !order || order.orderStatus !== "completed") return;
     OrdersApi.getFeedback(Number(orderId)).then((fb) => {
       if (fb) {
         setExistingFeedback(fb);
       }
       setFeedbackLoaded(true);
     });
-  }, [orderId]);
+  }, [orderId, order]);
+
+  const handleCancelOrder = () => {
+    cancelOrder.mutate(Number(orderId), {
+      onSuccess: () => toast.success("Order cancelled"),
+      onError: () => toast.error("Failed to cancel order"),
+    });
+  };
 
   const handleSubmitFeedback = async () => {
     if (rating === 0) {
@@ -89,7 +108,7 @@ export const OrderDetailPage: FC = () => {
     );
   }
 
-  const status = statusConfig[order.orderStatus] ?? statusConfig.pending;
+  const status = statusConfig[order.orderStatus] ?? statusConfig.pending_payment;
   const StatusIcon = status.icon;
 
   return (
@@ -211,6 +230,42 @@ export const OrderDetailPage: FC = () => {
               )}
             </div>
           </div>
+
+          {/* Cancel order */}
+          {order.orderStatus === "pending_payment" && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="destructive"
+                  className="w-full h-11 rounded-xl"
+                  disabled={cancelOrder.isPending}
+                >
+                  {cancelOrder.isPending ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    "Cancel Order"
+                  )}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="rounded-2xl max-w-sm mx-4">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Cancel this order?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. Your order will be cancelled.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="rounded-xl">Go back</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="rounded-xl bg-red-500 text-white hover:bg-red-600"
+                    onClick={handleCancelOrder}
+                  >
+                    Yes, cancel
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
 
           {/* Feedback */}
           {order.orderStatus === "completed" && feedbackLoaded && (

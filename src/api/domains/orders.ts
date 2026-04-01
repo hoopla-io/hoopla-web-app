@@ -5,7 +5,7 @@ export interface Order {
   shopName: string;
   shopIconUrl: string;
   drinkName: string;
-  orderStatus: "completed" | "cancelled" | "pending";
+  orderStatus: "completed" | "cancelled" | "pending_payment";
   productPrice: number;
   purchasedAt: string;
   purchasedAtUnix: number;
@@ -17,7 +17,7 @@ export interface OrderDetail {
   shopName: string;
   drinkName: string;
   drinkImageUrl: string;
-  orderStatus: "completed" | "cancelled" | "pending";
+  orderStatus: "completed" | "cancelled" | "pending_payment";
   productPrice: number;
   purchasedAt: string;
   purchasedAtUnix: number;
@@ -51,9 +51,9 @@ export const OrdersApi = {
   },
 
   getDetail: async (orderId: number) => {
-    const response = await httpClient.get(`/user/orders/${orderId}`);
+    const response: any = await httpClient.get(`/user/orders/${orderId}`);
 
-    return response.data as OrderDetail;
+    return (response.data ?? response) as OrderDetail;
   },
 
   getFeedback: async (orderId: number) => {
@@ -63,6 +63,11 @@ export const OrdersApi = {
     } catch {
       return null;
     }
+  },
+
+  cancelOrder: async (orderId: number) => {
+    const response = await httpClient.post(`/user/orders/${orderId}/cancel`);
+    return response.data;
   },
 
   leaveFeedback: async (orderId: number, rating: number, comment: string) => {
