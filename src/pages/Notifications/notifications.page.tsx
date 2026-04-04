@@ -2,7 +2,7 @@ import { FC, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Bell, Loader2 } from "lucide-react";
 
-import { useNotifications } from "@/api/hooks/notifications.hook";
+import { useNotifications, useMarkNotificationsRead } from "@/api/hooks/notifications.hook";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Page } from "@/components/Page";
 import { LoadingScreen } from "@/components/func/Loading";
@@ -15,7 +15,12 @@ export const NotificationsPage: FC = () => {
     hasNextPage,
     isFetchingNextPage,
   } = useNotifications();
+  const { markRead } = useMarkNotificationsRead();
   const observerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    markRead();
+  }, []);
 
   useEffect(() => {
     if (!observerRef.current || !hasNextPage) return;
@@ -70,7 +75,7 @@ export const NotificationsPage: FC = () => {
                 key={n.notificationId}
                 to={`/notifications/${n.notificationId}`}
               >
-                <div className="bg-white rounded-2xl shadow-sm overflow-hidden active:scale-[0.98] transition-transform mb-3">
+                <div className={`bg-white rounded-2xl shadow-sm overflow-hidden active:scale-[0.98] transition-transform mb-3 ${n.isNew ? "ring-2 ring-[var(--color-primary)]/30" : ""}`}>
                   {n.files?.imageUrl && (
                     <AspectRatio ratio={480 / 320}>
                       <img
@@ -81,9 +86,14 @@ export const NotificationsPage: FC = () => {
                     </AspectRatio>
                   )}
                   <div className="p-3">
-                    <h3 className="font-semibold text-base text-gray-900 line-clamp-2">
-                      {n.notificationTitle}
-                    </h3>
+                    <div className="flex items-start gap-2">
+                      <h3 className="font-semibold text-base text-gray-900 line-clamp-2 flex-1">
+                        {n.notificationTitle}
+                      </h3>
+                      {n.isNew && (
+                        <span className="mt-1.5 w-2 h-2 rounded-full bg-[var(--color-primary)] shrink-0" />
+                      )}
+                    </div>
                     <p className="text-sm text-gray-500 mt-1 line-clamp-2">
                       {n.notificationDescription}
                     </p>
