@@ -33,6 +33,7 @@ interface User {
     endDate: string;
     endDateUnix: number;
   };
+  unreadNotifications: number;
 }
 export const AuthApi = {
   login: async (phoneNumber: string) => {

@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   NotificationsApi,
@@ -67,4 +67,18 @@ export function useNotificationDetail(notificationId: number) {
   );
 
   return { notification, isLoading, isError };
+}
+
+export function useMarkNotificationsRead() {
+  const queryClient = useQueryClient();
+
+  const { mutate: markRead } = useMutation({
+    mutationFn: NotificationsApi.markRead,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["get-me"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+
+  return { markRead };
 }
