@@ -6,12 +6,13 @@ type Params = {
   name?: string;
   latitude?: number;
   longitude?: number;
+  categoryId?: number;
 };
 
 const ITEMS_PER_PAGE = 10;
 
 export function useShops(params: Params) {
-  const { name = "", latitude = 41.2995, longitude = 69.2401 } = params;
+  const { name = "", latitude = 41.2995, longitude = 69.2401, categoryId } = params;
   const queryClient = useQueryClient();
 
   const {
@@ -23,12 +24,13 @@ export function useShops(params: Params) {
     isFetchingNextPage,
   } = useInfiniteQuery<Shop[]>(
     {
-      queryKey: ["shops", latitude, longitude, name],
+      queryKey: ["shops", latitude, longitude, name, categoryId],
       queryFn: async ({ pageParam = 0 }) => {
         const allShops = await ShopsApi.getShops(
           Number(latitude),
           Number(longitude),
-          name
+          name,
+          categoryId
         );
         const start = (pageParam as number) * ITEMS_PER_PAGE;
         return allShops.slice(start, start + ITEMS_PER_PAGE);

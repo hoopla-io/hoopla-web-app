@@ -15,12 +15,15 @@ import toast from "react-hot-toast";
 
 import { useShop } from "@/api/hooks/shops.hook";
 import { useValidateOrder } from "@/api/hooks/orders.hook";
+import { usePartnerBanners } from "@/api/hooks/banners.hook";
 import { useAuth } from "@/context/auth.context";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Page } from "@/components/Page";
 import { LoadingScreen } from "@/components/func/Loading";
+import { BannerCarousel } from "@/components/func/BannerCarousel";
 import { formatBalance, cn } from "@/helpers/utils";
 import type { SelectedModifier } from "@/api/domains/orders";
+import type { Banner } from "@/api/domains/banners";
 
 function formatWorkingHours(
   hours: { weekDay: string; openAt: string; closeAt: string }[]
@@ -49,6 +52,24 @@ export const ShopDetailPage: FC = () => {
   const { shopDetail, isLoading } = useShop({
     shopId: Number(shopId),
   });
+
+  const { banners, isLoading: bannersLoading } = usePartnerBanners(
+    shopDetail.partnerId ?? 0
+  );
+
+  const handleBannerClick = (banner: Banner) => {
+    switch (banner.linkType) {
+      case "url":
+        window.open(banner.linkValue, "_blank");
+        break;
+      case "drink":
+        handleDrinkClick(Number(banner.linkValue));
+        break;
+      case "partner":
+        navigate(`/partners/${banner.linkValue}`);
+        break;
+    }
+  };
 
   const handleDrinkClick = (drinkId: number) => {
     if (!isAuthenticated) {
@@ -282,6 +303,17 @@ export const ShopDetailPage: FC = () => {
                   />
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Partner banners */}
+          {banners.length > 0 && (
+            <div className="px-4">
+              <BannerCarousel
+                banners={banners}
+                isLoading={bannersLoading}
+                onBannerClick={handleBannerClick}
+              />
             </div>
           )}
 

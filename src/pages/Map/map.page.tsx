@@ -1,5 +1,5 @@
 import { FC, useEffect, useRef, useState } from "react";
-import { MapPin, X, ChevronRight } from "lucide-react";
+import { MapPin, X, ChevronRight, LocateFixed } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import { useShops, type Shop } from "@/api/hooks/shops.hook";
@@ -7,9 +7,8 @@ import { formatDistance } from "@/components/func/ShopCard";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Page } from "@/components/Page";
 import { LoadingScreen } from "@/components/func/Loading";
+import { useUserLocation } from "@/hooks/useUserLocation";
 
-const DEFAULT_LAT = 41.2995;
-const DEFAULT_LNG = 69.2401;
 const YANDEX_MAP_API_KEY = "b0a85c0f-823e-4474-a498-9ae4c02da06f";
 const BRAND_COLOR = "#8d0b41";
 
@@ -47,30 +46,9 @@ export const MapPage: FC = () => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const [selectedShop, setSelectedShop] = useState<Shop | null>(null);
-  const [userLocation, setUserLocation] = useState<{
-    lat: number;
-    lng: number;
-  } | null>(null);
+  const { location: userLocation, refresh: refreshLocation, refreshing: isRefreshingLocation } = useUserLocation();
   const [mapReady, setMapReady] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setUserLocation({
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-          });
-        },
-        () => {
-          setUserLocation({ lat: DEFAULT_LAT, lng: DEFAULT_LNG });
-        }
-      );
-    } else {
-      setUserLocation({ lat: DEFAULT_LAT, lng: DEFAULT_LNG });
-    }
-  }, []);
 
   const { shops, isLoading } = useShops({
     latitude: userLocation?.lat,
@@ -153,6 +131,18 @@ export const MapPage: FC = () => {
       <div className="fixed inset-0 top-[64px] bottom-[60px]">
         {/* Map */}
         <div ref={mapContainerRef} className="w-full h-full" />
+
+        {/* Refresh location button */}
+        <button
+          onClick={refreshLocation}
+          disabled={isRefreshingLocation}
+          className="absolute top-4 right-4 z-10 p-2.5 bg-white rounded-full shadow-md text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
+        >
+          <LocateFixed
+            size={20}
+            className={isRefreshingLocation ? "animate-pulse" : ""}
+          />
+        </button>
 
         {isLoading && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white rounded-full px-4 py-2 shadow-md text-sm text-gray-600 flex items-center gap-2">

@@ -23,11 +23,24 @@ const ShopCard = ({ shop }: ShopCardProps) => {
             className="w-full h-full object-cover"
           />
         </AspectRatio>
-        <div className="p-3">
-          <h3 className="font-semibold text-base text-gray-900">{shop.name}</h3>
-          <div className="flex items-center gap-1 mt-1 text-sm text-gray-500">
-            <MapPin size={14} />
-            <span>{formatDistance(shop.distance)}</span>
+        <div className="flex items-center gap-3 p-3">
+          <Link
+            to={`/partners/${shop.partnerId}`}
+            onClick={(e) => e.stopPropagation()}
+            className="flex-shrink-0"
+          >
+            <img
+              src={shop.pictureUrl}
+              alt={shop.name}
+              className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100"
+            />
+          </Link>
+          <div className="min-w-0">
+            <h3 className="font-semibold text-base text-gray-900 truncate">{shop.name}</h3>
+            <div className="flex items-center gap-1 mt-0.5 text-sm text-gray-500">
+              <MapPin size={14} />
+              <span>{formatDistance(shop.distance)}</span>
+            </div>
           </div>
         </div>
       </div>
