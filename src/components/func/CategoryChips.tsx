@@ -21,7 +21,7 @@ export const CategoryChips: FC<Props> = ({
       <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-3">
         {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className="flex flex-col items-center gap-1.5 flex-shrink-0 w-[72px]">
-            <div className="w-16 h-16 rounded-2xl bg-gray-200 animate-pulse" />
+            <div className="w-16 h-16 rounded-3xl bg-gray-200 animate-pulse" />
             <div className="w-12 h-3 rounded bg-gray-200 animate-pulse" />
           </div>
         ))}
@@ -41,10 +41,10 @@ export const CategoryChips: FC<Props> = ({
         >
           <div
             className={cn(
-              "w-16 h-16 rounded-2xl flex items-center justify-center transition-colors border-2",
+              "w-16 h-16 rounded-3xl flex items-center justify-center transition-colors border",
               selectedId === cat.id
                 ? "bg-[var(--color-primary)]/10 border-[var(--color-primary)]"
-                : "bg-white border-transparent"
+                : "bg-white border-gray-200"
             )}
           >
             {cat.imageUrl ? (
