@@ -1,48 +1,41 @@
 import { FC, useCallback, useEffect, useRef, useState } from "react";
-import { Search, X, Loader2, Coffee } from "lucide-react";
+import { Search, X, Loader2, Coffee, LocateFixed } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import debounce from "lodash/debounce";
 
 import { useShops } from "@/api/hooks/shops.hook";
+import { useCategories } from "@/api/hooks/categories.hook";
+import { useMainBanners } from "@/api/hooks/banners.hook";
+import { useStoryList } from "@/api/hooks/stories.hook";
 import ShopCard from "@/components/func/ShopCard";
+import { CategoryChips } from "@/components/func/CategoryChips";
+import { BannerCarousel } from "@/components/func/BannerCarousel";
+import { StoryCircles } from "@/components/func/StoryCircles";
+import { StoryViewer } from "@/components/func/StoryViewer";
 import { Input } from "@/components/ui/input";
 import { Page } from "@/components/Page";
 import { LoadingScreen } from "@/components/func/Loading";
-
-const DEFAULT_LAT = 41.2995;
-const DEFAULT_LNG = 69.2401;
+import { useUserLocation } from "@/hooks/useUserLocation";
+import type { Banner } from "@/api/domains/banners";
 
 export const HomePage: FC = () => {
   const [searchText, setSearchText] = useState("");
-  const [userLocation, setUserLocation] = useState<{
-    lat: number;
-    lng: number;
-  } | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [storyViewerIndex, setStoryViewerIndex] = useState<number | null>(null);
+  const navigate = useNavigate();
+  const { location: userLocation, refresh: refreshLocation, refreshing: isRefreshingLocation } = useUserLocation();
+  const { categories, isLoading: categoriesLoading } = useCategories();
+  const { banners, isLoading: bannersLoading } = useMainBanners();
+  const { stories, isLoading: storiesLoading } = useStoryList();
   const observerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setUserLocation({
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-          });
-        },
-        () => {
-          setUserLocation({ lat: DEFAULT_LAT, lng: DEFAULT_LNG });
-        }
-      );
-    } else {
-      setUserLocation({ lat: DEFAULT_LAT, lng: DEFAULT_LNG });
-    }
-  }, []);
 
   const { shops, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useShops({
       latitude: userLocation?.lat,
       longitude: userLocation?.lng,
       name: searchText,
+      categoryId: selectedCategoryId ?? undefined,
     });
 
   const debouncedSearch = useCallback(
@@ -51,6 +44,17 @@ export const HomePage: FC = () => {
     }, 400),
     []
   );
+
+  const handleBannerClick = (banner: Banner) => {
+    switch (banner.linkType) {
+      case "url":
+        window.open(banner.linkValue, "_blank");
+        break;
+      case "partner":
+        navigate(`/partners/${banner.linkValue}`);
+        break;
+    }
+  };
 
   const handleClear = () => {
     if (searchInputRef.current) {
@@ -111,10 +115,53 @@ export const HomePage: FC = () => {
           </div>
         </div>
 
+        {/* Stories */}
+        <StoryCircles
+          stories={stories}
+          isLoading={storiesLoading}
+          onStoryClick={(index) => setStoryViewerIndex(index)}
+        />
+
+        {/* Story Viewer */}
+        {storyViewerIndex !== null && (
+          <StoryViewer
+            stories={stories}
+            initialIndex={storyViewerIndex}
+            onClose={() => setStoryViewerIndex(null)}
+          />
+        )}
+
+        {/* Banners */}
+        <BannerCarousel
+          banners={banners}
+          isLoading={bannersLoading}
+          onBannerClick={handleBannerClick}
+        />
+
+        {/* Category filter */}
+        <CategoryChips
+          categories={categories}
+          selectedId={selectedCategoryId}
+          onSelect={setSelectedCategoryId}
+          isLoading={categoriesLoading}
+        />
+
         {/* Section title */}
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">
-          {searchText ? "Search Results" : "Nearby Cafes"}
-        </h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold text-gray-900">
+            {searchText ? "Search Results" : "Nearby Cafes"}
+          </h2>
+          <button
+            onClick={refreshLocation}
+            disabled={isRefreshingLocation}
+            className="p-2 rounded-full text-gray-500 hover:bg-gray-200 transition-colors disabled:opacity-50"
+          >
+            <LocateFixed
+              size={20}
+              className={isRefreshingLocation ? "animate-pulse" : ""}
+            />
+          </button>
+        </div>
 
         {/* Loading */}
         {isLoading && (
