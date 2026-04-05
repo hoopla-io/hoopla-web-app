@@ -9,6 +9,7 @@ import { MapPage } from "@/pages/Map/map.page";
 import { NotificationsPage } from "@/pages/Notifications/notifications.page";
 import { NotificationDetailPage } from "@/pages/Notifications/notification-detail.page";
 import { ShopDetailPage } from "@/pages/ShopDetail/shop-detail.page";
+import { PartnerDetailPage } from "@/pages/PartnerDetail/partner-detail.page";
 import { ModifierSelectionPage } from "@/pages/MakeOrder/modifier-selection.page";
 import { OrderReceiptPage } from "@/pages/MakeOrder/order-receipt.page";
 import { OrdersPage } from "@/pages/Orders/orders.page";
@@ -36,6 +37,10 @@ export const routes: Route[] = [
   {
     path: "/shops/:shopId",
     Component: ShopDetailPage,
+  },
+  {
+    path: "/partners/:partnerId",
+    Component: PartnerDetailPage,
   },
   {
     path: "/shops/:shopId/order/modifiers",

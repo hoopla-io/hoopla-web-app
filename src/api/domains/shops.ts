@@ -23,9 +23,9 @@ export interface Shop {
 }
 
 export const ShopsApi = {
-  getShops: async (lat: number, long: number, name: string = '') => {
+  getShops: async (lat: number, long: number, name: string = '', categoryId?: number) => {
     const response = await httpClient.get('/shops/near-shops', {
-      params: { lat, long, name },
+      params: { lat, long, name, categoryId },
     });
 
     return (response.data ?? []) as Shop[];
