@@ -18,12 +18,12 @@ export const CategoryChips: FC<Props> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-3">
+      <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div
-            key={i}
-            className="flex-shrink-0 h-9 w-20 rounded-full bg-gray-200 animate-pulse"
-          />
+          <div key={i} className="flex flex-col items-center gap-1.5 flex-shrink-0 w-[72px]">
+            <div className="w-16 h-16 rounded-2xl bg-gray-200 animate-pulse" />
+            <div className="w-12 h-3 rounded bg-gray-200 animate-pulse" />
+          </div>
         ))}
       </div>
     );
@@ -32,37 +32,41 @@ export const CategoryChips: FC<Props> = ({
   if (categories.length === 0) return null;
 
   return (
-    <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-3">
-      <button
-        onClick={() => onSelect(null)}
-        className={cn(
-          "flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors",
-          selectedId === null
-            ? "bg-[var(--color-primary)] text-white"
-            : "bg-white text-gray-600 shadow-sm hover:bg-gray-50"
-        )}
-      >
-        All
-      </button>
+    <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-3">
       {categories.map((cat) => (
         <button
           key={cat.id}
-          onClick={() => onSelect(cat.id)}
-          className={cn(
-            "flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors",
-            selectedId === cat.id
-              ? "bg-[var(--color-primary)] text-white"
-              : "bg-white text-gray-600 shadow-sm hover:bg-gray-50"
-          )}
+          onClick={() => onSelect(selectedId === cat.id ? null : cat.id)}
+          className="flex flex-col items-center gap-1.5 flex-shrink-0 w-[72px]"
         >
-          {cat.imageUrl && (
-            <img
-              src={cat.imageUrl}
-              alt={cat.name}
-              className="w-4 h-4 rounded-full object-cover"
-            />
-          )}
-          {cat.name}
+          <div
+            className={cn(
+              "w-16 h-16 rounded-2xl flex items-center justify-center transition-colors border-2",
+              selectedId === cat.id
+                ? "bg-[var(--color-primary)]/10 border-[var(--color-primary)]"
+                : "bg-white border-transparent"
+            )}
+          >
+            {cat.imageUrl ? (
+              <img
+                src={cat.imageUrl}
+                alt={cat.name}
+                className="w-10 h-10 object-contain"
+              />
+            ) : (
+              <span className="text-2xl">
+                {cat.name.charAt(0)}
+              </span>
+            )}
+          </div>
+          <span
+            className={cn(
+              "text-xs font-medium text-center leading-tight line-clamp-2",
+              selectedId === cat.id ? "text-[var(--color-primary)]" : "text-gray-700"
+            )}
+          >
+            {cat.name}
+          </span>
         </button>
       ))}
     </div>
