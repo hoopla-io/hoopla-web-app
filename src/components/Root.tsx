@@ -21,7 +21,18 @@ function ErrorBoundaryError({ error }: { error: unknown }) {
 }
 
 export function Root() {
-  const queryClient = new QueryClient();
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: (failureCount, error) => {
+          // Don't retry auth errors — the interceptor handles refresh/redirect
+          const status = (error as any)?.status ?? (error as any)?.response?.status;
+          if (status === 401 || status === 412) return false;
+          return failureCount < 3;
+        },
+      },
+    },
+  });
 
   return (
     <ErrorBoundary fallback={ErrorBoundaryError}>
