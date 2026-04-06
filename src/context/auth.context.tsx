@@ -32,14 +32,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const confirmCode = async (sessionId: string, code: number) => {
     const data = await AuthApi.confirmSms(sessionId, code);
+
+    localStorage.setItem("access_token", data.jwt.accessToken);
+    localStorage.setItem("refresh_token", data.jwt.refreshToken);
+
     setState({
       isAuthenticated: true,
       isLoading: false,
       pending: false,
     });
-
-    localStorage.setItem("access_token", data.jwt.accessToken);
-    localStorage.setItem("refresh_token", data.jwt.refreshToken);
   };
 
   const logout = () => {

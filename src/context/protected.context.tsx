@@ -6,8 +6,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading, pending } = useAuth();
   const location = useLocation();
 
-  if (isLoading) {
-    <LoadingScreen header="Loading..." description="Please wait..." />;
+  if (isLoading || pending) {
+    return <LoadingScreen header="Loading..." description="Please wait..." />;
   }
 
   if (!isAuthenticated && !pending) {

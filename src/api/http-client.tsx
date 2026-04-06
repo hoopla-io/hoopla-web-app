@@ -1,8 +1,17 @@
 import axios from "axios";
-import type { AxiosError, AxiosInstance, AxiosResponse } from "axios";
+import type {
+  AxiosError,
+  AxiosInstance,
+  AxiosResponse,
+  InternalAxiosRequestConfig,
+} from "axios";
+
+interface RetryableRequestConfig extends InternalAxiosRequestConfig {
+  _isRetry?: boolean;
+}
 
 export const extractorResponseInterceptor = (response: AxiosResponse) => {
-  return Object.assign(response, response.data);
+  return { ...response, ...response.data };
 };
 
 let isRefreshing = false;
@@ -26,7 +35,7 @@ const redirectToLogin = () => {
   localStorage.removeItem("access_token");
   localStorage.removeItem("refresh_token");
   const currentPath = window.location.hash.replace("#", "") || "/";
-  window.location.hash = `/login?redirect=${currentPath}`;
+  window.location.hash = `/login?from=${encodeURIComponent(currentPath)}`;
 };
 
 export const applyExtractorResponseInterceptor = (
@@ -37,9 +46,16 @@ export const applyExtractorResponseInterceptor = (
       return extractorResponseInterceptor(response);
     },
     async (error: AxiosError) => {
-      const originalRequest = error.config;
+      const originalRequest = error.config as
+        | RetryableRequestConfig
+        | undefined;
 
-      if (error.response?.status === 412 && originalRequest) {
+      // Handle token expiry (412) — refresh and retry once
+      if (
+        error.response?.status === 412 &&
+        originalRequest &&
+        !originalRequest._isRetry
+      ) {
         const refreshToken = localStorage.getItem("refresh_token");
 
         if (!refreshToken) {
@@ -53,7 +69,8 @@ export const applyExtractorResponseInterceptor = (
             failedQueue.push({
               resolve: (token: string) => {
                 originalRequest.headers.Authorization = `Bearer ${token}`;
-                resolve(axios(originalRequest));
+                originalRequest._isRetry = true;
+                resolve(axiosInstance(originalRequest));
               },
               reject: (err: unknown) => {
                 reject(err);
@@ -65,19 +82,21 @@ export const applyExtractorResponseInterceptor = (
         isRefreshing = true;
 
         try {
-          // Use a plain axios call to avoid the request interceptor attaching the expired token
+          // Use plain axios to avoid attaching the expired token via request interceptor
           const { data } = await axios.patch(
             `${import.meta.env.VITE_API_URL}/user/refresh-token?refreshToken=${refreshToken}`
           );
+
           localStorage.setItem("access_token", data.accessToken);
           localStorage.setItem("refresh_token", data.refreshToken);
 
           // Retry all queued requests with the new token
           processQueue(null, data.accessToken);
 
-          // Retry the original request
+          // Retry the original request once
           originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
-          return axios(originalRequest);
+          originalRequest._isRetry = true;
+          return axiosInstance(originalRequest);
         } catch (refreshError) {
           processQueue(refreshError, null);
           redirectToLogin();
@@ -87,11 +106,13 @@ export const applyExtractorResponseInterceptor = (
         }
       }
 
+      // Handle unauthorized (401) — session is invalid, go to login
       if (error.response?.status === 401) {
         redirectToLogin();
         return Promise.reject(error);
       }
 
+      // For all other errors, extract response data without mutating the original
       return Promise.reject(
         error.response ? extractorResponseInterceptor(error.response) : error
       );
