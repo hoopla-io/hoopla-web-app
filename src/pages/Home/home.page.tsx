@@ -20,6 +20,7 @@ import type { Banner } from "@/api/domains/banners";
 
 export const HomePage: FC = () => {
   const [searchText, setSearchText] = useState("");
+  const [isSearchActive, setIsSearchActive] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [storyViewerIndex, setStoryViewerIndex] = useState<number | null>(null);
   const navigate = useNavigate();
@@ -59,8 +60,10 @@ export const HomePage: FC = () => {
   const handleClear = () => {
     if (searchInputRef.current) {
       searchInputRef.current.value = "";
+      searchInputRef.current.blur();
     }
     setSearchText("");
+    setIsSearchActive(false);
   };
 
   useEffect(() => {
@@ -101,6 +104,12 @@ export const HomePage: FC = () => {
             <Input
               ref={searchInputRef}
               onChange={(e) => debouncedSearch(e.target.value)}
+              onFocus={() => setIsSearchActive(true)}
+              onBlur={() => {
+                if (!searchInputRef.current?.value) {
+                  setIsSearchActive(false);
+                }
+              }}
               placeholder="Search cafes..."
               className="h-12 pl-10 pr-10 rounded-xl bg-white border-none shadow-sm text-base"
             />
@@ -115,36 +124,40 @@ export const HomePage: FC = () => {
           </div>
         </div>
 
-        {/* Stories */}
-        <StoryCircles
-          stories={stories}
-          isLoading={storiesLoading}
-          onStoryClick={(index) => setStoryViewerIndex(index)}
-        />
+        {!isSearchActive && (
+          <>
+            {/* Stories */}
+            <StoryCircles
+              stories={stories}
+              isLoading={storiesLoading}
+              onStoryClick={(index) => setStoryViewerIndex(index)}
+            />
 
-        {/* Story Viewer */}
-        {storyViewerIndex !== null && (
-          <StoryViewer
-            stories={stories}
-            initialIndex={storyViewerIndex}
-            onClose={() => setStoryViewerIndex(null)}
-          />
+            {/* Story Viewer */}
+            {storyViewerIndex !== null && (
+              <StoryViewer
+                stories={stories}
+                initialIndex={storyViewerIndex}
+                onClose={() => setStoryViewerIndex(null)}
+              />
+            )}
+
+            {/* Banners */}
+            <BannerCarousel
+              banners={banners}
+              isLoading={bannersLoading}
+              onBannerClick={handleBannerClick}
+            />
+
+            {/* Category filter */}
+            <CategoryChips
+              categories={categories}
+              selectedId={selectedCategoryId}
+              onSelect={setSelectedCategoryId}
+              isLoading={categoriesLoading}
+            />
+          </>
         )}
-
-        {/* Banners */}
-        <BannerCarousel
-          banners={banners}
-          isLoading={bannersLoading}
-          onBannerClick={handleBannerClick}
-        />
-
-        {/* Category filter */}
-        <CategoryChips
-          categories={categories}
-          selectedId={selectedCategoryId}
-          onSelect={setSelectedCategoryId}
-          isLoading={categoriesLoading}
-        />
 
         {/* Section title */}
         <div className="flex items-center justify-between mb-3">
