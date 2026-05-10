@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-import { useShop } from "@/api/hooks/shops.hook";
+import { useShop, useShopDrinks } from "@/api/hooks/shops.hook";
 import { useValidateOrder } from "@/api/hooks/orders.hook";
 import { usePartnerBanners } from "@/api/hooks/banners.hook";
 import { useAuth } from "@/context/auth.context";
@@ -40,8 +40,6 @@ function formatPrice(price: number): string {
   return formatBalance(price) + " UZS";
 }
 
-const ALL_CATEGORY = "All";
-
 export const ShopDetailPage: FC = () => {
   const { shopId } = useParams();
   const navigate = useNavigate();
@@ -49,9 +47,14 @@ export const ShopDetailPage: FC = () => {
   const validateOrder = useValidateOrder();
   const [validatingDrinkId, setValidatingDrinkId] = useState<number | null>(null);
 
+  const numericShopIdFromParams = Number(shopId);
+
   const { shopDetail, isLoading } = useShop({
-    shopId: Number(shopId),
+    shopId: numericShopIdFromParams,
   });
+
+  const { categories: drinkCategories, isLoading: drinksLoading } =
+    useShopDrinks(numericShopIdFromParams);
 
   const { banners, isLoading: bannersLoading } = usePartnerBanners(
     shopDetail.partnerId ?? 0
@@ -135,31 +138,23 @@ export const ShopDetailPage: FC = () => {
     );
   };
 
-  // Build categories from drinks
-  const { categories, drinksByCategory, hasRealCategories } = useMemo(() => {
-    const drinks = shopDetail?.drinks ?? [];
-    const grouped: Record<string, typeof drinks> = {};
-
-    for (const drink of drinks) {
-      const cat = drink.categoryName || ALL_CATEGORY;
-      if (!grouped[cat]) grouped[cat] = [];
-      grouped[cat].push(drink);
-    }
-
-    const cats = Object.keys(grouped);
-    const hasReal = cats.some((c) => c !== ALL_CATEGORY);
+  const { categories, hasRealCategories, allDrinks } = useMemo(() => {
+    const cats = drinkCategories.map((c) => c.name);
+    const hasReal = drinkCategories.some(
+      (c) => c.name && c.name.toLowerCase() !== "other"
+    );
+    const flat = drinkCategories.flatMap((c) => c.drinks);
 
     return {
       categories: hasReal ? cats : [],
-      drinksByCategory: grouped,
       hasRealCategories: hasReal,
+      allDrinks: flat,
     };
-  }, [shopDetail?.drinks]);
+  }, [drinkCategories]);
 
   const [activeCategory, setActiveCategory] = useState<string>("");
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // Set initial active category
   useEffect(() => {
     if (categories.length > 0 && !activeCategory) {
       setActiveCategory(categories[0]);
@@ -318,64 +313,80 @@ export const ShopDetailPage: FC = () => {
           )}
 
           {/* Menu */}
-          {shopDetail.drinks && shopDetail.drinks.length > 0 && (
+          {(drinksLoading || allDrinks.length > 0) && (
             <div>
               <h2 className="text-lg font-semibold text-gray-900 mb-3">
                 Menu
               </h2>
 
-              {/* Category tabs */}
-              {hasRealCategories && (
-                <div
-                  className="flex gap-2 overflow-x-auto pb-3 mb-1 scrollbar-hide sticky top-[64px] z-[5] bg-[#f5f5f5] pt-4 px-4 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)]"
-                >
-                  {categories.map((cat) => (
-                    <button
-                      key={cat}
-                      data-tab={cat}
-                      onClick={() => handleTabClick(cat)}
-                      className={cn(
-                        "flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors",
-                        activeCategory === cat
-                          ? "bg-[var(--color-primary)] text-white"
-                          : "bg-white text-gray-600 shadow-sm hover:bg-gray-50"
-                      )}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Drinks by category */}
-              {hasRealCategories ? (
-                <div className="space-y-6 px-4">
-                  {categories.map((cat) => (
-                    <div
-                      key={cat}
-                      ref={(el) => {
-                        sectionRefs.current[cat] = el;
-                      }}
-                      data-category={cat}
-                      className="scroll-mt-[120px]"
-                    >
-                      <h3 className="text-lg font-bold text-gray-900 mb-3">
-                        {cat}
-                      </h3>
-                      <div className="grid grid-cols-2 gap-3">
-                        {drinksByCategory[cat].map((drink) => (
-                          <DrinkCard key={drink.id} drink={drink} onOrderClick={handleDrinkClick} isValidating={validatingDrinkId === drink.id} />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+              {drinksLoading ? (
+                <div className="flex items-center justify-center py-10">
+                  <Loader2 size={24} className="animate-spin text-[var(--color-primary)]" />
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  {shopDetail.drinks.map((drink) => (
-                    <DrinkCard key={drink.id} drink={drink} onOrderClick={handleDrinkClick} isValidating={validatingDrinkId === drink.id} />
-                  ))}
-                </div>
+                <>
+                  {hasRealCategories && (
+                    <div
+                      className="flex gap-2 overflow-x-auto pb-3 mb-1 scrollbar-hide sticky top-[64px] z-[5] bg-[#f5f5f5] pt-4 px-4 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)]"
+                    >
+                      {categories.map((cat) => (
+                        <button
+                          key={cat}
+                          data-tab={cat}
+                          onClick={() => handleTabClick(cat)}
+                          className={cn(
+                            "flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors",
+                            activeCategory === cat
+                              ? "bg-[var(--color-primary)] text-white"
+                              : "bg-white text-gray-600 shadow-sm hover:bg-gray-50"
+                          )}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {hasRealCategories ? (
+                    <div className="space-y-6 px-4">
+                      {drinkCategories.map((cat) => (
+                        <div
+                          key={cat.id}
+                          ref={(el) => {
+                            sectionRefs.current[cat.name] = el;
+                          }}
+                          data-category={cat.name}
+                          className="scroll-mt-[120px]"
+                        >
+                          <h3 className="text-lg font-bold text-gray-900 mb-3">
+                            {cat.name}
+                          </h3>
+                          <div className="grid grid-cols-2 gap-3">
+                            {cat.drinks.map((drink) => (
+                              <DrinkCard
+                                key={drink.id}
+                                drink={drink}
+                                onOrderClick={handleDrinkClick}
+                                isValidating={validatingDrinkId === drink.id}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      {allDrinks.map((drink) => (
+                        <DrinkCard
+                          key={drink.id}
+                          drink={drink}
+                          onOrderClick={handleDrinkClick}
+                          isValidating={validatingDrinkId === drink.id}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -393,7 +404,7 @@ function DrinkCard({
   drink: {
     id: number;
     name: string;
-    pictureUrl: string;
+    pictureUrl: string | null;
     productPrice: number;
   };
   onOrderClick: (drinkId: number) => void;
