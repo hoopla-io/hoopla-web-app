@@ -7,5 +7,4 @@ services:
       - "3013:3000"
     environment:
       - NODE_ENV=production
-    restart: on-failure
     network_mode: host
