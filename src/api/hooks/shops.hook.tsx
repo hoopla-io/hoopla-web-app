@@ -1,6 +1,12 @@
 import { useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 
-import { ShopsApi, type Shop } from "@/api/domains/shops";
+import {
+  ShopsApi,
+  type Shop,
+  type ShopDrinksResponse,
+  type ShopDrinkCategory,
+  type ShopDrink,
+} from "@/api/domains/shops";
 
 type Params = {
   name?: string;
@@ -83,14 +89,6 @@ interface Url {
   url: string;
 }
 
-interface Drink {
-  id: number;
-  name: string;
-  pictureUrl: string;
-  productPrice: number;
-  categoryName: string | null;
-}
-
 export interface ShopDetail {
   id: number;
   partnerId: number;
@@ -101,7 +99,6 @@ export interface ShopDetail {
   workingHours: WorkingHours[] | null;
   pictures: Picture[] | null;
   urls: Url[] | null;
-  drinks: Drink[];
 }
 
 type ShopDetailParams = {
@@ -142,3 +139,29 @@ export function useShop(params: ShopDetailParams) {
     isError,
   };
 }
+
+export function useShopDrinks(shopId: number) {
+  const queryClient = useQueryClient();
+
+  const {
+    data,
+    isLoading,
+    isError,
+  } = useQuery<ShopDrinksResponse>(
+    {
+      queryKey: ["shop-drinks", shopId],
+      queryFn: () => ShopsApi.getShopDrinks(shopId),
+      staleTime: 300000,
+      enabled: Boolean(shopId),
+    },
+    queryClient
+  );
+
+  return {
+    categories: data?.categories ?? [],
+    isLoading,
+    isError,
+  };
+}
+
+export type { ShopDrink, ShopDrinkCategory };

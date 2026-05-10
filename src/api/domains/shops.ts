@@ -22,6 +22,23 @@ export interface Shop {
   }[];
 }
 
+export interface ShopDrink {
+  id: number;
+  name: string;
+  pictureUrl: string | null;
+  productPrice: number;
+}
+
+export interface ShopDrinkCategory {
+  id: number;
+  name: string;
+  drinks: ShopDrink[];
+}
+
+export interface ShopDrinksResponse {
+  categories: ShopDrinkCategory[];
+}
+
 export const ShopsApi = {
   getShops: async (lat: number, long: number, name: string = '', categoryId?: number) => {
     const response = await httpClient.get('/shops/near-shops', {
@@ -37,5 +54,13 @@ export const ShopsApi = {
     });
 
     return response.data;
+  },
+
+  getShopDrinks: async (shopId: number) => {
+    const response = await httpClient.get('/shops/drinks', {
+      params: { shopId },
+    });
+
+    return (response.data ?? { categories: [] }) as ShopDrinksResponse;
   },
 };
