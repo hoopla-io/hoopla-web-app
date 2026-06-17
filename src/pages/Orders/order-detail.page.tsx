@@ -260,7 +260,7 @@ export const OrderDetailPage: FC = () => {
                   )}
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent className="rounded-2xl max-w-sm mx-4">
+              <AlertDialogContent className="rounded-2xl max-w-sm">
                 <AlertDialogHeader>
                   <AlertDialogTitle>Cancel this order?</AlertDialogTitle>
                   <AlertDialogDescription>

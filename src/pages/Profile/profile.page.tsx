@@ -8,14 +8,12 @@ import {
   Wallet,
   ShieldCheck,
   FileText,
-  Loader2,
   ChevronRight,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
 import { FC, useState } from "react";
 import { Link } from "react-router-dom";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import {
   useDeleteAccount,
@@ -23,7 +21,7 @@ import {
   useLogOut,
 } from "@/api/hooks/profile.hook";
 import { usePaymentSystems } from "@/api/hooks/payments.hook";
-import { AuthApi } from "@/api/domains/auth";
+import { useAuth } from "@/context/auth.context";
 import PaymentApi from "@/api/domains/payment";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,19 +37,19 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+} from "@/components/ui/drawer";
 import { Page } from "@/components/Page";
 import { formatBalance } from "@/helpers/utils";
 import { LoadingScreen } from "@/components/func/Loading";
 
 export const ProfilePage: FC = () => {
   const { userInfo, isLoading } = useGetMe();
-  const queryClient = useQueryClient();
+  const { openEditProfile } = useAuth();
 
   const { logout } = useLogOut({
     onError: (error) => toast.error(error.message),
@@ -61,32 +59,10 @@ export const ProfilePage: FC = () => {
     onError: (error) => toast.error(error.message),
   });
 
-  // Edit profile state
-  const [editName, setEditName] = useState("");
-  const [editGender, setEditGender] = useState("");
-  const [editDob, setEditDob] = useState("");
-  const [editOpen, setEditOpen] = useState(false);
-
-  const updateProfile = useMutation({
-    mutationFn: () =>
-      AuthApi.updateProfile({
-        name: editName || undefined,
-        gender: editGender || undefined,
-        dateOfBirth: editDob || undefined,
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["get-me"] });
-      toast.success("Profile updated");
-      setEditOpen(false);
-    },
-    onError: () => toast.error("Failed to update profile"),
-  });
-
   // Top-up state
   const { paymentSystems } = usePaymentSystems();
   const [topUpAmount, setTopUpAmount] = useState("");
   const [topUpOpen, setTopUpOpen] = useState(false);
-  const [editLoading, setEditLoading] = useState(false);
 
   const handleTopUp = async (paymentId: number) => {
     const amount = Number(topUpAmount);
@@ -115,21 +91,6 @@ export const ProfilePage: FC = () => {
     );
   }
 
-  const openEditDialog = async () => {
-    setEditLoading(true);
-    setEditOpen(true);
-    try {
-      const data = await AuthApi.getEditProfile();
-      setEditName(data.name || "");
-      setEditGender(data.gender || "");
-      setEditDob(data.dateOfBirth || "");
-    } catch {
-      setEditName(userInfo.name || "");
-    } finally {
-      setEditLoading(false);
-    }
-  };
-
   return (
     <Page>
       <div className="max-w-lg mx-auto px-4 pt-2 pb-32">
@@ -151,7 +112,7 @@ export const ProfilePage: FC = () => {
                 </div>
               </div>
               <button
-                onClick={openEditDialog}
+                onClick={openEditProfile}
                 className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
               >
                 <Pencil size={18} className="text-white" />
@@ -274,7 +235,7 @@ export const ProfilePage: FC = () => {
                 Log out
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent className="rounded-2xl max-w-sm mx-4">
+            <AlertDialogContent className="rounded-2xl max-w-sm">
               <AlertDialogHeader>
                 <AlertDialogTitle>Log out?</AlertDialogTitle>
                 <AlertDialogDescription>
@@ -305,7 +266,7 @@ export const ProfilePage: FC = () => {
                 Delete account
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent className="rounded-2xl max-w-sm mx-4">
+            <AlertDialogContent className="rounded-2xl max-w-sm">
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
@@ -328,89 +289,17 @@ export const ProfilePage: FC = () => {
           </AlertDialog>
         </div>
 
-        {/* Edit Profile Dialog */}
-        <Dialog open={editOpen} onOpenChange={setEditOpen}>
-          <DialogContent className="rounded-2xl max-w-sm mx-4">
-            <DialogHeader>
-              <DialogTitle>Edit Profile</DialogTitle>
-              <DialogDescription>
-                Update your personal information
-              </DialogDescription>
-            </DialogHeader>
-            {editLoading ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
-              </div>
-            ) : (
-              <div className="space-y-4 pt-2">
-                <div>
-                  <label className="text-sm font-medium text-gray-700">
-                    Name
-                  </label>
-                  <Input
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    placeholder="Your name"
-                    className="h-11 rounded-xl mt-1"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">
-                    Gender
-                  </label>
-                  <div className="flex gap-2 mt-1">
-                    {["male", "female"].map((g) => (
-                      <button
-                        key={g}
-                        onClick={() => setEditGender(g)}
-                        className={`flex-1 h-11 rounded-xl text-sm font-medium border transition-colors ${
-                          editGender === g
-                            ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]"
-                            : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-                        }`}
-                      >
-                        {g.charAt(0).toUpperCase() + g.slice(1)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">
-                    Date of Birth
-                  </label>
-                  <Input
-                    type="date"
-                    value={editDob}
-                    onChange={(e) => setEditDob(e.target.value)}
-                    className="h-11 rounded-xl mt-1"
-                  />
-                </div>
-                <Button
-                  className="w-full h-11 rounded-xl text-white"
-                  disabled={updateProfile.isPending}
-                  onClick={() => updateProfile.mutate()}
-                >
-                  {updateProfile.isPending ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    "Save"
-                  )}
-                </Button>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Top Up Dialog */}
-        <Dialog open={topUpOpen} onOpenChange={setTopUpOpen}>
-          <DialogContent className="rounded-2xl max-w-sm mx-4">
-            <DialogHeader>
-              <DialogTitle>Top Up Balance</DialogTitle>
-              <DialogDescription>
-                Enter amount and select payment method
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 pt-2">
+        {/* Top Up Drawer */}
+        <Drawer open={topUpOpen} onOpenChange={setTopUpOpen}>
+          <DrawerContent className="pb-6">
+            <div className="w-full max-w-md mx-auto">
+              <DrawerHeader className="text-left">
+                <DrawerTitle>Top Up Balance</DrawerTitle>
+                <DrawerDescription>
+                  Enter amount and select payment method
+                </DrawerDescription>
+              </DrawerHeader>
+              <div className="space-y-4 px-4 pt-1">
               <div>
                 <label className="text-sm font-medium text-gray-700">
                   Amount (UZS)
@@ -466,9 +355,10 @@ export const ProfilePage: FC = () => {
                   ))}
                 </div>
               </div>
+              </div>
             </div>
-          </DialogContent>
-        </Dialog>
+          </DrawerContent>
+        </Drawer>
       </div>
     </Page>
   );
