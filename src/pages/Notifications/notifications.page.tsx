@@ -6,8 +6,10 @@ import { useNotifications, useMarkNotificationsRead } from "@/api/hooks/notifica
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Page } from "@/components/Page";
 import { LoadingScreen } from "@/components/func/Loading";
+import { useAuth } from "@/context/auth.context";
 
 export const NotificationsPage: FC = () => {
+  const { isAuthenticated } = useAuth();
   const {
     notifications,
     isLoading,
@@ -18,9 +20,11 @@ export const NotificationsPage: FC = () => {
   const { markRead } = useMarkNotificationsRead();
   const observerRef = useRef<HTMLDivElement>(null);
 
+  // The list/detail endpoints are public; only mark-read needs auth, so guard
+  // it to avoid triggering the sign-in drawer for logged-out visitors.
   useEffect(() => {
-    markRead();
-  }, []);
+    if (isAuthenticated) markRead();
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!observerRef.current || !hasNextPage) return;
