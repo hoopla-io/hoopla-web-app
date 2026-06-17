@@ -6,6 +6,10 @@ export interface Shop {
   name: string;
   pictureUrl: string;
   distance: number;
+  /** Real-time availability from the list endpoint. */
+  acceptingOrders?: boolean;
+  /** ISO timestamp the shop is paused until, or null when not paused. */
+  pausedUntil?: string | null;
   location: {
     lat: number;
     lng: number;
