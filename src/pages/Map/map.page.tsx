@@ -128,7 +128,8 @@ export const MapPage: FC = () => {
 
   return (
     <Page>
-      <div className="fixed inset-0 top-[64px] bottom-[60px]">
+      {/* Sits between the floating glass header (~76px) and bottom nav (~76px). */}
+      <div className="fixed inset-0 top-[72px] bottom-[84px]">
         {/* Map */}
         <div ref={mapContainerRef} className="w-full h-full" />
 

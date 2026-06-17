@@ -25,9 +25,10 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
 
   // Reset the search whenever the route changes so it never lingers open
   // (e.g. after tapping a shop card) or carries a stale query to another page.
+  // Guarded so an idle navigation doesn't trigger redundant re-renders.
   useEffect(() => {
-    setIsSearchOpen(false);
-    setSearchText("");
+    setIsSearchOpen((open) => (open ? false : open));
+    setSearchText((text) => (text ? "" : text));
   }, [pathname]);
 
   return (
