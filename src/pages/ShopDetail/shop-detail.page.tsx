@@ -339,7 +339,7 @@ export const ShopDetailPage: FC = () => {
                 <>
                   {hasRealCategories && (
                     <div
-                      className="flex gap-2 overflow-x-auto pb-3 mb-1 scrollbar-hide sticky top-[64px] z-[5] bg-[#f5f5f5] pt-4 px-4 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)]"
+                      className="flex gap-2 overflow-x-auto pb-3 mb-1 scrollbar-hide sticky top-[70px] z-[5] bg-[#f5f5f5] pt-4 px-4 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)]"
                     >
                       {categories.map((cat) => (
                         <button
