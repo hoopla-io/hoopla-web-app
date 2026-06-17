@@ -1,4 +1,4 @@
-import { FC, useCallback } from "react";
+import { FC, useCallback, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Bell, Search, X } from "lucide-react";
 import debounce from "lodash/debounce";
@@ -20,6 +20,14 @@ export const Header: FC = () => {
     debounce((value: string) => setSearchText(value), 400),
     []
   );
+
+  // Cancel any pending debounced write when the overlay closes (incl. the
+  // route-change reset in SearchContext) or the Header unmounts, so a trailing
+  // setSearchText can't resurrect a stale query on another page.
+  useEffect(() => {
+    if (!isSearchOpen) debouncedSetSearch.cancel();
+    return () => debouncedSetSearch.cancel();
+  }, [isSearchOpen, debouncedSetSearch]);
 
   const handleClose = () => {
     debouncedSetSearch.cancel();
