@@ -1,34 +1,85 @@
-import { FC } from "react";
-import { Link } from "react-router-dom";
-import { Bell } from "lucide-react";
+import { FC, useCallback } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { Bell, Search, X } from "lucide-react";
+import debounce from "lodash/debounce";
 
 import { useGetMe } from "@/api/hooks/profile.hook";
+import { useSearch } from "@/context/search.context";
 
 export const Header: FC = () => {
   const { userInfo } = useGetMe();
   const unreadCount = userInfo?.unreadNotifications ?? 0;
 
+  const { pathname } = useLocation();
+  const isHome = pathname === "/";
+
+  const { searchText, setSearchText, isSearchOpen, openSearch, closeSearch } =
+    useSearch();
+
+  const debouncedSetSearch = useCallback(
+    debounce((value: string) => setSearchText(value), 400),
+    []
+  );
+
+  const handleClose = () => {
+    debouncedSetSearch.cancel();
+    closeSearch();
+  };
+
+  // Shared style for the circular iOS-style action controls.
+  const control =
+    "grid h-9 w-9 place-items-center rounded-full bg-gray-500/10 text-gray-700 transition-all duration-200 hover:bg-gray-500/[0.16] active:scale-90";
+
   return (
-    <header className="fixed top-0 left-0 right-0 bg-white shadow-sm z-10">
-      <div className="max-w-lg mx-auto px-4">
-        <div className="flex justify-between items-center py-4">
-          <Link
-            to="/"
-            className="font-eugusto text-2xl text-[var(--color-primary)] tracking-wide"
-          >
-            hoopla
-          </Link>
-          <Link
-            to="/notifications"
-            className="relative p-2 rounded-full hover:bg-gray-100 transition-colors"
-          >
-            <Bell size={22} className="text-gray-600" />
-            {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold leading-none px-1">
-                {unreadCount > 99 ? "99+" : unreadCount}
-              </span>
-            )}
-          </Link>
+    // Floating glass pill mirroring the bottom nav. Outer is click-through in
+    // its margins so taps around the pill reach the content beneath.
+    <header className="pointer-events-none sticky top-0 z-30 px-3 pb-2 pt-2">
+      <div className="pointer-events-auto mx-auto max-w-lg">
+        <div className="flex min-h-[40px] items-center justify-between rounded-[26px] bg-white/80 px-5 py-2.5 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.3)] ring-1 ring-black/[0.06] backdrop-blur-2xl">
+          {isSearchOpen ? (
+            // Full-header search overlay: takes over the logo + icons.
+            <div className="flex w-full items-center gap-2.5 duration-200 animate-in fade-in slide-in-from-right-4">
+              <Search size={20} className="shrink-0 text-gray-500" />
+              <input
+                autoFocus
+                defaultValue={searchText}
+                onChange={(e) => debouncedSetSearch(e.target.value)}
+                placeholder="Search cafes..."
+                className="flex-1 bg-transparent text-base text-gray-900 outline-none placeholder:text-gray-400"
+              />
+              <button onClick={handleClose} aria-label="Close search" className={control}>
+                <X size={18} />
+              </button>
+            </div>
+          ) : (
+            <>
+              <Link
+                to="/"
+                className="font-eugusto text-2xl tracking-wide text-[var(--color-primary)]"
+              >
+                hoopla
+              </Link>
+              <div className="flex items-center gap-2">
+                {isHome && (
+                  <button onClick={openSearch} aria-label="Search cafes" className={control}>
+                    <Search size={19} />
+                  </button>
+                )}
+                <Link
+                  to="/notifications"
+                  aria-label="Notifications"
+                  className={`relative ${control}`}
+                >
+                  <Bell size={19} />
+                  {unreadCount > 0 && (
+                    <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                </Link>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </header>

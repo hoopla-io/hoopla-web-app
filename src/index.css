@@ -67,3 +67,15 @@
     font-family: system-ui, -apple-system, sans-serif;
   }
 }
+
+@layer utilities {
+  /* Hide the native scrollbar on horizontal sliders (stories, categories,
+     menu tabs) while keeping swipe/scroll. */
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+}

@@ -2,64 +2,65 @@ import { cn } from "@/helpers/utils";
 import { Home, MapPin, ReceiptText, User } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
+const NAV_ITEMS: {
+  to: string;
+  end?: boolean;
+  icon: typeof Home;
+  label: string;
+}[] = [
+  { to: "/", end: true, icon: Home, label: "Home" },
+  { to: "/map", icon: MapPin, label: "Map" },
+  { to: "/orders", icon: ReceiptText, label: "Orders" },
+  { to: "/profile", icon: User, label: "Profile" },
+];
+
 const BottomNav = () => {
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-10">
-      <nav className="max-w-lg mx-auto px-4 py-2">
-        <div className="flex items-center justify-around">
-          <NavLink
-            to="/"
-            end
-            className={({ isActive }) =>
-              cn(
-                "flex flex-col items-center p-2 text-gray-600 transition-colors",
-                isActive && "text-[var(--color-primary)]"
-              )
-            }
-          >
-            <Home size={20} />
-            <span className="text-xs mt-1">Home</span>
-          </NavLink>
-
-          <NavLink
-            to="/map"
-            className={({ isActive }) =>
-              cn(
-                "flex flex-col items-center p-2 text-gray-600 transition-colors",
-                isActive && "text-[var(--color-primary)]"
-              )
-            }
-          >
-            <MapPin size={20} />
-            <span className="text-xs mt-1">Map</span>
-          </NavLink>
-
-          <NavLink
-            to="/orders"
-            className={({ isActive }) =>
-              cn(
-                "flex flex-col items-center p-2 text-gray-600 transition-colors",
-                isActive && "text-[var(--color-primary)]"
-              )
-            }
-          >
-            <ReceiptText size={20} />
-            <span className="text-xs mt-1">Orders</span>
-          </NavLink>
-
-          <NavLink
-            to="/profile"
-            className={({ isActive }) =>
-              cn(
-                "flex flex-col items-center p-2 text-gray-600 transition-colors",
-                isActive && "text-[var(--color-primary)]"
-              )
-            }
-          >
-            <User size={20} />
-            <span className="text-xs mt-1">Profile</span>
-          </NavLink>
-        </div>
+    // Outer layer is click-through in its margins so the floating bar doesn't
+    // block taps around it; the safe-area inset clears the iOS home indicator.
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-4 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+0.625rem)]">
+      <nav className="pointer-events-auto mx-auto max-w-md">
+        <ul className="flex items-stretch justify-around gap-1 rounded-[28px] bg-white/80 px-2 py-1.5 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.35)] ring-1 ring-black/[0.06] backdrop-blur-2xl">
+          {NAV_ITEMS.map(({ to, end, icon: Icon, label }) => (
+            <li key={to} className="flex-1">
+              <NavLink to={to} end={end} aria-label={label}>
+                {({ isActive }) => (
+                  <div className="flex flex-col items-center gap-1 py-1 transition-transform duration-200 active:scale-90">
+                    {/* Soft tinted circle behind the active icon (works with
+                        outline icons; lucide doesn't ship filled variants). */}
+                    <span
+                      className={cn(
+                        "flex h-9 w-9 items-center justify-center rounded-full transition-colors duration-200",
+                        isActive ? "bg-[var(--color-primary)]/12" : "bg-transparent"
+                      )}
+                    >
+                      <Icon
+                        size={22}
+                        strokeWidth={isActive ? 2.4 : 2}
+                        className={cn(
+                          "transition-colors duration-200",
+                          isActive
+                            ? "text-[var(--color-primary)]"
+                            : "text-gray-600"
+                        )}
+                      />
+                    </span>
+                    <span
+                      className={cn(
+                        "text-[10px] font-semibold leading-none tracking-tight transition-colors duration-200",
+                        isActive
+                          ? "text-[var(--color-primary)]"
+                          : "text-gray-600"
+                      )}
+                    >
+                      {label}
+                    </span>
+                  </div>
+                )}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
       </nav>
     </div>
   );

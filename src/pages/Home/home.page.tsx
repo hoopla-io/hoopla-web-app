@@ -1,7 +1,6 @@
-import { FC, useCallback, useEffect, useRef, useState } from "react";
-import { Search, X, Loader2, Coffee, LocateFixed } from "lucide-react";
+import { FC, useEffect, useRef, useState } from "react";
+import { Loader2, Coffee, LocateFixed } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import debounce from "lodash/debounce";
 
 import { useShops } from "@/api/hooks/shops.hook";
 import { useCategories } from "@/api/hooks/categories.hook";
@@ -12,24 +11,23 @@ import { CategoryChips } from "@/components/func/CategoryChips";
 import { BannerCarousel } from "@/components/func/BannerCarousel";
 import { StoryCircles } from "@/components/func/StoryCircles";
 import { StoryViewer } from "@/components/func/StoryViewer";
-import { Input } from "@/components/ui/input";
 import { Page } from "@/components/Page";
 import { LoadingScreen } from "@/components/func/Loading";
 import { useUserLocation } from "@/hooks/useUserLocation";
+import { useSearch } from "@/context/search.context";
 import type { Banner } from "@/api/domains/banners";
 
 export const HomePage: FC = () => {
-  const [searchText, setSearchText] = useState("");
-  const [isSearchActive, setIsSearchActive] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [storyViewerIndex, setStoryViewerIndex] = useState<number | null>(null);
   const navigate = useNavigate();
+  // Search is driven from the header overlay (see Header.tsx / SearchContext).
+  const { searchText, isSearchOpen } = useSearch();
   const { location: userLocation, refresh: refreshLocation, refreshing: isRefreshingLocation } = useUserLocation();
   const { categories, isLoading: categoriesLoading } = useCategories();
   const { banners, isLoading: bannersLoading } = useMainBanners();
   const { stories, isLoading: storiesLoading } = useStoryList();
   const observerRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const { shops, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useShops({
@@ -38,13 +36,6 @@ export const HomePage: FC = () => {
       name: searchText,
       categoryId: selectedCategoryId ?? undefined,
     });
-
-  const debouncedSearch = useCallback(
-    debounce((value: string) => {
-      setSearchText(value);
-    }, 400),
-    []
-  );
 
   const handleBannerClick = (banner: Banner) => {
     switch (banner.linkType) {
@@ -55,15 +46,6 @@ export const HomePage: FC = () => {
         navigate(`/partners/${banner.linkValue}`);
         break;
     }
-  };
-
-  const handleClear = () => {
-    if (searchInputRef.current) {
-      searchInputRef.current.value = "";
-      searchInputRef.current.blur();
-    }
-    setSearchText("");
-    setIsSearchActive(false);
   };
 
   useEffect(() => {
@@ -93,38 +75,8 @@ export const HomePage: FC = () => {
 
   return (
     <Page>
-      <div className="max-w-lg mx-auto px-4 pt-6 pb-6">
-        {/* Search */}
-        <div className="sticky top-[72px] z-[5] bg-[#f5f5f5] pb-3 pt-1">
-          <div className="relative">
-            <Search
-              size={18}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
-            />
-            <Input
-              ref={searchInputRef}
-              onChange={(e) => debouncedSearch(e.target.value)}
-              onFocus={() => setIsSearchActive(true)}
-              onBlur={() => {
-                if (!searchInputRef.current?.value) {
-                  setIsSearchActive(false);
-                }
-              }}
-              placeholder="Search cafes..."
-              className="h-12 pl-10 pr-10 rounded-xl bg-white border-none shadow-sm text-base"
-            />
-            {searchText && (
-              <button
-                onClick={handleClear}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <X size={18} />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {!isSearchActive && (
+      <div className="max-w-lg mx-auto px-4 pt-4 pb-6">
+        {!isSearchOpen && (
           <>
             {/* Stories */}
             <StoryCircles

@@ -46,10 +46,10 @@ export const ShopStatusBadge: FC<Props> = ({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] backdrop-blur-md shadow-sm ring-1",
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] backdrop-blur-lg shadow-sm ring-1",
         isOpen
-          ? "bg-emerald-50/90 text-emerald-700 ring-emerald-600/15"
-          : "bg-white/85 text-gray-500 ring-black/5",
+          ? "bg-emerald-50/55 text-emerald-700 ring-white/50"
+          : "bg-white/50 text-gray-700 ring-white/50",
         className
       )}
     >
