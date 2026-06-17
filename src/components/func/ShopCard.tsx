@@ -1,7 +1,8 @@
-import { MapPin } from "lucide-react";
-import { Link } from "react-router-dom";
+import { MapPin, ArrowUpRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import type { Shop } from "@/api/domains/shops";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { ShopStatusBadge } from "@/components/func/ShopStatusBadge";
 
 function formatDistance(distance: number): string {
   if (distance >= 1) return `${distance.toFixed(1)} km`;
@@ -13,37 +14,75 @@ interface ShopCardProps {
 }
 
 const ShopCard = ({ shop }: ShopCardProps) => {
+  const navigate = useNavigate();
+
   return (
     <Link to={`/shops/${shop.shopId}`} className="block">
-      <div className="bg-white rounded-2xl shadow-sm overflow-hidden active:scale-[0.98] transition-transform">
-        <AspectRatio ratio={480 / 320}>
-          <img
-            src={shop.pictureUrl}
-            alt={shop.name}
-            className="w-full h-full object-cover"
-          />
-        </AspectRatio>
-        <div className="flex items-center gap-3 p-3">
-          <Link
-            to={`/partners/${shop.partnerId}`}
-            onClick={(e) => e.stopPropagation()}
-            className="flex-shrink-0"
-          >
+      <article className="group relative overflow-hidden rounded-[28px] bg-white ring-1 ring-black/[0.04] shadow-[0_12px_30px_-16px_rgba(141,11,65,0.4)] transition-transform duration-300 active:scale-[0.98]">
+        {/* Photo */}
+        <div className="relative">
+          <AspectRatio ratio={3 / 2}>
             <img
               src={shop.pictureUrl}
               alt={shop.name}
-              className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100"
+              className="h-full w-full object-cover transition-transform duration-700 ease-out group-active:scale-[1.04]"
             />
-          </Link>
-          <div className="min-w-0">
-            <h3 className="font-semibold text-base text-gray-900 truncate">{shop.name}</h3>
-            <div className="flex items-center gap-1 mt-0.5 text-sm text-gray-500">
-              <MapPin size={14} />
-              <span>{formatDistance(shop.distance)}</span>
+          </AspectRatio>
+
+          {/* Scrim for legibility of the overlaid chips */}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/15" />
+
+          {/* Distance chip */}
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/80 px-2.5 py-1 text-xs font-medium text-gray-800 shadow-sm ring-1 ring-white/60 backdrop-blur-md">
+            <MapPin size={12} className="text-[var(--color-primary)]" />
+            {formatDistance(shop.distance)}
+          </span>
+
+          {/* Open / Closed status */}
+          <ShopStatusBadge
+            acceptingOrders={shop.acceptingOrders}
+            pausedUntil={shop.pausedUntil}
+            className="absolute right-3 top-3"
+          />
+        </div>
+
+        {/* Footer */}
+        <div className="px-4 pb-4 pt-6">
+          <div className="flex items-end gap-3">
+            {/* Partner avatar, lifted to overlap the photo edge.
+                A button (not a Link) to avoid nesting <a> inside the card <a>. */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                navigate(`/partners/${shop.partnerId}`);
+              }}
+              className="-mt-10 shrink-0"
+            >
+              <img
+                src={shop.pictureUrl}
+                alt={shop.name}
+                className="h-14 w-14 rounded-2xl object-cover shadow-md ring-4 ring-white"
+              />
+            </button>
+
+            <div className="min-w-0 flex-1 pb-0.5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--color-primary)]/70">
+                Cafe
+              </p>
+              <h3 className="truncate text-[17px] font-semibold leading-snug tracking-tight text-gray-900">
+                {shop.name}
+              </h3>
+            </div>
+
+            {/* Order CTA */}
+            <div className="mb-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--color-primary)] text-white shadow-[0_6px_16px_-4px_rgba(141,11,65,0.65)] transition-transform duration-300 group-active:scale-90">
+              <ArrowUpRight size={18} />
             </div>
           </div>
         </div>
-      </div>
+      </article>
     </Link>
   );
 };

@@ -207,7 +207,7 @@ export const OrdersPage: FC = () => {
       </div>
 
       <AlertDialog open={!!cancelTarget} onOpenChange={(open) => !open && setCancelTarget(null)}>
-        <AlertDialogContent className="rounded-2xl max-w-sm mx-4">
+        <AlertDialogContent className="rounded-2xl max-w-sm">
           <AlertDialogHeader>
             <AlertDialogTitle>Cancel this order?</AlertDialogTitle>
             <AlertDialogDescription>

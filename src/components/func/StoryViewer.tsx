@@ -245,8 +245,10 @@ export const StoryViewer: FC<Props> = ({ stories, initialIndex, onClose }) => {
             className="w-full h-full object-contain"
           />
 
-          {/* Bottom content overlay */}
-          <div className="absolute bottom-0 left-0 right-0 z-[105]">
+          {/* Bottom content overlay — sits above the tap zones, but is
+              pointer-events-none so taps fall through to the navigation
+              zones; only the button (pointer-events-auto) captures clicks. */}
+          <div className="absolute bottom-0 left-0 right-0 z-[120] pointer-events-none">
             <div className="bg-gradient-to-t from-black/70 via-black/30 to-transparent pt-20 pb-6 px-4">
               {currentItem.title && (
                 <h3 className="text-white font-semibold text-lg mb-1 drop-shadow-md">
@@ -264,7 +266,7 @@ export const StoryViewer: FC<Props> = ({ stories, initialIndex, onClose }) => {
                     e.stopPropagation();
                     handleItemLink(currentItem);
                   }}
-                  className="flex items-center gap-1.5 mx-auto px-5 py-2.5 rounded-full bg-white text-gray-900 text-sm font-medium shadow-lg"
+                  className="flex items-center gap-1.5 mx-auto px-5 py-2.5 rounded-full bg-white text-gray-900 text-sm font-medium shadow-lg pointer-events-auto"
                 >
                   <ChevronUp size={16} />
                   {getLinkLabel(currentItem.linkType)}

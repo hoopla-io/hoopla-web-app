@@ -21,17 +21,20 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Page } from "@/components/Page";
 import { LoadingScreen } from "@/components/func/Loading";
 import { BannerCarousel } from "@/components/func/BannerCarousel";
-import { formatBalance, cn } from "@/helpers/utils";
+import { ShopStatusBadge } from "@/components/func/ShopStatusBadge";
+import {
+  formatBalance,
+  cn,
+  getShopOpenStatus,
+  type WorkingHour,
+} from "@/helpers/utils";
 import type { SelectedModifier } from "@/api/domains/orders";
 import type { Banner } from "@/api/domains/banners";
 
-function formatWorkingHours(
-  hours: { weekDay: string; openAt: string; closeAt: string }[]
-): string {
-  const today = new Date()
-    .toLocaleString("en-US", { weekday: "long" })
-    .toLowerCase();
-  const todayHours = hours.find((h) => h.weekDay === today);
+function formatWorkingHours(hours: WorkingHour[]): string {
+  // Reuse the shared helper so the displayed hours and the Open/Closed badge
+  // always agree (same case-insensitive weekday lookup).
+  const { todayHours } = getShopOpenStatus(hours);
   if (!todayHours) return "Closed today";
   return `${todayHours.openAt} - ${todayHours.closeAt}`;
 }
@@ -43,7 +46,7 @@ function formatPrice(price: number): string {
 export const ShopDetailPage: FC = () => {
   const { shopId } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, openLoginModal } = useAuth();
   const validateOrder = useValidateOrder();
   const [validatingDrinkId, setValidatingDrinkId] = useState<number | null>(null);
 
@@ -76,10 +79,16 @@ export const ShopDetailPage: FC = () => {
 
   const handleDrinkClick = (drinkId: number) => {
     if (!isAuthenticated) {
-      navigate("/login");
+      // Gate behind the sign-in modal; resume the order on success so the
+      // user stays on this page instead of being redirected away.
+      openLoginModal(() => proceedToOrder(drinkId));
       return;
     }
 
+    proceedToOrder(drinkId);
+  };
+
+  const proceedToOrder = (drinkId: number) => {
     const numericShopId = Number(shopId);
     setValidatingDrinkId(drinkId);
 
@@ -212,7 +221,10 @@ export const ShopDetailPage: FC = () => {
                   <Clock size={18} className="text-[var(--color-primary)]" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Today's hours</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-gray-500">Today's hours</p>
+                    <ShopStatusBadge workingHours={shopDetail.workingHours} />
+                  </div>
                   <p className="text-sm font-medium text-gray-900">
                     {formatWorkingHours(shopDetail.workingHours)}
                   </p>

@@ -31,11 +31,14 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue = [];
 };
 
+export const AUTH_EXPIRED_EVENT = "auth:expired";
+
 const redirectToLogin = () => {
   localStorage.removeItem("access_token");
   localStorage.removeItem("refresh_token");
-  const currentPath = window.location.hash.replace("#", "") || "/";
-  window.location.hash = `/login?from=${encodeURIComponent(currentPath)}`;
+  // Let the app prompt sign-in via the global drawer instead of navigating
+  // to a separate page. AuthProvider listens for this event.
+  window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
 };
 
 export const applyExtractorResponseInterceptor = (
