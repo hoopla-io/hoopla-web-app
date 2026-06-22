@@ -92,7 +92,7 @@ export const OrderReceiptPage: FC = () => {
 
   return (
     <Page>
-      <div className="max-w-lg mx-auto pb-32">
+      <div className="max-w-lg mx-auto pb-40">
         {/* Header */}
         <div className="flex items-center gap-3 p-4">
           <button
@@ -262,17 +262,20 @@ export const OrderReceiptPage: FC = () => {
         </div>
       </div>
 
-      {/* Sticky Bottom Button */}
-      <div className="fixed bottom-[60px] left-0 right-0 bg-white border-t border-gray-100 p-4 z-20">
-        <div className="max-w-lg mx-auto">
+      {/* Floating confirm bar — floats just above the bottom-nav pill and
+          mirrors its rounded floating language, instead of the old full-width
+          opaque bar the new glass nav overlapped. Outer is click-through in its
+          margins so taps around the button still reach the content/nav. */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+5.75rem)] z-30 px-4">
+        <div className="pointer-events-auto mx-auto max-w-lg">
           <button
             onClick={handleConfirm}
             disabled={createOrder.isPending}
             className={cn(
-              "w-full py-3.5 rounded-xl text-white font-semibold text-base transition-colors flex items-center justify-center gap-2",
+              "flex w-full items-center justify-center gap-2 rounded-full py-4 text-base font-semibold text-white transition-all active:scale-[0.99]",
               createOrder.isPending
-                ? "bg-gray-300 cursor-not-allowed"
-                : "bg-[var(--color-primary)] active:bg-[var(--color-primary-dark)]"
+                ? "cursor-not-allowed bg-gray-300"
+                : "bg-[var(--color-primary)] shadow-[0_12px_30px_-8px_rgba(141,11,65,0.55)] active:bg-[var(--color-primary-dark)]"
             )}
           >
             {createOrder.isPending ? (

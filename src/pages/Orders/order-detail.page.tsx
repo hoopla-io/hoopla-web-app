@@ -1,7 +1,6 @@
 import { FC, useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
-  ArrowLeft,
   CheckCircle,
   XCircle,
   Clock,
@@ -11,13 +10,14 @@ import {
   Receipt,
   Star,
   Loader2,
+  Maximize2,
+  X,
 } from "lucide-react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 
 import { useOrderDetail, useCancelOrder } from "@/api/hooks/orders.hook";
 import { OrdersApi } from "@/api/domains/orders";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -69,7 +69,6 @@ const statusConfig: Record<string, { label: string; icon: typeof CheckCircle; co
 
 export const OrderDetailPage: FC = () => {
   const { orderId } = useParams();
-  const navigate = useNavigate();
 
   const { order, isLoading } = useOrderDetail(Number(orderId));
   const cancelOrder = useCancelOrder();
@@ -80,6 +79,22 @@ export const OrderDetailPage: FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [existingFeedback, setExistingFeedback] = useState<{ rating: number; comment: string } | null>(null);
   const [feedbackLoaded, setFeedbackLoaded] = useState(false);
+  const [imageOpen, setImageOpen] = useState(false);
+
+  // Lightbox: close on Escape and lock background scroll while open.
+  useEffect(() => {
+    if (!imageOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setImageOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [imageOpen]);
 
   useEffect(() => {
     if (!orderId || !order || order.orderStatus !== "completed") return;
@@ -126,44 +141,45 @@ export const OrderDetailPage: FC = () => {
 
   return (
     <Page>
-      <div className="max-w-lg mx-auto pb-28">
-        {/* Hero image */}
-        <div className="relative">
-          <AspectRatio ratio={480 / 320}>
-            <img
-              src={order.drinkImageUrl}
-              alt={order.drinkName}
-              className="w-full h-full object-cover"
-            />
-          </AspectRatio>
-          <button
-            onClick={() => navigate(-1)}
-            className="absolute top-4 left-4 p-2 rounded-full bg-white/80 backdrop-blur-sm shadow-sm hover:bg-white transition-colors"
-          >
-            <ArrowLeft size={20} className="text-gray-700" />
-          </button>
-          <div
-            className={`absolute top-4 right-4 inline-flex items-center gap-1 text-sm font-medium px-3 py-1.5 rounded-full ${status.bg} ${status.color}`}
-          >
-            <StatusIcon size={16} />
-            {status.label}
-          </div>
-        </div>
+      <div className="max-w-lg mx-auto px-2 pt-4 pb-28">
+        <div className="space-y-4">
+          {/* Order card — image header, cafe, items and payment all combined
+              into a single card, separated by subtle internal dividers. */}
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            {/* Header — tappable thumbnail beside the title, date and status */}
+            <div className="flex items-center gap-4 p-4">
+              <button
+                onClick={() => setImageOpen(true)}
+                aria-label="View image"
+                className="group relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-2xl bg-gray-100 ring-1 ring-black/[0.04] transition-transform active:scale-[0.97]"
+              >
+                <img
+                  src={order.drinkImageUrl}
+                  alt={order.drinkName}
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <span className="absolute bottom-1.5 right-1.5 grid h-6 w-6 place-items-center rounded-lg bg-black/45 text-white backdrop-blur-sm">
+                  <Maximize2 size={13} />
+                </span>
+              </button>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl font-bold leading-tight text-gray-900 line-clamp-2">
+                  {order.drinkName}
+                </h1>
+                <p className="mt-1 text-sm text-gray-500">
+                  {format(new Date(order.purchasedAt), "MMMM d, yyyy · HH:mm")}
+                </p>
+                <span
+                  className={`mt-2.5 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${status.bg} ${status.color}`}
+                >
+                  <StatusIcon size={13} />
+                  {status.label}
+                </span>
+              </div>
+            </div>
 
-        <div className="pt-4 px-2 space-y-4">
-          {/* Title & date */}
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {order.drinkName}
-            </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              {format(new Date(order.purchasedAt), "MMMM d, yyyy · HH:mm")}
-            </p>
-          </div>
-
-          {/* Shop info */}
-          <div className="bg-white rounded-2xl shadow-sm p-4">
-            <div className="flex items-center gap-3">
+            {/* Cafe */}
+            <div className="flex items-center gap-3 p-4 border-t border-gray-100">
               <div className="w-9 h-9 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center flex-shrink-0">
                 <Store size={18} className="text-[var(--color-primary)]" />
               </div>
@@ -174,73 +190,73 @@ export const OrderDetailPage: FC = () => {
                 </p>
               </div>
             </div>
-          </div>
 
-          {/* Order items */}
-          {order.items && order.items.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-sm p-4">
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-              Items
-            </h2>
-            <div className="space-y-3">
-              {order.items.map((item, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center">
-                      <Coffee size={16} className="text-gray-400" />
+            {/* Items */}
+            {order.items && order.items.length > 0 && (
+              <div className="p-4 border-t border-gray-100">
+                <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                  Items
+                </h2>
+                <div className="space-y-3">
+                  {order.items.map((item, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center">
+                          <Coffee size={16} className="text-gray-400" />
+                        </div>
+                        <span className="text-sm text-gray-900">{item.name}</span>
+                      </div>
+                      <span className="text-sm font-medium text-gray-900">
+                        {formatBalance(item.price)} UZS
+                      </span>
                     </div>
-                    <span className="text-sm text-gray-900">{item.name}</span>
-                  </div>
-                  <span className="text-sm font-medium text-gray-900">
-                    {formatBalance(item.price)} UZS
-                  </span>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-          )}
-
-          {/* Payment summary */}
-          <div className="bg-white rounded-2xl shadow-sm p-4">
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-              Payment
-            </h2>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Total</span>
-                <span className="font-medium text-gray-900">
-                  {formatBalance(order.productPrice)} UZS
-                </span>
               </div>
-              {order.cashback_used > 0 && (
+            )}
+
+            {/* Payment */}
+            <div className="p-4 border-t border-gray-100">
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                Payment
+              </h2>
+              <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Cashback used</span>
-                  <span className="font-medium text-green-600">
-                    -{formatBalance(order.cashback_used)} UZS
+                  <span className="text-gray-500">Total</span>
+                  <span className="font-medium text-gray-900">
+                    {formatBalance(order.productPrice)} UZS
                   </span>
                 </div>
-              )}
-              {order.cashback_earned > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Cashback earned</span>
-                  <span className="font-medium text-[var(--color-primary)]">
-                    +{formatBalance(order.cashback_earned)} UZS
-                  </span>
-                </div>
-              )}
-              {order.fiscalLink && (
-                <div className="pt-2 border-t">
-                  <a
-                    href={order.fiscalLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-primary)] hover:underline"
-                  >
-                    <Receipt size={14} />
-                    View fiscal receipt
-                  </a>
-                </div>
-              )}
+                {order.cashback_used > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Cashback used</span>
+                    <span className="font-medium text-green-600">
+                      -{formatBalance(order.cashback_used)} UZS
+                    </span>
+                  </div>
+                )}
+                {order.cashback_earned > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Cashback earned</span>
+                    <span className="font-medium text-[var(--color-primary)]">
+                      +{formatBalance(order.cashback_earned)} UZS
+                    </span>
+                  </div>
+                )}
+                {order.fiscalLink && (
+                  <div className="pt-2 border-t">
+                    <a
+                      href={order.fiscalLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-primary)] hover:underline"
+                    >
+                      <Receipt size={14} />
+                      View fiscal receipt
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -358,6 +374,30 @@ export const OrderDetailPage: FC = () => {
           )}
         </div>
       </div>
+
+      {/* Fullscreen image lightbox */}
+      {imageOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setImageOpen(false)}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-6 backdrop-blur-sm duration-200 animate-in fade-in"
+        >
+          <button
+            onClick={() => setImageOpen(false)}
+            aria-label="Close image"
+            className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white backdrop-blur-md transition hover:bg-white/20 active:scale-90"
+          >
+            <X size={22} />
+          </button>
+          <img
+            src={order.drinkImageUrl}
+            alt={order.drinkName}
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[85vh] max-w-full rounded-2xl object-contain shadow-2xl duration-200 animate-in zoom-in-95"
+          />
+        </div>
+      )}
     </Page>
   );
 };

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -61,6 +62,31 @@ export function useShops(params: Params) {
     hasNextPage,
     isFetchingNextPage,
   };
+}
+
+/**
+ * Returns EVERY nearby shop in one shot (no pagination) — used by the map, which
+ * must plot all pins at once. `useShops` paginates for the infinite-scroll list,
+ * so on the map it would only ever surface the first page of markers.
+ */
+export function useAllShops(params: Params) {
+  const { name = "", latitude = 41.2995, longitude = 69.2401, categoryId } = params;
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, isError } = useQuery<Shop[]>(
+    {
+      queryKey: ["shops-all", latitude, longitude, name, categoryId],
+      queryFn: () =>
+        ShopsApi.getShops(Number(latitude), Number(longitude), name, categoryId),
+      staleTime: 300000,
+    },
+    queryClient
+  );
+
+  // Stable reference so consumers' effects don't re-run on every render.
+  const shops = useMemo(() => data ?? [], [data]);
+
+  return { shops, isLoading, isError };
 }
 
 export type { Shop };
