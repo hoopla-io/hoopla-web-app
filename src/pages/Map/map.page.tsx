@@ -2,7 +2,7 @@ import { FC, useEffect, useRef, useState } from "react";
 import { MapPin, X, ChevronRight, LocateFixed } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-import { useShops, type Shop } from "@/api/hooks/shops.hook";
+import { useAllShops, type Shop } from "@/api/hooks/shops.hook";
 import { formatDistance } from "@/components/func/ShopCard";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Page } from "@/components/Page";
@@ -44,18 +44,24 @@ function createPinSvg(color: string): string {
 
 export const MapPage: FC = () => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  // `map` (state) drives the marker effect; `mapInstanceRef` mirrors it so the
+  // cleanup can destroy the instance directly — a setState updater isn't a
+  // reliable place for that side effect (React may skip it on unmount).
   const mapInstanceRef = useRef<any>(null);
+  const [map, setMap] = useState<any>(null);
   const [selectedShop, setSelectedShop] = useState<Shop | null>(null);
   const { location: userLocation, refresh: refreshLocation, refreshing: isRefreshingLocation } = useUserLocation();
-  const [mapReady, setMapReady] = useState(false);
   const navigate = useNavigate();
 
-  const { shops, isLoading } = useShops({
+  const { shops, isLoading } = useAllShops({
     latitude: userLocation?.lat,
     longitude: userLocation?.lng,
   });
 
-  // Initialize map
+  // Initialize the map. The instance lives in state (not a ref) so the marker
+  // effect below re-runs whenever the map is rebuilt — fixing the race where
+  // pins were added to a map instance that was about to be destroyed, leaving
+  // the freshly-built map empty.
   useEffect(() => {
     if (!userLocation || !mapContainerRef.current) return;
 
@@ -64,30 +70,34 @@ export const MapPage: FC = () => {
     loadYandexMaps().then(() => {
       if (cancelled || !mapContainerRef.current) return;
 
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.destroy();
-      }
-
-      const map = new window.ymaps.Map(mapContainerRef.current, {
+      const instance = new window.ymaps.Map(mapContainerRef.current, {
         center: [userLocation.lat, userLocation.lng],
         zoom: 13,
         controls: ["zoomControl", "geolocationControl"],
       });
 
-      mapInstanceRef.current = map;
-      setMapReady(true);
+      // Location changed again before the async load finished — discard.
+      if (cancelled) {
+        instance.destroy();
+        return;
+      }
+
+      mapInstanceRef.current = instance;
+      setMap(instance);
     });
 
     return () => {
       cancelled = true;
+      mapInstanceRef.current?.destroy();
+      mapInstanceRef.current = null;
+      setMap(null);
     };
   }, [userLocation]);
 
-  // Add placemarks when shops load
+  // (Re)draw every shop marker whenever the map is rebuilt or the shops change.
   useEffect(() => {
-    if (!mapReady || !mapInstanceRef.current || shops.length === 0) return;
+    if (!map || shops.length === 0) return;
 
-    const map = mapInstanceRef.current;
     map.geoObjects.removeAll();
 
     const pinIcon = createPinSvg(BRAND_COLOR);
@@ -115,7 +125,7 @@ export const MapPage: FC = () => {
 
       map.geoObjects.add(placemark);
     });
-  }, [mapReady, shops]);
+  }, [map, shops]);
 
   if (!userLocation) {
     return (

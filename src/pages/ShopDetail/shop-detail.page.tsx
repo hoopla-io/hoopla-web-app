@@ -9,6 +9,7 @@ import {
   ArrowLeft,
   Coffee,
   ChevronRight,
+  ChevronDown,
   Loader2,
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -161,8 +162,18 @@ export const ShopDetailPage: FC = () => {
     };
   }, [drinkCategories]);
 
+  const [infoExpanded, setInfoExpanded] = useState(false);
+
   const [activeCategory, setActiveCategory] = useState<string>("");
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const tabScrollRef = useRef<HTMLDivElement>(null);
+  // While a tab tap is smooth-scrolling we suppress the scroll-spy so the active
+  // pill doesn't flicker through the intermediate sections it passes over.
+  const isClickScrollingRef = useRef(false);
+  const clickScrollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Live intersection state per category, keyed by name (see scroll-spy below).
+  const visibilityRef = useRef<Record<string, boolean>>({});
 
   useEffect(() => {
     if (categories.length > 0 && !activeCategory) {
@@ -170,8 +181,67 @@ export const ShopDetailPage: FC = () => {
     }
   }, [categories, activeCategory]);
 
+  // Scroll-spy: highlight the tab for whichever section sits in the band just
+  // below the sticky header + category bar as the user scrolls the menu.
+  useEffect(() => {
+    if (!hasRealCategories || categories.length === 0) return;
+
+    const sections = categories
+      .map((c) => sectionRefs.current[c])
+      .filter((el): el is HTMLDivElement => el !== null);
+    if (sections.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (isClickScrollingRef.current) return;
+        for (const entry of entries) {
+          const cat = entry.target.getAttribute("data-category");
+          if (cat) visibilityRef.current[cat] = entry.isIntersecting;
+        }
+        // Topmost (in document order) section currently inside the band wins.
+        const firstVisible = categories.find((c) => visibilityRef.current[c]);
+        if (firstVisible) setActiveCategory(firstVisible);
+      },
+      // Active band = from 132px (sticky header + tab bar) down to 45% of the
+      // viewport, so a section activates as its heading clears the sticky bar.
+      { rootMargin: "-132px 0px -55% 0px", threshold: 0 }
+    );
+
+    sections.forEach((s) => observer.observe(s));
+    return () => observer.disconnect();
+  }, [categories, hasRealCategories]);
+
+  // Keep the active pill in view by smoothly centering it within the tab strip.
+  // We scroll the strip directly (rather than scrollIntoView) so the page never
+  // moves vertically and the centering works inside the sticky bar.
+  useEffect(() => {
+    const container = tabScrollRef.current;
+    const btn = tabRefs.current[activeCategory];
+    if (!container || !btn) return;
+
+    const offset =
+      btn.offsetLeft - (container.clientWidth - btn.clientWidth) / 2;
+    const maxScroll = container.scrollWidth - container.clientWidth;
+    const left = Math.max(0, Math.min(offset, maxScroll));
+
+    container.scrollTo({ left, behavior: "smooth" });
+  }, [activeCategory]);
+
+  useEffect(() => {
+    return () => {
+      if (clickScrollTimeout.current) clearTimeout(clickScrollTimeout.current);
+    };
+  }, []);
+
   const handleTabClick = (cat: string) => {
     setActiveCategory(cat);
+    // Suppress scroll-spy until the programmatic smooth scroll settles.
+    isClickScrollingRef.current = true;
+    if (clickScrollTimeout.current) clearTimeout(clickScrollTimeout.current);
+    clickScrollTimeout.current = setTimeout(() => {
+      isClickScrollingRef.current = false;
+    }, 700);
+
     const el = sectionRefs.current[cat];
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -213,86 +283,142 @@ export const ShopDetailPage: FC = () => {
             {shopDetail.name}
           </h1>
 
-          {/* Info card */}
-          <div className="bg-white rounded-sm shadow-sm py-4 space-y-3">
-            {shopDetail.workingHours.length > 0 && (
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center flex-shrink-0">
-                  <Clock size={18} className="text-[var(--color-primary)]" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-xs text-gray-500">Today's hours</p>
-                    <ShopStatusBadge workingHours={shopDetail.workingHours} />
+          {/* Info card — collapsed by default; the hours row acts as the toggle
+              header and the contact details (map, phones, links) expand below. */}
+          {(() => {
+            const hasInfoDetails =
+              Boolean(shopDetail.location) ||
+              shopDetail.phoneNumbers.length > 0 ||
+              shopDetail.urls.length > 0;
+
+            return (
+              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => hasInfoDetails && setInfoExpanded((v) => !v)}
+                  aria-expanded={infoExpanded}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-4 text-left",
+                    !hasInfoDetails && "cursor-default"
+                  )}
+                >
+                  <div className="w-9 h-9 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center flex-shrink-0">
+                    <Clock size={18} className="text-[var(--color-primary)]" />
                   </div>
-                  <p className="text-sm font-medium text-gray-900">
-                    {formatWorkingHours(shopDetail.workingHours)}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {shopDetail.location && (
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center flex-shrink-0">
-                  <MapPin size={18} className="text-[var(--color-primary)]" />
-                </div>
-                <a
-                  href={`https://yandex.uz/maps/?ll=${shopDetail.location.lng},${shopDetail.location.lat}&z=16&mode=whatshere&whatshere[point]=${shopDetail.location.lng},${shopDetail.location.lat}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm font-medium text-[var(--color-primary)] hover:underline"
-                >
-                  Open in Yandex Maps
-                </a>
-              </div>
-            )}
-
-            {shopDetail.phoneNumbers.map((phone, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center flex-shrink-0">
-                  <Phone size={18} className="text-[var(--color-primary)]" />
-                </div>
-                <a
-                  href={`tel:+${phone.phoneNumber}`}
-                  className="text-sm font-medium text-gray-900"
-                >
-                  +{phone.phoneNumber}
-                </a>
-              </div>
-            ))}
-
-            {shopDetail.urls.length > 0 && (
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center flex-shrink-0">
-                  {shopDetail.urls[0].urlType === "instagram" ? (
-                    <Instagram
-                      size={18}
-                      className="text-[var(--color-primary)]"
-                    />
-                  ) : (
-                    <Globe
-                      size={18}
-                      className="text-[var(--color-primary)]"
+                  <div className="flex-1 min-w-0">
+                    {shopDetail.workingHours.length > 0 ? (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs text-gray-500">Today's hours</p>
+                          <ShopStatusBadge workingHours={shopDetail.workingHours} />
+                        </div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {formatWorkingHours(shopDetail.workingHours)}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-sm font-medium text-gray-900">
+                        Cafe details
+                      </p>
+                    )}
+                  </div>
+                  {hasInfoDetails && (
+                    <ChevronDown
+                      size={20}
+                      className={cn(
+                        "text-gray-400 flex-shrink-0 transition-transform duration-300",
+                        infoExpanded && "rotate-180"
+                      )}
                     />
                   )}
-                </div>
-                <div className="flex gap-3">
-                  {shopDetail.urls.map((url, i) => (
-                    <a
-                      key={i}
-                      href={url.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm font-medium text-[var(--color-primary)] hover:underline"
+                </button>
+
+                {/* Collapsible details. The grid-rows 0fr→1fr trick animates the
+                    height smoothly without measuring a fixed pixel value. While
+                    collapsed, `inert` + aria-hidden keep the hidden links out of
+                    the tab order and the accessibility tree. */}
+                {hasInfoDetails && (
+                  <div
+                    className={cn(
+                      "grid transition-all duration-300 ease-in-out",
+                      infoExpanded
+                        ? "grid-rows-[1fr] opacity-100"
+                        : "grid-rows-[0fr] opacity-0"
+                    )}
+                  >
+                    <div
+                      className="overflow-hidden"
+                      aria-hidden={!infoExpanded}
+                      {...(!infoExpanded ? ({ inert: "" } as Record<string, string>) : {})}
                     >
-                      {url.urlType === "instagram" ? "Instagram" : "Website"}
-                    </a>
-                  ))}
-                </div>
+                      <div className="px-4 pb-4 pt-3 space-y-3 border-t border-gray-100">
+                        {shopDetail.location && (
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center flex-shrink-0">
+                              <MapPin size={18} className="text-[var(--color-primary)]" />
+                            </div>
+                            <a
+                              href={`https://yandex.uz/maps/?ll=${shopDetail.location.lng},${shopDetail.location.lat}&z=16&mode=whatshere&whatshere[point]=${shopDetail.location.lng},${shopDetail.location.lat}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm font-medium text-[var(--color-primary)] hover:underline"
+                            >
+                              Open in Yandex Maps
+                            </a>
+                          </div>
+                        )}
+
+                        {shopDetail.phoneNumbers.map((phone, i) => (
+                          <div key={i} className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center flex-shrink-0">
+                              <Phone size={18} className="text-[var(--color-primary)]" />
+                            </div>
+                            <a
+                              href={`tel:+${phone.phoneNumber}`}
+                              className="text-sm font-medium text-gray-900"
+                            >
+                              +{phone.phoneNumber}
+                            </a>
+                          </div>
+                        ))}
+
+                        {shopDetail.urls.length > 0 && (
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center flex-shrink-0">
+                              {shopDetail.urls[0].urlType === "instagram" ? (
+                                <Instagram
+                                  size={18}
+                                  className="text-[var(--color-primary)]"
+                                />
+                              ) : (
+                                <Globe
+                                  size={18}
+                                  className="text-[var(--color-primary)]"
+                                />
+                              )}
+                            </div>
+                            <div className="flex gap-3">
+                              {shopDetail.urls.map((url, i) => (
+                                <a
+                                  key={i}
+                                  href={url.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sm font-medium text-[var(--color-primary)] hover:underline"
+                                >
+                                  {url.urlType === "instagram" ? "Instagram" : "Website"}
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            );
+          })()}
 
           {/* Gallery */}
           {shopDetail.pictures.length > 1 && (
@@ -327,10 +453,6 @@ export const ShopDetailPage: FC = () => {
           {/* Menu */}
           {(drinksLoading || allDrinks.length > 0) && (
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">
-                Menu
-              </h2>
-
               {drinksLoading ? (
                 <div className="flex items-center justify-center py-10">
                   <Loader2 size={24} className="animate-spin text-[var(--color-primary)]" />
@@ -338,24 +460,36 @@ export const ShopDetailPage: FC = () => {
               ) : (
                 <>
                   {hasRealCategories && (
-                    <div
-                      className="flex gap-2 overflow-x-auto pb-3 mb-1 scrollbar-hide sticky top-[70px] z-[5] bg-[#f5f5f5] pt-4 px-4 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)]"
-                    >
-                      {categories.map((cat) => (
-                        <button
-                          key={cat}
-                          data-tab={cat}
-                          onClick={() => handleTabClick(cat)}
-                          className={cn(
-                            "flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors",
-                            activeCategory === cat
-                              ? "bg-[var(--color-primary)] text-white"
-                              : "bg-white text-gray-600 shadow-sm hover:bg-gray-50"
-                          )}
-                        >
-                          {cat}
-                        </button>
-                      ))}
+                    // Floating glass pill row that docks just beneath the header,
+                    // mirroring its bg-white/80 + backdrop-blur language so the two
+                    // read as one cohesive cluster. -mx-2 cancels the parent px-2 so
+                    // the pill aligns to the same max-w-lg edges as the header; px-3
+                    // matches the header's side inset. Outer is click-through so taps
+                    // in the margins reach the content scrolling behind.
+                    <div className="pointer-events-none sticky top-[64px] z-20 -mx-2 px-3 pt-2 pb-2">
+                      <div
+                        ref={tabScrollRef}
+                        className="pointer-events-auto relative flex gap-2 overflow-x-auto scrollbar-hide rounded-[24px] bg-white/80 px-2 py-2 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.3)] ring-1 ring-black/[0.06] backdrop-blur-2xl"
+                      >
+                        {categories.map((cat) => (
+                          <button
+                            key={cat}
+                            data-tab={cat}
+                            ref={(el) => {
+                              tabRefs.current[cat] = el;
+                            }}
+                            onClick={() => handleTabClick(cat)}
+                            className={cn(
+                              "flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors",
+                              activeCategory === cat
+                                ? "bg-[var(--color-primary)] text-white"
+                                : "bg-gray-500/5 text-gray-600 hover:bg-gray-500/10"
+                            )}
+                          >
+                            {cat}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
 
@@ -368,7 +502,7 @@ export const ShopDetailPage: FC = () => {
                             sectionRefs.current[cat.name] = el;
                           }}
                           data-category={cat.name}
-                          className="scroll-mt-[120px]"
+                          className="scroll-mt-[132px]"
                         >
                           <h3 className="text-lg font-bold text-gray-900 mb-3">
                             {cat.name}
