@@ -181,6 +181,11 @@ export const OrdersPage: FC = () => {
                     <p className="text-xs text-gray-400 mt-0.5">
                       {format(new Date(order.purchasedAt), "MMM d, yyyy · HH:mm")}
                     </p>
+                    {order.cashback_earned > 0 && (
+                      <p className="text-xs font-medium text-[var(--color-primary)] mt-0.5">
+                        +{formatBalance(order.cashback_earned)} UZS cashback
+                      </p>
+                    )}
                   </div>
                   <div className="flex flex-col items-end gap-1 flex-shrink-0">
                     <span className="text-sm font-semibold text-gray-900">
