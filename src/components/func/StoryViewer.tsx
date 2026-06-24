@@ -191,7 +191,7 @@ export const StoryViewer: FC<Props> = ({ stories, initialIndex, onClose }) => {
     >
       {/* Progress bars */}
       {totalItems > 0 && (
-        <div className="absolute top-3 left-3 right-3 z-[110] flex gap-1">
+        <div className="absolute top-[calc(0.75rem+var(--tg-top-inset,0px))] left-3 right-3 z-[110] flex gap-1">
           {story!.items.map((_, i) => (
             <div key={i} className="flex-1 h-[3px] rounded-full bg-white/30 overflow-hidden">
               <div
@@ -207,7 +207,7 @@ export const StoryViewer: FC<Props> = ({ stories, initialIndex, onClose }) => {
       )}
 
       {/* Header */}
-      <div className="absolute top-8 left-3 right-3 z-[110] flex items-center justify-between">
+      <div className="absolute top-[calc(2rem+var(--tg-top-inset,0px))] left-3 right-3 z-[110] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <img
             src={stories[groupIndex]?.coverImageUrl}
@@ -249,7 +249,7 @@ export const StoryViewer: FC<Props> = ({ stories, initialIndex, onClose }) => {
               pointer-events-none so taps fall through to the navigation
               zones; only the button (pointer-events-auto) captures clicks. */}
           <div className="absolute bottom-0 left-0 right-0 z-[120] pointer-events-none">
-            <div className="bg-gradient-to-t from-black/70 via-black/30 to-transparent pt-20 pb-6 px-4">
+            <div className="bg-gradient-to-t from-black/70 via-black/30 to-transparent pt-20 px-4 pb-[calc(1.5rem+var(--tg-bottom-inset,0px))]">
               {currentItem.title && (
                 <h3 className="text-white font-semibold text-lg mb-1 drop-shadow-md">
                   {currentItem.title}

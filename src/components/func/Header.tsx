@@ -41,7 +41,7 @@ export const Header: FC = () => {
   return (
     // Floating glass pill mirroring the bottom nav. Outer is click-through in
     // its margins so taps around the pill reach the content beneath.
-    <header className="pointer-events-none sticky top-0 z-30 px-3 pb-2 pt-2">
+    <header className="pointer-events-none sticky top-0 z-30 px-3 pb-2 pt-[calc(0.5rem+var(--tg-top-inset,0px))]">
       <div className="pointer-events-auto mx-auto max-w-lg">
         <div className="flex min-h-[40px] items-center justify-between rounded-[26px] bg-white/80 px-5 py-2.5 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.3)] ring-1 ring-black/[0.06] backdrop-blur-2xl">
           {isSearchOpen ? (

@@ -18,12 +18,31 @@ interface TelegramLocationManager {
   getLocation(callback: (data: TelegramLocationData | null) => void): void;
 }
 
+interface TelegramSafeAreaInset {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+}
+
 interface TelegramWebApp {
   onEvent(event: string, callback: () => void): void;
   offEvent(event: string, callback: () => void): void;
   viewportHeight: number;
   viewportStableHeight: number;
   LocationManager?: TelegramLocationManager;
+  // Layout / lifecycle (subset we use). Optional because older clients may
+  // not implement them; fullscreen + safe areas need Bot API 8.0.
+  ready?(): void;
+  expand?(): void;
+  isVersionAtLeast?(version: string): boolean;
+  requestFullscreen?(): void;
+  exitFullscreen?(): void;
+  isFullscreen?: boolean;
+  setHeaderColor?(color: string): void;
+  setBackgroundColor?(color: string): void;
+  safeAreaInset?: TelegramSafeAreaInset;
+  contentSafeAreaInset?: TelegramSafeAreaInset;
 }
 
 interface Window {

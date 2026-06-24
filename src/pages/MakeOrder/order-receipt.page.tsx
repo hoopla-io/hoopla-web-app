@@ -421,7 +421,7 @@ export const OrderReceiptPage: FC = () => {
           mirrors its rounded floating language, instead of the old full-width
           opaque bar the new glass nav overlapped. Outer is click-through in its
           margins so taps around the button still reach the content/nav. */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+5.75rem)] z-30 px-4">
+      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+var(--tg-bottom-inset,0px)+5.75rem)] z-30 px-4">
         <div className="pointer-events-auto mx-auto max-w-lg">
           <button
             onClick={handleConfirm}

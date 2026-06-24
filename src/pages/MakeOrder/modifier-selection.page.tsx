@@ -221,7 +221,7 @@ export const ModifierSelectionPage: FC = () => {
 
       {/* Floating action bar — mirrors the receipt's floating pill so it sits
           above the glass bottom-nav instead of overlapping it. */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+5.75rem)] z-30 px-4">
+      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+var(--tg-bottom-inset,0px)+5.75rem)] z-30 px-4">
         <div className="pointer-events-auto mx-auto max-w-lg">
           <button
             onClick={handleContinue}
@@ -246,7 +246,7 @@ export const ModifierSelectionPage: FC = () => {
         >
           <button
             onClick={() => setImageOpen(false)}
-            className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+            className="absolute right-4 top-[calc(1rem+var(--tg-top-inset,0px))] grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white backdrop-blur-sm transition-colors hover:bg-white/20"
           >
             <X size={22} />
           </button>

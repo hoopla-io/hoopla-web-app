@@ -411,7 +411,7 @@ export const OrderDetailPage: FC = () => {
           <button
             onClick={() => setImageOpen(false)}
             aria-label="Close image"
-            className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white backdrop-blur-md transition hover:bg-white/20 active:scale-90"
+            className="absolute right-4 top-[calc(1rem+var(--tg-top-inset,0px))] grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white backdrop-blur-md transition hover:bg-white/20 active:scale-90"
           >
             <X size={22} />
           </button>
