@@ -61,9 +61,9 @@ const ShopCard = ({ shop }: ShopCardProps) => {
               className="-mt-10 shrink-0"
             >
               <img
-                src={shop.pictureUrl}
+                src={shop.logoUrl || shop.pictureUrl}
                 alt={shop.name}
-                className="h-14 w-14 rounded-2xl object-cover shadow-md ring-4 ring-white"
+                className="h-14 w-14 rounded-2xl bg-white object-contain p-1.5 shadow-md ring-4 ring-white"
               />
             </button>
 

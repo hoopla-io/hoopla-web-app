@@ -5,6 +5,8 @@ export interface Shop {
   partnerId: number;
   name: string;
   pictureUrl: string;
+  /** Square partner/brand logo, returned on every near-shops entry. */
+  logoUrl: string;
   distance: number;
   /** Real-time availability from the list endpoint. */
   acceptingOrders?: boolean;
