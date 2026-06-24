@@ -33,15 +33,6 @@ function loadYandexMaps(): Promise<void> {
   });
 }
 
-function createPinSvg(color: string): string {
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="48" viewBox="0 0 36 48">
-      <path d="M18 0C8.06 0 0 8.06 0 18c0 13.5 18 30 18 30s18-16.5 18-30C36 8.06 27.94 0 18 0z" fill="${color}"/>
-      <circle cx="18" cy="18" r="8" fill="white"/>
-    </svg>`;
-  return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg.trim());
-}
-
 export const MapPage: FC = () => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   // `map` (state) drives the marker effect; `mapInstanceRef` mirrors it so the
@@ -100,19 +91,31 @@ export const MapPage: FC = () => {
 
     map.geoObjects.removeAll();
 
-    const pinIcon = createPinSvg(BRAND_COLOR);
+    // Custom pin: each partner's logo sits inside a branded teardrop badge.
+    const PinLayout = window.ymaps.templateLayoutFactory.createClass(
+      `<div style="position: relative; width: 44px; height: 53px; transform: translate(-22px, -53px);">
+         <div style="position: absolute; top: 0; left: 0; width: 44px; height: 44px; border-radius: 50%; background: #fff; border: 3px solid ${BRAND_COLOR}; box-shadow: 0 3px 8px rgba(0,0,0,0.25); box-sizing: border-box; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+           <img src="$[properties.logoUrl]" style="width: 82%; height: 82%; object-fit: contain;" onerror="this.style.display='none'" />
+         </div>
+         <div style="position: absolute; top: 40px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 10px solid ${BRAND_COLOR};"></div>
+       </div>`
+    );
 
     shops.forEach((shop) => {
       const placemark = new window.ymaps.Placemark(
         [shop.location.lat, shop.location.lng],
         {
           hintContent: shop.name,
+          logoUrl: shop.logoUrl || shop.pictureUrl,
         },
         {
-          iconLayout: "default#image",
-          iconImageHref: pinIcon,
-          iconImageSize: [36, 48],
-          iconImageOffset: [-18, -48],
+          iconLayout: PinLayout,
+          // Keep the clickable area aligned with the round logo badge.
+          iconShape: {
+            type: "Circle",
+            coordinates: [0, -31],
+            radius: 22,
+          },
         }
       );
 
