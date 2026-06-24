@@ -95,7 +95,7 @@ export const MapPage: FC = () => {
     const PinLayout = window.ymaps.templateLayoutFactory.createClass(
       `<div style="position: relative; width: 44px; height: 53px; transform: translate(-22px, -53px);">
          <div style="position: absolute; top: 0; left: 0; width: 44px; height: 44px; border-radius: 50%; background: #fff; border: 3px solid ${BRAND_COLOR}; box-shadow: 0 3px 8px rgba(0,0,0,0.25); box-sizing: border-box; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-           <img src="$[properties.logoUrl]" style="width: 82%; height: 82%; object-fit: contain;" onerror="this.style.display='none'" />
+           <img src="$[properties.logoUrl]" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.style.display='none'" />
          </div>
          <div style="position: absolute; top: 40px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 10px solid ${BRAND_COLOR};"></div>
        </div>`
