@@ -1,9 +1,8 @@
 import { FC, useState } from "react";
 import { useParams, useNavigate, useLocation, Navigate } from "react-router-dom";
-import { ArrowLeft, Check } from "lucide-react";
+import { ArrowLeft, Check, Maximize2, X, Coffee } from "lucide-react";
 
 import { Page } from "@/components/Page";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { formatBalance, cn } from "@/helpers/utils";
 import type {
   ValidateOrderResponse,
@@ -25,6 +24,8 @@ export const ModifierSelectionPage: FC = () => {
   const [selected, setSelected] = useState<Record<string, SelectedModifier>>(
     {}
   );
+  const [comment, setComment] = useState("");
+  const [imageOpen, setImageOpen] = useState(false);
 
   if (!validatedOrder) {
     return <Navigate to={`/shops/${shopId}`} replace />;
@@ -65,6 +66,9 @@ export const ModifierSelectionPage: FC = () => {
       state: {
         validatedOrder,
         selectedModifiers,
+        // Pass the note forward so the receipt knows it was handled here and
+        // doesn't render its own textarea.
+        comment: comment.trim(),
       },
       replace: true,
     });
@@ -72,53 +76,64 @@ export const ModifierSelectionPage: FC = () => {
 
   return (
     <Page>
-      <div className="max-w-lg mx-auto pb-32">
+      <div className="max-w-lg mx-auto pb-40">
         {/* Header */}
-        <div className="relative">
-          <AspectRatio ratio={480 / 280}>
-            {validatedOrder.drink.imageUrl ? (
-              <img
-                src={validatedOrder.drink.imageUrl}
-                alt={validatedOrder.drink.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                <span className="text-gray-400 text-lg">No image</span>
-              </div>
-            )}
-          </AspectRatio>
+        <div className="flex items-center gap-3 p-4">
           <button
             onClick={() => navigate(-1)}
-            className="absolute top-4 left-4 p-2 rounded-full bg-white/80 backdrop-blur-sm shadow-sm hover:bg-white transition-colors"
+            className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
           >
             <ArrowLeft size={20} className="text-gray-700" />
           </button>
+          <h1 className="text-lg font-bold text-gray-900">Customize</h1>
         </div>
 
-        <div className="px-4 pt-4 space-y-2">
-          <h1 className="text-xl font-bold text-gray-900">
-            {validatedOrder.drink.name}
-          </h1>
-          <p className="text-sm text-gray-500">{validatedOrder.shop.name}</p>
-          <p className="text-base font-semibold text-[var(--color-primary)]">
-            {formatPrice(validatedOrder.drink.amount)}
-          </p>
+        {/* Drink — compact square thumbnail, tap to expand */}
+        <div className="mx-4 flex items-center gap-3.5">
+          {validatedOrder.drink.imageUrl ? (
+            <button
+              type="button"
+              onClick={() => setImageOpen(true)}
+              className="relative shrink-0 transition-transform active:scale-[0.97]"
+            >
+              <img
+                src={validatedOrder.drink.imageUrl}
+                alt={validatedOrder.drink.name}
+                className="h-[72px] w-[72px] rounded-2xl object-cover shadow-sm ring-1 ring-black/[0.06]"
+              />
+              <span className="absolute bottom-1 right-1 grid h-5 w-5 place-items-center rounded-full bg-black/55 text-white backdrop-blur-sm">
+                <Maximize2 size={11} />
+              </span>
+            </button>
+          ) : (
+            <div className="grid h-[72px] w-[72px] shrink-0 place-items-center rounded-2xl bg-gray-100 text-gray-400 ring-1 ring-black/[0.06]">
+              <Coffee size={24} />
+            </div>
+          )}
+          <div className="min-w-0">
+            <h2 className="truncate text-lg font-bold text-gray-900">
+              {validatedOrder.drink.name}
+            </h2>
+            <p className="truncate text-sm text-gray-500">
+              {validatedOrder.shop.name}
+            </p>
+            <p className="mt-0.5 text-sm font-semibold text-[var(--color-primary)]">
+              {formatPrice(validatedOrder.drink.amount)}
+            </p>
+          </div>
         </div>
 
         {/* Modifier Groups */}
-        <div className="px-4 pt-6 space-y-6">
+        <div className="px-4 pt-6 space-y-7">
           {modKeys.map((groupKey) => {
             const options = modifications[groupKey] as any[];
 
             return (
               <div key={groupKey}>
-                <div className="flex items-center gap-2 mb-3">
-                  <h2 className="text-base font-semibold text-gray-900">
-                    {groupKey}
-                  </h2>
-                </div>
-                <div className="space-y-2">
+                <h2 className="mb-3 px-1 text-[13px] font-semibold uppercase tracking-[0.12em] text-gray-500">
+                  {groupKey}
+                </h2>
+                <div className="space-y-2.5">
                   {options.map((modifier: any, idx: number) => {
                     const modId = String(modifier.modificationId ?? idx);
                     const isSelected = selected[groupKey]?.modifierId === modId;
@@ -128,28 +143,28 @@ export const ModifierSelectionPage: FC = () => {
                         key={modId}
                         onClick={() => handleSelect(groupKey, modifier)}
                         className={cn(
-                          "w-full flex items-center justify-between p-3 rounded-xl border transition-colors",
+                          "flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3.5 text-left transition-all active:scale-[0.99]",
                           isSelected
-                            ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5"
-                            : "border-gray-200 bg-white"
+                            ? "bg-[var(--color-primary)]/[0.06] ring-2 ring-[var(--color-primary)]"
+                            : "bg-white shadow-[0_2px_10px_-6px_rgba(0,0,0,0.18)] ring-1 ring-black/[0.06]"
                         )}
                       >
-                        <div className="flex items-center gap-3">
-                          <div
+                        <div className="flex min-w-0 items-center gap-3">
+                          <span
                             className={cn(
-                              "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
+                              "grid h-6 w-6 shrink-0 place-items-center rounded-full transition-colors",
                               isSelected
-                                ? "border-[var(--color-primary)] bg-[var(--color-primary)]"
-                                : "border-gray-300"
+                                ? "bg-[var(--color-primary)]"
+                                : "ring-2 ring-gray-300"
                             )}
                           >
                             {isSelected && (
-                              <Check size={12} className="text-white" />
+                              <Check size={14} className="text-white" />
                             )}
-                          </div>
+                          </span>
                           <span
                             className={cn(
-                              "text-sm font-medium",
+                              "truncate text-[15px] font-medium",
                               isSelected ? "text-gray-900" : "text-gray-700"
                             )}
                           >
@@ -157,7 +172,14 @@ export const ModifierSelectionPage: FC = () => {
                           </span>
                         </div>
                         {(modifier.modificationPrice ?? 0) > 0 && (
-                          <span className="text-sm text-gray-500">
+                          <span
+                            className={cn(
+                              "shrink-0 text-sm font-semibold",
+                              isSelected
+                                ? "text-[var(--color-primary)]"
+                                : "text-gray-500"
+                            )}
+                          >
                             +{formatPrice(modifier.modificationPrice)}
                           </span>
                         )}
@@ -169,31 +191,73 @@ export const ModifierSelectionPage: FC = () => {
             );
           })}
         </div>
+
+        {/* Note to barista — lives here (not on the receipt) because this drink
+            has modifiers, so the note is captured alongside the choices. */}
+        <div className="px-4 pt-7">
+          <label
+            htmlFor="order-comment"
+            className="mb-2 block px-1 text-[13px] font-semibold uppercase tracking-[0.12em] text-gray-500"
+          >
+            Note to barista{" "}
+            <span className="font-normal normal-case tracking-normal text-gray-400">
+              (optional)
+            </span>
+          </label>
+          <textarea
+            id="order-comment"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            rows={3}
+            maxLength={500}
+            placeholder="e.g. less ice, oat milk, extra hot…"
+            className="w-full resize-none rounded-2xl border border-gray-200 bg-white p-3.5 text-sm text-gray-900 shadow-sm outline-none transition-colors placeholder:text-gray-400 focus:border-[var(--color-primary)]"
+          />
+          <p className="mt-1 text-right text-xs text-gray-400">
+            {comment.length}/500
+          </p>
+        </div>
       </div>
 
-      {/* Sticky Bottom Bar */}
-      <div className="fixed bottom-[60px] left-0 right-0 bg-white border-t border-gray-100 p-4 z-20">
-        <div className="max-w-lg mx-auto">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-500">Total</span>
-            <span className="text-lg font-bold text-gray-900">
-              {formatPrice(totalPrice)}
-            </span>
-          </div>
+      {/* Floating action bar — mirrors the receipt's floating pill so it sits
+          above the glass bottom-nav instead of overlapping it. */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+5.75rem)] z-30 px-4">
+        <div className="pointer-events-auto mx-auto max-w-lg">
           <button
             onClick={handleContinue}
             disabled={!allGroupsSelected}
             className={cn(
-              "w-full py-3.5 rounded-xl text-white font-semibold text-base transition-colors",
+              "flex w-full items-center justify-center gap-2 rounded-full py-4 text-base font-semibold text-white transition-all active:scale-[0.99]",
               allGroupsSelected
-                ? "bg-[var(--color-primary)] active:bg-[var(--color-primary-dark)]"
-                : "bg-gray-300 cursor-not-allowed"
+                ? "bg-[var(--color-primary)] shadow-[0_12px_30px_-8px_rgba(141,11,65,0.55)] active:bg-[var(--color-primary-dark)]"
+                : "cursor-not-allowed bg-gray-300"
             )}
           >
-            Continue
+            Continue · {formatPrice(totalPrice)}
           </button>
         </div>
       </div>
+
+      {/* Expanded drink image */}
+      {imageOpen && validatedOrder.drink.imageUrl && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setImageOpen(false)}
+        >
+          <button
+            onClick={() => setImageOpen(false)}
+            className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+          >
+            <X size={22} />
+          </button>
+          <img
+            src={validatedOrder.drink.imageUrl}
+            alt={validatedOrder.drink.name}
+            className="max-h-[85vh] max-w-full rounded-2xl object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </Page>
   );
 };

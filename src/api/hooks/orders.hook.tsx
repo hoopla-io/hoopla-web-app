@@ -1,6 +1,12 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { OrdersApi, type Order, type OrderDetail, type CreateOrderRequest } from "@/api/domains/orders";
+import {
+  OrdersApi,
+  type Order,
+  type OrderDetail,
+  type CreateOrderRequest,
+  type CheckPromocodeRequest,
+} from "@/api/domains/orders";
 import { useAuth } from "@/context/auth.context";
 
 const ITEMS_PER_PAGE = 10;
@@ -84,6 +90,12 @@ export function useValidateOrder() {
   return useMutation({
     mutationFn: ({ drinkId, shopId }: { drinkId: number; shopId: number }) =>
       OrdersApi.validateOrder(drinkId, shopId),
+  });
+}
+
+export function useCheckPromocode() {
+  return useMutation({
+    mutationFn: (data: CheckPromocodeRequest) => OrdersApi.checkPromocode(data),
   });
 }
 

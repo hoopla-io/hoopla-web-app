@@ -215,6 +215,16 @@ export const OrderDetailPage: FC = () => {
               </div>
             )}
 
+            {/* Note to barista */}
+            {order.comment && (
+              <div className="p-4 border-t border-gray-100">
+                <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                  Note to barista
+                </h2>
+                <p className="text-sm text-gray-700">{order.comment}</p>
+              </div>
+            )}
+
             {/* Payment */}
             <div className="p-4 border-t border-gray-100">
               <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
@@ -227,6 +237,21 @@ export const OrderDetailPage: FC = () => {
                     {formatBalance(order.productPrice)} UZS
                   </span>
                 </div>
+                {order.promoCode && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">
+                      Promocode{" "}
+                      <span className="font-medium text-gray-700">
+                        {order.promoCode}
+                      </span>
+                    </span>
+                    {order.promoDiscount ? (
+                      <span className="font-medium text-green-600">
+                        -{formatBalance(order.promoDiscount)} UZS
+                      </span>
+                    ) : null}
+                  </div>
+                )}
                 {order.cashback_used > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Cashback used</span>
