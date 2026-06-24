@@ -30,6 +30,14 @@
   --destructive-foreground: 0 0% 100%;
   --ring: 338 85% 30%;
   --radius: 0.75rem;
+
+  /* Telegram safe-area insets (status bar + Telegram controls). Default 0 so
+     layouts behave normally outside Telegram / fullscreen; the Telegram
+     bootstrap overwrites these at runtime. See src/helpers/telegram.ts. */
+  --tg-top-inset: 0px;
+  --tg-bottom-inset: 0px;
+  --tg-left-inset: 0px;
+  --tg-right-inset: 0px;
 }
 
 @layer base {

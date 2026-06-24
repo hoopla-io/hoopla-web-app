@@ -466,7 +466,7 @@ export const ShopDetailPage: FC = () => {
                     // the pill aligns to the same max-w-lg edges as the header; px-3
                     // matches the header's side inset. Outer is click-through so taps
                     // in the margins reach the content scrolling behind.
-                    <div className="pointer-events-none sticky top-[64px] z-20 -mx-2 px-3 pt-2 pb-2">
+                    <div className="pointer-events-none sticky top-[calc(64px+var(--tg-top-inset,0px))] z-20 -mx-2 px-3 pt-2 pb-2">
                       <div
                         ref={tabScrollRef}
                         className="pointer-events-auto relative flex gap-2 overflow-x-auto scrollbar-hide rounded-[24px] bg-white/80 px-2 py-2 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.3)] ring-1 ring-black/[0.06] backdrop-blur-2xl"

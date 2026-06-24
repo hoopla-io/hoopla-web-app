@@ -141,8 +141,9 @@ export const MapPage: FC = () => {
 
   return (
     <Page>
-      {/* Sits between the floating glass header (~76px) and bottom nav (~76px). */}
-      <div className="fixed inset-0 top-[72px] bottom-[84px]">
+      {/* Sits between the floating glass header (~76px) and bottom nav (~76px),
+          plus Telegram's safe-area insets when running fullscreen. */}
+      <div className="fixed inset-0 top-[calc(72px+var(--tg-top-inset,0px))] bottom-[calc(84px+var(--tg-bottom-inset,0px))]">
         {/* Map */}
         <div ref={mapContainerRef} className="w-full h-full" />
 

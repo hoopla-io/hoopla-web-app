@@ -18,7 +18,7 @@ const BottomNav = () => {
   return (
     // Outer layer is click-through in its margins so the floating bar doesn't
     // block taps around it; the safe-area inset clears the iOS home indicator.
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-4 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+0.625rem)]">
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-4 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+var(--tg-bottom-inset,0px)+0.625rem)]">
       <nav className="pointer-events-auto mx-auto max-w-md">
         <ul className="flex items-stretch justify-around gap-1 rounded-[28px] bg-white/80 px-2 py-1.5 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.35)] ring-1 ring-black/[0.06] backdrop-blur-2xl">
           {NAV_ITEMS.map(({ to, end, icon: Icon, label }) => (
