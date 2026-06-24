@@ -131,7 +131,7 @@ export const OrdersApi = {
 
   getFeedback: async (orderId: number) => {
     try {
-      const response = await httpClient.get(`/user/orders/${orderId}/feedback`);
+      const response = await httpClient.get(`/orders/feedbacks/${orderId}`);
       return response.data as { rating: number; comment: string } | null;
     } catch {
       return null;
