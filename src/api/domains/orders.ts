@@ -29,6 +29,11 @@ export interface OrderDetail {
   cashback_used: number;
   cashback_earned: number;
   fiscalLink: string | null;
+  /** Applied promocode, if any (in sum). */
+  promoCode?: string | null;
+  promoDiscount?: number;
+  /** Note the user left for the barista. */
+  comment?: string | null;
 }
 
 export interface OrderListMeta {
@@ -69,10 +74,32 @@ export interface SelectedModifier {
 
 export interface CreateOrderRequest {
   cashback_amount: number;
+  /** Optional free-text note from the user to the barista. */
+  comment?: string;
   drinkId: number;
   modifiers: SelectedModifier[];
   shopId: number;
   use_cashback: boolean;
+  /** Optional promocode to apply at order creation. */
+  promo_code?: string;
+}
+
+export interface CheckPromocodeRequest {
+  code: string;
+  shopId: number;
+  drinkId: number;
+  modifiers?: SelectedModifier[];
+}
+
+/** All money values here are in sum (same unit the receipt already shows). */
+export interface CheckPromocodeResult {
+  valid: boolean;
+  code: string;
+  discountType: "percent" | "fixed" | string;
+  discountValue: number;
+  discountAmount: number;
+  subtotal: number;
+  total: number;
 }
 
 export interface CreateOrderResponse {
@@ -132,6 +159,15 @@ export const OrdersApi = {
     });
 
     return (response.data ?? response) as ValidateOrderResponse;
+  },
+
+  checkPromocode: async (data: CheckPromocodeRequest) => {
+    const response: any = await httpClient.post(
+      "/user/orders/check-promocode",
+      data
+    );
+
+    return (response.data ?? response) as CheckPromocodeResult;
   },
 
   createOrder: async (data: CreateOrderRequest) => {
