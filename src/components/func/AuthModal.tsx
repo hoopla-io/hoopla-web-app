@@ -24,12 +24,14 @@ export const AuthModal: FC = () => {
         if (!open) closeLoginModal();
       }}
     >
-      <DrawerContent className="pb-6">
+      <DrawerContent className="max-h-[92dvh]">
         <DrawerTitle className="sr-only">Sign In</DrawerTitle>
         <DrawerDescription className="sr-only">
           Sign in with your phone number to continue.
         </DrawerDescription>
-        <div className="w-full max-w-md mx-auto">
+        {/* Scrollable body: caps the sheet height and keeps the verification
+            code field reachable above the keyboard / device bottom inset. */}
+        <div className="w-full max-w-md mx-auto flex-1 min-h-0 overflow-y-auto overscroll-contain pb-[calc(1.5rem+env(safe-area-inset-bottom,0px)+var(--tg-bottom-inset,0px))]">
           <LoginForm />
         </div>
       </DrawerContent>
