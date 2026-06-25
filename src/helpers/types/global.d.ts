@@ -25,6 +25,14 @@ interface TelegramSafeAreaInset {
   right: number;
 }
 
+interface TelegramBackButton {
+  isVisible: boolean;
+  show(): void;
+  hide(): void;
+  onClick(callback: () => void): void;
+  offClick(callback: () => void): void;
+}
+
 interface TelegramWebApp {
   onEvent(event: string, callback: () => void): void;
   offEvent(event: string, callback: () => void): void;
@@ -43,6 +51,7 @@ interface TelegramWebApp {
   setBackgroundColor?(color: string): void;
   safeAreaInset?: TelegramSafeAreaInset;
   contentSafeAreaInset?: TelegramSafeAreaInset;
+  BackButton?: TelegramBackButton;
 }
 
 interface Window {
