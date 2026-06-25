@@ -38,6 +38,10 @@ interface TelegramWebApp {
   offEvent(event: string, callback: () => void): void;
   viewportHeight: number;
   viewportStableHeight: number;
+  // Signed launch params — a non-empty string only inside a real Telegram
+  // client; "" in a plain browser. `platform` is "unknown" outside Telegram.
+  initData?: string;
+  platform?: string;
   LocationManager?: TelegramLocationManager;
   // Layout / lifecycle (subset we use). Optional because older clients may
   // not implement them; fullscreen + safe areas need Bot API 8.0.

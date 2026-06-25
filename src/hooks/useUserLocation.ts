@@ -31,29 +31,68 @@ function setLocationCookie(location: UserLocation) {
   document.cookie = `${COOKIE_NAME}=${location.lat},${location.lng}; max-age=${COOKIE_MAX_AGE}; path=/`;
 }
 
+/**
+ * True only when running inside a real Telegram client. Outside Telegram the
+ * web-app.js shim still exposes `window.Telegram.WebApp` (and a LocationManager
+ * whose `init` callback never fires), so we must not rely on it in a browser.
+ */
+function isInsideTelegram(): boolean {
+  const tg = window.Telegram?.WebApp;
+  if (!tg) return false;
+  return (
+    (typeof tg.initData === "string" && tg.initData.length > 0) ||
+    (typeof tg.platform === "string" && tg.platform !== "unknown")
+  );
+}
+
+// Hard cap on the whole lookup so the loading screen can never hang, even if a
+// platform API silently never calls back.
+const LOCATION_TIMEOUT_MS = 12000;
+const GEO_TIMEOUT_MS = 10000;
+
 function requestFreshLocation(
   onSuccess: (loc: UserLocation) => void,
   onError: () => void
 ) {
+  let settled = false;
+  let timer: ReturnType<typeof setTimeout>;
+  const succeed = (loc: UserLocation) => {
+    if (settled) return;
+    settled = true;
+    clearTimeout(timer);
+    onSuccess(loc);
+  };
+  const fail = () => {
+    if (settled) return;
+    settled = true;
+    clearTimeout(timer);
+    onError();
+  };
+
+  // Safety net: if neither path resolves (e.g. Telegram's LocationManager.init
+  // never calls back), give up so the caller can use the default location.
+  timer = setTimeout(fail, LOCATION_TIMEOUT_MS);
+
   const fallbackToBrowser = () => {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
-        (pos) =>
-          onSuccess({
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-          }),
-        () => onError()
+        (pos) => succeed({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => fail(),
+        // getCurrentPosition defaults to an infinite timeout — cap it.
+        { enableHighAccuracy: false, timeout: GEO_TIMEOUT_MS, maximumAge: 60000 }
       );
     } else {
-      onError();
+      fail();
     }
   };
 
-  const tgLocationManager = window.Telegram?.WebApp?.LocationManager;
+  const tgLocationManager = isInsideTelegram()
+    ? window.Telegram?.WebApp?.LocationManager
+    : undefined;
 
   if (tgLocationManager) {
     tgLocationManager.init(() => {
+      if (settled) return;
       if (
         !tgLocationManager.isLocationAvailable ||
         !tgLocationManager.isAccessGranted
@@ -63,7 +102,7 @@ function requestFreshLocation(
       }
       tgLocationManager.getLocation((data) => {
         if (data) {
-          onSuccess({ lat: data.latitude, lng: data.longitude });
+          succeed({ lat: data.latitude, lng: data.longitude });
         } else {
           fallbackToBrowser();
         }
