@@ -1,5 +1,5 @@
 import { Loader2, Phone, ShieldCheck } from "lucide-react";
-import { FC, useState } from "react";
+import { FC, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -36,9 +36,23 @@ type Props = {
 export const LoginForm: FC<Props> = ({ onSuccess }) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const { login, confirmCode } = useAuth();
+  const codeSectionRef = useRef<HTMLDivElement>(null);
 
   const phoneForm = useForm({ resolver: zodResolver(phoneSchema) });
   const codeForm = useForm({ resolver: zodResolver(codeSchema) });
+
+  // When the code step appears, bring it into view within the sheet so the
+  // input isn't left hidden below the keyboard / bottom edge.
+  useEffect(() => {
+    if (!sessionId) return;
+    const id = requestAnimationFrame(() =>
+      codeSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      })
+    );
+    return () => cancelAnimationFrame(id);
+  }, [sessionId]);
 
   const onPhoneSubmit = async (data: { phoneNumber: string }) => {
     try {
@@ -73,35 +87,34 @@ export const LoginForm: FC<Props> = ({ onSuccess }) => {
       <div className="h-px bg-gray-100 mx-6" />
 
       <div className="p-6 space-y-5">
-        {/* Phone Number */}
-        <Form {...phoneForm}>
-          <form
-            onSubmit={phoneForm.handleSubmit(onPhoneSubmit)}
-            className="space-y-4"
-          >
-            <FormField
-              control={phoneForm.control}
-              name="phoneNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <label className="text-sm font-medium text-gray-700">
-                    Phone Number
-                  </label>
-                  <FormControl>
-                    <PhoneInput
-                      {...field}
-                      placeholder="Phone Number"
-                      countries={["UZ"]}
-                      defaultCountry="UZ"
-                      disabled={!!sessionId}
-                      required
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            {!sessionId ? (
+        {!sessionId ? (
+          /* Step 1 — Phone Number */
+          <Form {...phoneForm}>
+            <form
+              onSubmit={phoneForm.handleSubmit(onPhoneSubmit)}
+              className="space-y-4"
+            >
+              <FormField
+                control={phoneForm.control}
+                name="phoneNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <label className="text-sm font-medium text-gray-700">
+                      Phone Number
+                    </label>
+                    <FormControl>
+                      <PhoneInput
+                        {...field}
+                        placeholder="Phone Number"
+                        countries={["UZ"]}
+                        defaultCountry="UZ"
+                        required
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <Button
                 type="submit"
                 className="w-full h-12 text-base font-medium text-white rounded-xl"
@@ -116,26 +129,11 @@ export const LoginForm: FC<Props> = ({ onSuccess }) => {
                   </>
                 )}
               </Button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  setSessionId(null);
-                  codeForm.reset();
-                }}
-                className="text-sm font-medium text-[var(--color-primary)] hover:underline"
-              >
-                Change number
-              </button>
-            )}
-          </form>
-        </Form>
-
-        {/* Verification Code */}
-        {sessionId && (
-          <>
-            <div className="h-px bg-gray-100" />
-
+            </form>
+          </Form>
+        ) : (
+          /* Step 2 — Verification Code (phone field hidden to free space) */
+          <div ref={codeSectionRef}>
             <Form {...codeForm}>
               <form
                 onSubmit={codeForm.handleSubmit(onCodeSubmit)}
@@ -161,6 +159,16 @@ export const LoginForm: FC<Props> = ({ onSuccess }) => {
                         />
                       </FormControl>
                       <FormMessage />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSessionId(null);
+                          codeForm.reset();
+                        }}
+                        className="text-sm font-medium text-[var(--color-primary)] hover:underline"
+                      >
+                        Change number
+                      </button>
                     </FormItem>
                   )}
                 />
@@ -180,7 +188,7 @@ export const LoginForm: FC<Props> = ({ onSuccess }) => {
                 </Button>
               </form>
             </Form>
-          </>
+          </div>
         )}
       </div>
     </>
