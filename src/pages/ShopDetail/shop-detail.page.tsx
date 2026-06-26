@@ -29,7 +29,10 @@ import {
   getShopOpenStatus,
   type WorkingHour,
 } from "@/helpers/utils";
-import type { SelectedModifier } from "@/api/domains/orders";
+import {
+  toSelectedModifier,
+  type SelectedModifier,
+} from "@/api/domains/orders";
 import type { Banner } from "@/api/domains/banners";
 
 function formatWorkingHours(hours: WorkingHour[]): string {
@@ -99,10 +102,45 @@ export const ShopDetailPage: FC = () => {
         onSuccess: (data) => {
           setValidatingDrinkId(null);
 
+          const groups = data.modifierGroups?.length
+            ? data.modifierGroups
+            : null;
+
+          // Show the modifier page whenever there's a real choice to make:
+          // any group with more than one option. Single-option groups are
+          // resolved here so trivial drinks skip straight to the receipt.
+          if (groups) {
+            const needsModifierSelection = groups.some(
+              (g) => (g.options?.length ?? 0) > 1
+            );
+
+            if (needsModifierSelection) {
+              navigate(`/shops/${numericShopId}/order/modifiers`, {
+                state: { validatedOrder: data },
+              });
+            } else {
+              // Auto-select required single-option groups; optional ones stay
+              // empty so we don't force a modifier the customer didn't pick.
+              const autoSelectedModifiers: SelectedModifier[] = groups
+                .filter(
+                  (g) => (g.options?.length ?? 0) === 1 && (g.minSelect ?? 0) >= 1
+                )
+                .map((g) => toSelectedModifier(g.options[0], g.key));
+
+              navigate(`/shops/${numericShopId}/order/receipt`, {
+                state: {
+                  validatedOrder: data,
+                  selectedModifiers: autoSelectedModifiers,
+                },
+              });
+            }
+            return;
+          }
+
+          // Legacy path — no group rules; behave exactly as before.
           const modifications = data.modifications ?? {};
           const modKeys = Object.keys(modifications);
 
-          // Check if any modification group has multiple options
           const needsModifierSelection = modKeys.some(
             (key) =>
               Array.isArray(modifications[key]) &&
@@ -114,23 +152,13 @@ export const ShopDetailPage: FC = () => {
               state: { validatedOrder: data },
             });
           } else {
-            // Auto-select single modifiers
             const autoSelectedModifiers: SelectedModifier[] = modKeys
               .filter(
                 (key) =>
                   Array.isArray(modifications[key]) &&
                   modifications[key].length === 1
               )
-              .map((key) => {
-                const mod = modifications[key][0];
-                return {
-                  modifierGroupId: String(mod.modificationGroupId ?? key),
-                  modifierId: String(mod.modificationId ?? ""),
-                  modifierKey: String(mod.modificationKey ?? key),
-                  modifierPrice: mod.modificationPrice ?? 0,
-                  modifierName: mod.modificationName ?? "",
-                };
-              });
+              .map((key) => toSelectedModifier(modifications[key][0], key));
 
             navigate(`/shops/${numericShopId}/order/receipt`, {
               state: {

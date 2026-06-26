@@ -60,8 +60,35 @@ export interface ValidateOrderResponse {
   };
   validatedAt: string;
   validatedAtUnix: number;
+  /** Legacy modifier map (still sent). Keyed by the group's modifierKey. */
   modifications: Record<string, any>;
+  /**
+   * First-class modifier groups with display name + min/max selection rules.
+   * Additive — present only on newer backends; fall back to `modifications`.
+   */
+  modifierGroups?: ModifierGroup[];
   cashback_percent: number;
+}
+
+export interface ModifierOption {
+  modificationId: string | number;
+  modificationName: string;
+  modificationPrice: number;
+  /** Usually equals the group key; included for completeness. */
+  modificationKey?: string;
+  modificationGroupId?: string | number;
+}
+
+export interface ModifierGroup {
+  /** Identifies the group; equals each option's modifierKey on checkout. */
+  key: string;
+  /** Friendly display name (defaults to the POS key on the backend). */
+  name: string;
+  /** Minimum options the customer must pick. 0 = optional. */
+  minSelect: number;
+  /** Maximum options the customer may pick. null = unlimited. */
+  maxSelect: number | null;
+  options: ModifierOption[];
 }
 
 export interface SelectedModifier {
@@ -70,6 +97,24 @@ export interface SelectedModifier {
   modifierKey: string;
   modifierPrice: number;
   modifierName?: string;
+}
+
+/**
+ * Normalizes a validate-order option (legacy or grouped) into the
+ * SelectedModifier shape the create endpoint expects. `fallbackKey` is the
+ * group key, used when the option doesn't carry its own key/group id.
+ */
+export function toSelectedModifier(
+  option: any,
+  fallbackKey: string
+): SelectedModifier {
+  return {
+    modifierGroupId: String(option?.modificationGroupId ?? fallbackKey),
+    modifierId: String(option?.modificationId ?? ""),
+    modifierKey: String(option?.modificationKey ?? fallbackKey),
+    modifierPrice: option?.modificationPrice ?? 0,
+    modifierName: option?.modificationName ?? "",
+  };
 }
 
 export interface CreateOrderRequest {
