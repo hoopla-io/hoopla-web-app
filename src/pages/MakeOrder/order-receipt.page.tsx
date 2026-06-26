@@ -48,7 +48,7 @@ export const OrderReceiptPage: FC = () => {
     return <Navigate to={`/shops/${shopId}`} replace />;
   }
 
-  const { validatedOrder, selectedModifiers } = state;
+  const { validatedOrder, selectedModifiers = [] } = state;
 
   const modifiersTotal = selectedModifiers.reduce(
     (sum, m) => sum + m.modifierPrice,
@@ -143,8 +143,14 @@ export const OrderReceiptPage: FC = () => {
             navigate(`/orders/${data.order_id}`, { replace: true });
           }
         },
-        onError: () => {
-          toast.error("Failed to create order. Please try again.");
+        onError: (err: any) => {
+          // Surface the backend's reason (e.g. an unmet modifier-group rule)
+          // as a safety net behind the modifier page's client-side validation.
+          toast.error(
+            err?.message ??
+              err?.response?.data?.message ??
+              "Failed to create order. Please try again."
+          );
         },
       }
     );
