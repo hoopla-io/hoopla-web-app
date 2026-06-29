@@ -101,7 +101,25 @@ export const MapPage: FC = () => {
        </div>`
     );
 
-    shops.forEach((shop) => {
+    // Cluster icon: a branded circle showing how many shops are merged when
+    // they'd otherwise overlap at low zoom. Clicking it zooms in to split them.
+    const ClusterLayout = window.ymaps.templateLayoutFactory.createClass(
+      `<div style="transform: translate(-21px, -21px); width: 42px; height: 42px; border-radius: 50%; background: ${BRAND_COLOR}; border: 3px solid #fff; box-shadow: 0 3px 8px rgba(0,0,0,0.3); box-sizing: border-box; display: flex; align-items: center; justify-content: center;">
+         <span style="color: #fff; font-weight: 700; font-size: 14px; line-height: 1;">{{ properties.geoObjects.length }}</span>
+       </div>`
+    );
+
+    const clusterer = new window.ymaps.Clusterer({
+      clusterIconLayout: ClusterLayout,
+      clusterIconShape: { type: "Circle", coordinates: [0, 0], radius: 21 },
+      // Click a cluster to zoom in and break it apart; skip the default balloon
+      // since we have our own shop card.
+      clusterDisableClickZoom: false,
+      hasBalloon: false,
+      gridSize: 80,
+    });
+
+    const placemarks = shops.map((shop) => {
       const placemark = new window.ymaps.Placemark(
         [shop.location.lat, shop.location.lng],
         {
@@ -126,8 +144,11 @@ export const MapPage: FC = () => {
         });
       });
 
-      map.geoObjects.add(placemark);
+      return placemark;
     });
+
+    clusterer.add(placemarks);
+    map.geoObjects.add(clusterer);
   }, [map, shops]);
 
   if (!userLocation) {
