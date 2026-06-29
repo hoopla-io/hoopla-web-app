@@ -233,9 +233,10 @@ export const ShopDetailPage: FC = () => {
         const firstVisible = categories.find((c) => visibilityRef.current[c]);
         if (firstVisible) setActiveCategory(firstVisible);
       },
-      // Active band = from 132px (sticky header + tab bar) down to 45% of the
-      // viewport, so a section activates as its heading clears the sticky bar.
-      { rootMargin: "-132px 0px -55% 0px", threshold: 0 }
+      // Active band = from ~72px (the sticky tab bar; the app header is hidden
+      // on this page) down to 45% of the viewport, so a section activates as
+      // its heading clears the sticky bar.
+      { rootMargin: "-72px 0px -55% 0px", threshold: 0 }
     );
 
     sections.forEach((s) => observer.observe(s));
@@ -303,7 +304,7 @@ export const ShopDetailPage: FC = () => {
           </AspectRatio>
           <button
             onClick={() => navigate(-1)}
-            className="absolute top-4 left-4 p-2 rounded-full bg-white/80 backdrop-blur-sm shadow-sm hover:bg-white transition-colors"
+            className="absolute top-[calc(1rem+var(--tg-top-inset,0px))] left-4 p-2 rounded-full bg-white/80 backdrop-blur-sm shadow-sm hover:bg-white transition-colors"
           >
             <ArrowLeft size={20} className="text-gray-700" />
           </button>
@@ -491,13 +492,13 @@ export const ShopDetailPage: FC = () => {
               ) : (
                 <>
                   {hasRealCategories && (
-                    // Floating glass pill row that docks just beneath the header,
-                    // mirroring its bg-white/80 + backdrop-blur language so the two
-                    // read as one cohesive cluster. -mx-2 cancels the parent px-2 so
-                    // the pill aligns to the same max-w-lg edges as the header; px-3
-                    // matches the header's side inset. Outer is click-through so taps
-                    // in the margins reach the content scrolling behind.
-                    <div className="pointer-events-none sticky top-[calc(64px+var(--tg-top-inset,0px))] z-20 -mx-2 px-3 pt-2 pb-2">
+                    // Floating glass pill row that docks at the very top — the
+                    // app header is hidden on this page, so the bar sits right
+                    // below the Telegram top inset. -mx-2 cancels the parent
+                    // px-2 so the pill spans the same max-w-lg edges; px-3 is the
+                    // side inset. Outer is click-through so taps in the margins
+                    // reach the content scrolling behind.
+                    <div className="pointer-events-none sticky top-[var(--tg-top-inset,0px)] z-20 -mx-2 px-3 pt-2 pb-2">
                       <div
                         ref={tabScrollRef}
                         className="pointer-events-auto relative flex gap-2 overflow-x-auto scrollbar-hide rounded-[24px] bg-white/80 px-2 py-2 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.3)] ring-1 ring-black/[0.06] backdrop-blur-2xl"
@@ -533,7 +534,7 @@ export const ShopDetailPage: FC = () => {
                             sectionRefs.current[cat.name] = el;
                           }}
                           data-category={cat.name}
-                          className="scroll-mt-[132px]"
+                          className="scroll-mt-[calc(72px+var(--tg-top-inset,0px))]"
                         >
                           <h3 className="text-lg font-bold text-gray-900 mb-3">
                             {cat.name}
