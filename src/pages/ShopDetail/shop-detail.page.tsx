@@ -214,9 +214,12 @@ export const ShopDetailPage: FC = () => {
   useEffect(() => {
     if (!hasRealCategories || categories.length === 0) return;
 
+    // `el instanceof Element` (not `!== null`) so a not-yet-mounted ref —
+    // which reads back as `undefined`, not `null` — can't reach observe() and
+    // throw "parameter 1 is not of type 'Element'".
     const sections = categories
       .map((c) => sectionRefs.current[c])
-      .filter((el): el is HTMLDivElement => el !== null);
+      .filter((el): el is HTMLDivElement => el instanceof Element);
     if (sections.length === 0) return;
 
     const observer = new IntersectionObserver(
