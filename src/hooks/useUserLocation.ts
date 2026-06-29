@@ -93,13 +93,14 @@ function requestFreshLocation(
   if (tgLocationManager) {
     tgLocationManager.init(() => {
       if (settled) return;
-      if (
-        !tgLocationManager.isLocationAvailable ||
-        !tgLocationManager.isAccessGranted
-      ) {
+      // If the client/device can't provide location at all, use the browser.
+      if (!tgLocationManager.isLocationAvailable) {
         fallbackToBrowser();
         return;
       }
+      // Always call getLocation — the first time it shows Telegram's permission
+      // prompt and persists the grant (the "Geolocation" toggle in the bot
+      // profile). null means the user denied or it's unavailable, so fall back.
       tgLocationManager.getLocation((data) => {
         if (data) {
           succeed({ lat: data.latitude, lng: data.longitude });
