@@ -4,6 +4,13 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { AuthApi, LoginResponse } from "@/api/domains/auth";
 import { AUTH_EXPIRED_EVENT } from "@/api/http-client";
 import { DEFAULT_USER_NAME } from "@/helpers/utils";
+import {
+  setTokens,
+  clearTokens,
+  hydrateTokens,
+  getAccessToken,
+  getRefreshToken,
+} from "@/helpers/token-storage";
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -45,8 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const confirmCode = async (sessionId: string, code: number) => {
     const data = await AuthApi.confirmSms(sessionId, code);
 
-    localStorage.setItem("access_token", data.jwt.accessToken);
-    localStorage.setItem("refresh_token", data.jwt.refreshToken);
+    setTokens(data.jwt.accessToken, data.jwt.refreshToken);
 
     setState({
       isAuthenticated: true,
@@ -75,8 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
+    clearTokens();
     setState({
       isAuthenticated: false,
       isLoading: false,
@@ -98,22 +103,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const closeEditProfile = () => setIsEditProfileOpen(false);
 
   useEffect(() => {
-    const accessToken = localStorage.getItem("access_token");
-    const refreshToken = localStorage.getItem("refresh_token");
+    let cancelled = false;
 
-    if (accessToken && refreshToken) {
+    // Hydrate from the durable store first (CloudStorage in Telegram, where
+    // localStorage may have been evicted), then settle the auth state. Stays
+    // `pending` until this resolves so we never flash signed-out on cold start.
+    (async () => {
+      await hydrateTokens();
+      if (cancelled) return;
+      const authed = Boolean(getAccessToken() && getRefreshToken());
       setState({
-        isAuthenticated: true,
+        isAuthenticated: authed,
         isLoading: false,
         pending: false,
       });
-    } else {
-      setState({
-        isAuthenticated: false,
-        isLoading: false,
-        pending: false,
-      });
-    }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Session expired/invalid (from the HTTP interceptor): clear auth and prompt
