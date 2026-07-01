@@ -1,4 +1,5 @@
 import { httpClient } from "@/api/http-client";
+import { getDeviceInfo } from "@/helpers/device";
 
 export interface LoginResponse {
   phoneNumber: string;
@@ -48,13 +49,24 @@ export const AuthApi = {
     const response = await httpClient.post(`/auth/confirm-sms`, {
       sessionId,
       code,
+      // Optional device fields — labels this session in the /user/devices list.
+      // Omitting them is valid; we always send our best-effort values.
+      ...getDeviceInfo(),
     });
 
     return response.data as ConfirmSmsResponse;
   },
 
   logout: async () => {
-    await httpClient.post("/user/logout");
+    // Pass this device's refresh token so only the current session is logged
+    // out; other devices stay signed in. Without it the backend (old behavior)
+    // would log out every device. Falls back to that if the token is missing.
+    const refreshToken = localStorage.getItem("refresh_token");
+    await httpClient.post(
+      "/user/logout",
+      null,
+      refreshToken ? { params: { refreshToken } } : undefined
+    );
   },
 
   deleteAccount: async () => {

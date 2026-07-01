@@ -3,10 +3,20 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import react from "@vitejs/plugin-react-swc";
 import mkcert from "vite-plugin-mkcert";
 import path from "path";
+import { readFileSync } from "node:fs";
+
+// Single source of truth for the app version — reported as the device
+// `appVersion` on login (see src/helpers/device.ts).
+const appVersion = JSON.parse(
+  readFileSync(path.resolve(__dirname, "package.json"), "utf-8")
+).version as string;
 
 // https://vitejs.dev/config/
 export default defineConfig({
   base: "/",
+  define: {
+    __APP_VERSION__: JSON.stringify(appVersion),
+  },
   css: {
     preprocessorOptions: {
       scss: {
