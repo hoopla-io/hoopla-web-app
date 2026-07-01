@@ -5,7 +5,7 @@ const privacy = {
   content: `
             <div class="space-y-2 mb-8">
                 <h2 class="font-bold text-xl">PRIVACY POLICY</h2>
-                <p>Policy on the collection and processing of personal data of LLC "ALPHAZET TECHNOLOGIES" HOOPLA</p>
+                <p>Policy on the collection and processing of personal data of LLC "HOOPLA BRIDGE" HOOPLA</p>
             </div>
             <div class="space-y-2 mb-8">
                 <h2 class="font-bold text-xl">General Provisions</h2>
@@ -15,7 +15,7 @@ const privacy = {
             </div>
             <div class="space-y-2 mb-8">
                 <h2 class="font-bold text-xl">Key Definitions</h2>
-                <p><strong>2.1.</strong> Operator – LLC "ALPHAZET TECHNOLOGIES", which independently organizes and (or) carries out the collection and processing of personal data within the "HOOPLA" Application, as well as determines the purposes of personal data processing, the list of data to be collected and processed, and the operations performed.</p>
+                <p><strong>2.1.</strong> Operator – LLC "HOOPLA BRIDGE", which independently organizes and (or) carries out the collection and processing of personal data within the "HOOPLA" Application, as well as determines the purposes of personal data processing, the list of data to be collected and processed, and the operations performed.</p>
                 <p><strong>2.2.</strong> User – an individual who has reached the age of majority and uses the "HOOPLA" Application to receive services provided by partner coffee shops.</p>
                 <p><strong>2.3.</strong> Partner – a legal entity or an individual entrepreneur registered in accordance with the legislation of the Republic of Uzbekistan, providing services to Users as part of cooperation with "HOOPLA".</p>
                 <p><strong>2.4.</strong> Personal data – information related to a specific User that allows their identification.</p>

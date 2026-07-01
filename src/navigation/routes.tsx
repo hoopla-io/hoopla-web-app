@@ -14,6 +14,7 @@ import { ModifierSelectionPage } from "@/pages/MakeOrder/modifier-selection.page
 import { OrderReceiptPage } from "@/pages/MakeOrder/order-receipt.page";
 import { OrdersPage } from "@/pages/Orders/orders.page";
 import { OrderDetailPage } from "@/pages/Orders/order-detail.page";
+import { DevicesPage } from "@/pages/Devices/devices.page";
 
 interface Route {
   path: string;
@@ -68,6 +69,11 @@ export const routes: Route[] = [
     protected: true,
     element: <ProfilePage />,
     title: "Profile",
+  },
+  {
+    path: "/devices",
+    protected: true,
+    element: <DevicesPage />,
   },
   {
     path: "/notifications",

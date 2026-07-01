@@ -5,7 +5,7 @@ const terms = {
   lastUpdated: "Last updated:",
   content: `
         <p>On providing access to the subscription</p>
-        <p>Limited Liability Company <span class="font-bold">"ALPHAZET TECHNOLOGIES"</span>, hereinafter referred to as the "Company," represented by the Director acting under the Charter, offers to enter into this Public Offer for the provision of access to the subscription (hereinafter referred to as the Offer, Agreement, or Contract) under the terms set forth below:</p>
+        <p>Limited Liability Company <span class="font-bold">"HOOPLA BRIDGE"</span>, hereinafter referred to as the "Company," represented by the Director acting under the Charter, offers to enter into this Public Offer for the provision of access to the subscription (hereinafter referred to as the Offer, Agreement, or Contract) under the terms set forth below:</p>
         <br />
         <div class="space-y-2 mb-8">
           <h2 class="font-bold text-xl">TERMS AND DEFINITIONS</h2>
