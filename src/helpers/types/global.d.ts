@@ -33,6 +33,33 @@ interface TelegramBackButton {
   offClick(callback: () => void): void;
 }
 
+// Persistent per-user key/value store, synced across the user's Telegram
+// sessions/devices. Bot API 6.9+, so optional on TelegramWebApp.
+interface TelegramCloudStorage {
+  setItem(
+    key: string,
+    value: string,
+    callback?: (error: string | null, success?: boolean) => void
+  ): void;
+  getItem(
+    key: string,
+    callback: (error: string | null, value?: string) => void
+  ): void;
+  getItems(
+    keys: string[],
+    callback: (error: string | null, values?: Record<string, string>) => void
+  ): void;
+  removeItem(
+    key: string,
+    callback?: (error: string | null, success?: boolean) => void
+  ): void;
+  removeItems(
+    keys: string[],
+    callback?: (error: string | null, success?: boolean) => void
+  ): void;
+  getKeys(callback: (error: string | null, keys?: string[]) => void): void;
+}
+
 interface TelegramWebApp {
   onEvent(event: string, callback: () => void): void;
   offEvent(event: string, callback: () => void): void;
@@ -56,6 +83,7 @@ interface TelegramWebApp {
   safeAreaInset?: TelegramSafeAreaInset;
   contentSafeAreaInset?: TelegramSafeAreaInset;
   BackButton?: TelegramBackButton;
+  CloudStorage?: TelegramCloudStorage;
 }
 
 interface Window {

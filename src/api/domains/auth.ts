@@ -1,5 +1,6 @@
 import { httpClient } from "@/api/http-client";
 import { getDeviceInfo } from "@/helpers/device";
+import { getRefreshToken } from "@/helpers/token-storage";
 
 export interface LoginResponse {
   phoneNumber: string;
@@ -61,7 +62,7 @@ export const AuthApi = {
     // Pass this device's refresh token so only the current session is logged
     // out; other devices stay signed in. Without it the backend (old behavior)
     // would log out every device. Falls back to that if the token is missing.
-    const refreshToken = localStorage.getItem("refresh_token");
+    const refreshToken = getRefreshToken();
     await httpClient.post(
       "/user/logout",
       null,

@@ -6,6 +6,13 @@ import type {
   InternalAxiosRequestConfig,
 } from "axios";
 
+import {
+  getAccessToken,
+  getRefreshToken,
+  setTokens,
+  clearTokens,
+} from "@/helpers/token-storage";
+
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _isRetry?: boolean;
 }
@@ -34,8 +41,7 @@ const processQueue = (error: unknown, token: string | null = null) => {
 export const AUTH_EXPIRED_EVENT = "auth:expired";
 
 const redirectToLogin = () => {
-  localStorage.removeItem("access_token");
-  localStorage.removeItem("refresh_token");
+  clearTokens();
   // Let the app prompt sign-in via the global drawer instead of navigating
   // to a separate page. AuthProvider listens for this event.
   window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
@@ -59,7 +65,7 @@ export const applyExtractorResponseInterceptor = (
         originalRequest &&
         !originalRequest._isRetry
       ) {
-        const refreshToken = localStorage.getItem("refresh_token");
+        const refreshToken = getRefreshToken();
 
         if (!refreshToken) {
           redirectToLogin();
@@ -90,8 +96,7 @@ export const applyExtractorResponseInterceptor = (
             `${import.meta.env.VITE_API_URL}/user/refresh-token?refreshToken=${refreshToken}`
           );
 
-          localStorage.setItem("access_token", data.accessToken);
-          localStorage.setItem("refresh_token", data.refreshToken);
+          setTokens(data.accessToken, data.refreshToken);
 
           // Retry all queued requests with the new token
           processQueue(null, data.accessToken);
@@ -128,7 +133,7 @@ export const applyExtractorResponseInterceptor = (
 export const applyAuthorizationInterceptor = (axiosInstance: AxiosInstance) => {
   axiosInstance.interceptors.request.use(
     (config) => {
-      const token = localStorage.getItem("access_token");
+      const token = getAccessToken();
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
