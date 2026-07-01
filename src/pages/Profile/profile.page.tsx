@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Gift,
   Loader2,
+  MonitorSmartphone,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
@@ -332,6 +333,19 @@ export const ProfilePage: FC = () => {
               <ChevronRight size={18} className="text-gray-400" />
             </Button>
           )}
+
+          <Link to="/devices">
+            <Button
+              variant="outline"
+              className="w-full h-12 justify-between rounded-2xl bg-white border-none shadow-sm text-gray-700 hover:bg-gray-50 mt-2"
+            >
+              <span className="flex items-center gap-3">
+                <MonitorSmartphone size={18} className="text-gray-400" />
+                Devices
+              </span>
+              <ChevronRight size={18} className="text-gray-400" />
+            </Button>
+          </Link>
 
           <Link to="/privacy-policy">
             <Button

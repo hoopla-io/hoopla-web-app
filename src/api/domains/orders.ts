@@ -12,6 +12,32 @@ export interface Order {
   cashback_earned: number;
 }
 
+/**
+ * An in-progress order shown on the home screen "Current order" card.
+ * Returned by GET /user/orders/active. Distinct from `Order` (history):
+ * the status set is different and it carries `hasFeedback`. `cashback_earned`
+ * keeps the backend's snake_case key.
+ */
+export interface ActiveOrder {
+  id: number;
+  shopName: string;
+  shopIconUrl: string | null;
+  drinkName: string;
+  // Known statuses kept as literals for autocomplete; `string & {}` still
+  // accepts any future status the backend adds without widening to bare string.
+  orderStatus:
+    | "pending_payment"
+    | "pending"
+    | "preparing"
+    | "ready"
+    | (string & {});
+  productPrice: number;
+  purchasedAt: string;
+  purchasedAtUnix: number;
+  cashback_earned: number;
+  hasFeedback: boolean;
+}
+
 export interface OrderDetail {
   id: number;
   shopName: string;
@@ -166,6 +192,11 @@ export const OrdersApi = {
       data: (response.data ?? []) as Order[],
       meta: response.meta as OrderListMeta,
     };
+  },
+
+  getActive: async () => {
+    const response: any = await httpClient.get("/user/orders/active");
+    return (response.data ?? []) as ActiveOrder[];
   },
 
   getDetail: async (orderId: number) => {
