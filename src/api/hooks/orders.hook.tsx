@@ -3,6 +3,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 import {
   OrdersApi,
   type Order,
+  type ActiveOrder,
   type OrderDetail,
   type CreateOrderRequest,
   type CheckPromocodeRequest,
@@ -53,6 +54,26 @@ export function useOrders() {
   };
 }
 
+export function useActiveOrders() {
+  const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
+
+  const { data, isLoading, isError } = useQuery<ActiveOrder[]>(
+    {
+      queryKey: ["active-orders"],
+      queryFn: () => OrdersApi.getActive(),
+      enabled: isAuthenticated,
+      staleTime: 15000,
+      // Poll so the card reflects status changes (preparing → ready) without a
+      // manual refresh. (refetchOnWindowFocus is already on by default.)
+      refetchInterval: 30000,
+    },
+    queryClient
+  );
+
+  return { activeOrders: data ?? [], isLoading, isError };
+}
+
 export function useOrderDetail(orderId: number) {
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
@@ -82,6 +103,7 @@ export function useCancelOrder() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       queryClient.invalidateQueries({ queryKey: ["order-detail"] });
+      queryClient.invalidateQueries({ queryKey: ["active-orders"] });
     },
   });
 }
@@ -107,6 +129,7 @@ export function useCreateOrder() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       queryClient.invalidateQueries({ queryKey: ["get-me"] });
+      queryClient.invalidateQueries({ queryKey: ["active-orders"] });
     },
   });
 }
