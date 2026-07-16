@@ -48,9 +48,18 @@ let memory: { access: string | null; refresh: string | null } = {
   refresh: safeGet(REFRESH_KEY),
 };
 
-/** Telegram CloudStorage, or undefined outside Telegram / on older clients. */
+/**
+ * Telegram CloudStorage, or undefined outside Telegram / on older clients.
+ * CloudStorage needs Bot API 6.9+ — the property exists even outside a real
+ * Telegram client (telegram-web-app.js provides a stub that self-reports
+ * version "6.0" in a plain browser) but calling its methods below the
+ * required version just logs a "not supported" error, so gate on
+ * isVersionAtLeast the same way initTelegram() already does elsewhere.
+ */
 function cloud() {
-  return window.Telegram?.WebApp?.CloudStorage;
+  const tg = window.Telegram?.WebApp;
+  if (!tg?.isVersionAtLeast?.("6.9")) return undefined;
+  return tg.CloudStorage;
 }
 
 export function getAccessToken(): string | null {

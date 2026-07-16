@@ -38,8 +38,14 @@ export const LoginForm: FC<Props> = ({ onSuccess }) => {
   const { login, confirmCode } = useAuth();
   const codeSectionRef = useRef<HTMLDivElement>(null);
 
-  const phoneForm = useForm({ resolver: zodResolver(phoneSchema) });
-  const codeForm = useForm({ resolver: zodResolver(codeSchema) });
+  const phoneForm = useForm({
+    resolver: zodResolver(phoneSchema),
+    defaultValues: { phoneNumber: "" },
+  });
+  const codeForm = useForm({
+    resolver: zodResolver(codeSchema),
+    defaultValues: { code: "" },
+  });
 
   // When the code step appears, bring it into view within the sheet so the
   // input isn't left hidden below the keyboard / bottom edge.
