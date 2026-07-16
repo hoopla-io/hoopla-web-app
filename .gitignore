@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+# Local planning doc — not part of the shipped app
+CART_IMPLEMENTATION_PLAN.md
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

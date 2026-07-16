@@ -10,8 +10,7 @@ import { NotificationsPage } from "@/pages/Notifications/notifications.page";
 import { NotificationDetailPage } from "@/pages/Notifications/notification-detail.page";
 import { ShopDetailPage } from "@/pages/ShopDetail/shop-detail.page";
 import { PartnerDetailPage } from "@/pages/PartnerDetail/partner-detail.page";
-import { ModifierSelectionPage } from "@/pages/MakeOrder/modifier-selection.page";
-import { OrderReceiptPage } from "@/pages/MakeOrder/order-receipt.page";
+import { CartPage } from "@/pages/Cart/cart.page";
 import { OrdersPage } from "@/pages/Orders/orders.page";
 import { OrderDetailPage } from "@/pages/Orders/order-detail.page";
 import { DevicesPage } from "@/pages/Devices/devices.page";
@@ -44,14 +43,10 @@ export const routes: Route[] = [
     Component: PartnerDetailPage,
   },
   {
-    path: "/shops/:shopId/order/modifiers",
+    path: "/cart",
     protected: true,
-    element: <ModifierSelectionPage />,
-  },
-  {
-    path: "/shops/:shopId/order/receipt",
-    protected: true,
-    element: <OrderReceiptPage />,
+    element: <CartPage />,
+    title: "Cart",
   },
   {
     path: "/orders",

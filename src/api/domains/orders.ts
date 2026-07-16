@@ -5,7 +5,21 @@ export interface Order {
   shopName: string;
   shopIconUrl: string;
   drinkName: string;
-  orderStatus: "completed" | "cancelled" | "pending_payment" | "pending" | "error";
+  /** Drink-item thumbnails for the order card. Empty for none; a legacy
+   * single-item order yields one, a multi-item cart order yields several. */
+  itemImages?: string[] | null;
+  // Full backend status set. `paid`/`preparing`/`ready` were previously
+  // missing here, which made the status pill fall through to a wrong default.
+  orderStatus:
+    | "completed"
+    | "cancelled"
+    | "pending_payment"
+    | "paid"
+    | "pending"
+    | "preparing"
+    | "ready"
+    | "error"
+    | (string & {});
   productPrice: number;
   purchasedAt: string;
   purchasedAtUnix: number;
@@ -43,14 +57,32 @@ export interface OrderDetail {
   shopName: string;
   drinkName: string;
   drinkImageUrl: string;
-  orderStatus: "completed" | "cancelled" | "pending_payment" | "pending" | "error";
+  // Full backend status set. `paid`/`preparing`/`ready` were previously
+  // missing here, which made the status pill fall through to a wrong default.
+  orderStatus:
+    | "completed"
+    | "cancelled"
+    | "pending_payment"
+    | "paid"
+    | "pending"
+    | "preparing"
+    | "ready"
+    | "error"
+    | (string & {});
   productPrice: number;
   purchasedAt: string;
   purchasedAtUnix: number;
   items: {
+    id: number;
     item_type: string;
     name: string;
     price: number;
+    quantity: number;
+    /** Drink-row image; null for modifier rows and drinks with no image. */
+    imageUrl?: string | null;
+    /** Links a "modifier" row to the "drink" row it belongs to — null for
+     * drink rows, and for modifiers on every legacy (pre-cart) order. */
+    parent_item_id: number | null;
   }[];
   cashback_used: number;
   cashback_earned: number;
@@ -60,6 +92,10 @@ export interface OrderDetail {
   promoDiscount?: number;
   /** Note the user left for the barista. */
   comment?: string | null;
+  /** Live Rahmat payment URL — present only while orderStatus is
+   * "pending_payment" and the invoice is still open. Lets the detail page
+   * offer "Complete payment" for an order that wasn't paid at checkout. */
+  checkout_url?: string;
 }
 
 export interface OrderListMeta {

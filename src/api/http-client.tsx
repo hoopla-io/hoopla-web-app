@@ -91,18 +91,30 @@ export const applyExtractorResponseInterceptor = (
         isRefreshing = true;
 
         try {
-          // Use plain axios to avoid attaching the expired token via request interceptor
-          const { data } = await axios.patch(
+          // Use plain axios to avoid attaching the expired token via request
+          // interceptor. NOTE: this also skips our response extractor, so
+          // `body` is the full API envelope { code, message, data, meta } — the
+          // tokens live under body.data, not on body itself.
+          const { data: body } = await axios.patch(
             `${import.meta.env.VITE_API_URL}/user/refresh-token?refreshToken=${refreshToken}`
           );
 
-          setTokens(data.accessToken, data.refreshToken);
+          const accessToken: string | undefined = body?.data?.accessToken;
+          const newRefreshToken: string | undefined = body?.data?.refreshToken;
+
+          // Never retry with "Bearer undefined": a token-less refresh response
+          // is treated as a failed refresh (→ caught below → sign-in prompt).
+          if (!accessToken) {
+            throw new Error("refresh-token response had no accessToken");
+          }
+
+          setTokens(accessToken, newRefreshToken ?? refreshToken);
 
           // Retry all queued requests with the new token
-          processQueue(null, data.accessToken);
+          processQueue(null, accessToken);
 
           // Retry the original request once
-          originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           originalRequest._isRetry = true;
           return axiosInstance(originalRequest);
         } catch (refreshError) {
@@ -136,6 +148,15 @@ export const applyAuthorizationInterceptor = (axiosInstance: AxiosInstance) => {
       const token = getAccessToken();
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+      }
+      // Reveals type='test' partners/shops/orders to this client — the
+      // backend hides them from every real customer unless this header is
+      // present. Explicit opt-in via VITE_HOOPLA_TEST_MODE="true", not tied
+      // to Vite's dev/prod build mode: a dev build checking real-customer
+      // behavior shouldn't accidentally see test data, and this must never
+      // be enabled in a build real customers use.
+      if (import.meta.env.VITE_HOOPLA_TEST_MODE === "true") {
+        config.headers["X-Hoopla-Test"] = "true";
       }
       return config;
     },

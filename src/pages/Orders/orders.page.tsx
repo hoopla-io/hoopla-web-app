@@ -1,6 +1,6 @@
 import { FC, useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ReceiptText, Loader2, CheckCircle, XCircle, Clock, AlertCircle, Coffee } from "lucide-react";
+import { ReceiptText, Loader2, CheckCircle, XCircle, Clock, AlertCircle, Coffee, Coins } from "lucide-react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 
@@ -44,6 +44,24 @@ const statusConfig: Record<string, { label: string; icon: typeof CheckCircle; co
     icon: Coffee,
     color: "text-blue-600",
     bg: "bg-blue-50",
+  },
+  paid: {
+    label: "Preparing",
+    icon: Coffee,
+    color: "text-blue-600",
+    bg: "bg-blue-50",
+  },
+  preparing: {
+    label: "Preparing",
+    icon: Coffee,
+    color: "text-blue-600",
+    bg: "bg-blue-50",
+  },
+  ready: {
+    label: "Ready",
+    icon: CheckCircle,
+    color: "text-emerald-600",
+    bg: "bg-emerald-50",
   },
   error: {
     label: "Error",
@@ -142,14 +160,29 @@ export const OrdersPage: FC = () => {
         {orders.length > 0 && (
           <div className="space-y-2">
             {orders.map((order) => {
-              const status = statusConfig[order.orderStatus] ?? statusConfig.pending_payment;
+              const status = statusConfig[order.orderStatus] ?? {
+                label: "Processing",
+                icon: Clock,
+                color: "text-gray-500",
+                bg: "bg-gray-100",
+              };
               const StatusIcon = status.icon;
+
+              const images =
+                order.itemImages && order.itemImages.length > 0
+                  ? order.itemImages
+                  : order.shopIconUrl
+                  ? [order.shopIconUrl]
+                  : [];
+              const hasOverflow = images.length > 4;
+              const visibleImages = hasOverflow ? images.slice(0, 3) : images.slice(0, 4);
+              const extraCount = hasOverflow ? images.length - 3 : 0;
 
               return (
                 <Link
                   key={order.id}
                   to={`/orders/${order.id}`}
-                  className="bg-white rounded-2xl shadow-sm p-3 flex items-center gap-3 active:scale-[0.98] transition-transform block select-none"
+                  className="bg-white rounded-2xl shadow-sm p-3 active:scale-[0.98] transition-transform block select-none"
                   onTouchStart={() => startLongPress(order)}
                   onTouchEnd={clearLongPress}
                   onTouchMove={clearLongPress}
@@ -166,38 +199,63 @@ export const OrdersPage: FC = () => {
                     }
                   }}
                 >
-                  <img
-                    src={order.shopIconUrl}
-                    alt={order.drinkName}
-                    className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-sm text-gray-900 truncate">
-                      {order.drinkName}
-                    </h3>
-                    <p className="text-xs text-gray-500 truncate">
-                      {order.shopName}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {format(new Date(order.purchasedAt), "MMM d, yyyy · HH:mm")}
-                    </p>
-                    {order.cashback_earned > 0 && (
-                      <p className="text-xs font-medium text-[var(--color-primary)] mt-0.5">
-                        +{formatBalance(order.cashback_earned)} UZS cashback
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-sm text-gray-900 truncate">
+                        {order.shopName}
+                      </h3>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {format(new Date(order.purchasedAt), "d MMMM HH:mm, yyyy")}
                       </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                      <span className="text-sm font-semibold text-gray-900">
+                        {formatBalance(order.productPrice)} sum
+                      </span>
+                      <span
+                        className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${status.bg} ${status.color}`}
+                      >
+                        <StatusIcon size={12} />
+                        {status.label}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 mt-3">
+                    {images.length > 0 ? (
+                      <>
+                        {visibleImages.map((src, idx) => (
+                          <img
+                            key={idx}
+                            src={src}
+                            alt={order.drinkName}
+                            className="w-12 h-12 rounded-xl object-cover ring-1 ring-black/5 flex-shrink-0"
+                          />
+                        ))}
+                        {extraCount > 0 && (
+                          <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs font-medium text-gray-500">
+                              +{extraCount}
+                            </span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
+                        <Coffee size={18} className="text-gray-400" />
+                      </div>
                     )}
                   </div>
-                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                    <span className="text-sm font-semibold text-gray-900">
-                      {formatBalance(order.productPrice)} UZS
-                    </span>
-                    <span
-                      className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${status.bg} ${status.color}`}
-                    >
-                      <StatusIcon size={12} />
-                      {status.label}
-                    </span>
-                  </div>
+
+                  {order.cashback_earned > 0 && (
+                    <div className="mt-2.5 flex items-center gap-1.5">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-600">
+                        <Coins size={13} />
+                        +{formatBalance(order.cashback_earned)} UZS
+                      </span>
+                      <span className="text-xs text-gray-400">cashback earned</span>
+                    </div>
+                  )}
                 </Link>
               );
             })}
@@ -217,7 +275,7 @@ export const OrdersPage: FC = () => {
             <AlertDialogTitle>Cancel this order?</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to cancel your order
-              {cancelTarget ? ` "${cancelTarget.drinkName}"` : ""}? This action cannot be undone.
+              {cancelTarget ? ` from ${cancelTarget.shopName}` : ""}? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
