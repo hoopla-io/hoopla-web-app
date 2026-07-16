@@ -5,10 +5,15 @@ import debounce from "lodash/debounce";
 
 import { useGetMe } from "@/api/hooks/profile.hook";
 import { useSearch } from "@/context/search.context";
+import { useSecretActivator } from "@/hooks/useSecretActivator";
+import { toggleTestMode } from "@/helpers/testMode";
 
 export const Header: FC = () => {
   const { userInfo } = useGetMe();
   const unreadCount = userInfo?.unreadNotifications ?? 0;
+
+  // Hidden gesture: tap the logo 5× to toggle test mode (X-Hoopla-Test + vConsole).
+  const secretTap = useSecretActivator(() => void toggleTestMode());
 
   const { pathname } = useLocation();
   const isHome = pathname === "/";
@@ -63,6 +68,7 @@ export const Header: FC = () => {
             <>
               <Link
                 to="/"
+                onClick={secretTap}
                 className="font-eugusto text-2xl tracking-wide text-[var(--color-primary)]"
               >
                 hoopla

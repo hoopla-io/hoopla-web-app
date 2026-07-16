@@ -4,9 +4,11 @@ import { Header } from "@/components/func/Header";
 import { Toaster } from "react-hot-toast";
 import { SearchProvider } from "@/context/search.context";
 import { useTelegramBackButton } from "@/hooks/useTelegramBackButton";
+import { useStartParamDeepLink } from "@/hooks/useStartParamDeepLink";
 
 export default function Layout() {
   useTelegramBackButton();
+  useStartParamDeepLink();
   const { pathname } = useLocation();
   // Shop detail has its own hero + sticky category bar, so the floating app
   // header is redundant there. Hide it (only on the detail page itself, not

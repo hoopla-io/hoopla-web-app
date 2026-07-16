@@ -68,7 +68,16 @@ interface TelegramWebApp {
   // Signed launch params — a non-empty string only inside a real Telegram
   // client; "" in a plain browser. `platform` is "unknown" outside Telegram.
   initData?: string;
+  // Parsed launch params. `start_param` carries the `?startapp=...` value from
+  // a Mini App deep link (e.g. a shared shop link) — see useStartParamDeepLink.
+  initDataUnsafe?: {
+    start_param?: string;
+    [key: string]: unknown;
+  };
   platform?: string;
+  // Open a t.me / external link from within the Mini App (Bot API 6.1+/6.9+).
+  openTelegramLink?(url: string): void;
+  openLink?(url: string): void;
   LocationManager?: TelegramLocationManager;
   // Layout / lifecycle (subset we use). Optional because older clients may
   // not implement them; fullscreen + safe areas need Bot API 8.0.
