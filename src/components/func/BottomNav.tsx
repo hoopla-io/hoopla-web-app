@@ -1,24 +1,34 @@
 import { cn } from "@/helpers/utils";
-import { Home, MapPin, ReceiptText, User } from "lucide-react";
+import { Home, MapPin, ReceiptText, ShoppingBag, User } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 import { useEditableFocused } from "@/hooks/useEditableFocused";
+import { useAuth } from "@/context/auth.context";
+import { useCartCount } from "@/api/hooks/cart.hook";
 
-const NAV_ITEMS: {
+type NavItem = {
   to: string;
   end?: boolean;
   icon: typeof Home;
   label: string;
-}[] = [
-  { to: "/", end: true, icon: Home, label: "Home" },
-  { to: "/map", icon: MapPin, label: "Map" },
-  { to: "/orders", icon: ReceiptText, label: "Orders" },
-  { to: "/profile", icon: User, label: "Profile" },
-];
+  badge?: number;
+};
 
 const BottomNav = () => {
   // Slide the bar out of the way while typing so it doesn't crowd the keyboard.
   const editableFocused = useEditableFocused();
+  const { isAuthenticated } = useAuth();
+  const cartCount = useCartCount();
+
+  const navItems: NavItem[] = [
+    { to: "/", end: true, icon: Home, label: "Home" },
+    { to: "/map", icon: MapPin, label: "Map" },
+    ...(isAuthenticated
+      ? [{ to: "/cart", icon: ShoppingBag, label: "Cart", badge: cartCount }]
+      : []),
+    { to: "/orders", icon: ReceiptText, label: "Orders" },
+    { to: "/profile", icon: User, label: "Profile" },
+  ];
 
   return (
     // Outer layer is click-through in its margins so the floating bar doesn't
@@ -31,7 +41,7 @@ const BottomNav = () => {
     >
       <nav className="pointer-events-auto mx-auto max-w-md">
         <ul className="flex items-stretch justify-around gap-1 rounded-[28px] bg-white/80 px-2 py-1.5 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.35)] ring-1 ring-black/[0.06] backdrop-blur-2xl">
-          {NAV_ITEMS.map(({ to, end, icon: Icon, label }) => (
+          {navItems.map(({ to, end, icon: Icon, label, badge }) => (
             <li key={to} className="flex-1">
               <NavLink to={to} end={end} aria-label={label}>
                 {({ isActive }) => (
@@ -40,7 +50,7 @@ const BottomNav = () => {
                         outline icons; lucide doesn't ship filled variants). */}
                     <span
                       className={cn(
-                        "flex h-9 w-9 items-center justify-center rounded-full transition-colors duration-200",
+                        "relative flex h-9 w-9 items-center justify-center rounded-full transition-colors duration-200",
                         isActive ? "bg-[var(--color-primary)]/12" : "bg-transparent"
                       )}
                     >
@@ -54,6 +64,11 @@ const BottomNav = () => {
                             : "text-gray-600"
                         )}
                       />
+                      {!!badge && badge > 0 && (
+                        <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white">
+                          {badge > 99 ? "99+" : badge}
+                        </span>
+                      )}
                     </span>
                     <span
                       className={cn(
