@@ -12,6 +12,7 @@ import {
   setTokens,
   clearTokens,
 } from "@/helpers/token-storage";
+import { isTestModeEnabled } from "@/helpers/testMode";
 
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _isRetry?: boolean;
@@ -151,11 +152,10 @@ export const applyAuthorizationInterceptor = (axiosInstance: AxiosInstance) => {
       }
       // Reveals type='test' partners/shops/orders to this client — the
       // backend hides them from every real customer unless this header is
-      // present. Explicit opt-in via VITE_HOOPLA_TEST_MODE="true", not tied
-      // to Vite's dev/prod build mode: a dev build checking real-customer
-      // behavior shouldn't accidentally see test data, and this must never
-      // be enabled in a build real customers use.
-      if (import.meta.env.VITE_HOOPLA_TEST_MODE === "true") {
+      // present. Gated on the runtime test-mode toggle (hidden 5-tap gesture)
+      // or the VITE_HOOPLA_TEST_MODE env override, so a normal customer build
+      // never sends it. See helpers/testMode.ts.
+      if (isTestModeEnabled()) {
         config.headers["X-Hoopla-Test"] = "true";
       }
       return config;
