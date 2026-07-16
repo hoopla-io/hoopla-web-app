@@ -8,7 +8,8 @@ import {
   Instagram,
   ArrowLeft,
   Coffee,
-  ChevronRight,
+  Plus,
+  Minus,
   ChevronDown,
   Loader2,
 } from "lucide-react";
@@ -16,6 +17,14 @@ import toast from "react-hot-toast";
 
 import { useShop, useShopDrinks } from "@/api/hooks/shops.hook";
 import { useValidateOrder } from "@/api/hooks/orders.hook";
+import {
+  useAddCartItem,
+  useClearCart,
+  useCart,
+  useUpdateCartItemQuantity,
+  useRemoveCartItem,
+  isCrossShopCartConflict,
+} from "@/api/hooks/cart.hook";
 import { usePartnerBanners } from "@/api/hooks/banners.hook";
 import { useAuth } from "@/context/auth.context";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
@@ -23,6 +32,8 @@ import { Page } from "@/components/Page";
 import { LoadingScreen } from "@/components/func/Loading";
 import { BannerCarousel } from "@/components/func/BannerCarousel";
 import { ShopStatusBadge } from "@/components/func/ShopStatusBadge";
+import { CartConflictDialog } from "@/components/func/CartConflictDialog";
+import { DrinkModifierSheet } from "@/components/func/DrinkModifierSheet";
 import {
   formatBalance,
   cn,
@@ -32,6 +43,7 @@ import {
 import {
   toSelectedModifier,
   type SelectedModifier,
+  type ValidateOrderResponse,
 } from "@/api/domains/orders";
 import type { Banner } from "@/api/domains/banners";
 
@@ -52,7 +64,24 @@ export const ShopDetailPage: FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated, openLoginModal } = useAuth();
   const validateOrder = useValidateOrder();
+  const addCartItem = useAddCartItem();
+  const clearCart = useClearCart();
+  const { cart } = useCart();
+  const updateItemQuantity = useUpdateCartItemQuantity();
+  const removeItem = useRemoveCartItem();
   const [validatingDrinkId, setValidatingDrinkId] = useState<number | null>(null);
+  const [showCartConflict, setShowCartConflict] = useState(false);
+  const [pendingAdd, setPendingAdd] = useState<{
+    shopId: number;
+    drinkId: number;
+    modifiers: SelectedModifier[];
+  } | null>(null);
+  const [modifierDrink, setModifierDrink] = useState<ValidateOrderResponse | null>(
+    null
+  );
+  const [pendingCartItemIds, setPendingCartItemIds] = useState<Set<number>>(
+    new Set()
+  );
 
   const numericShopIdFromParams = Number(shopId);
 
@@ -82,6 +111,11 @@ export const ShopDetailPage: FC = () => {
   };
 
   const handleDrinkClick = (drinkId: number) => {
+    // One validate/add flow at a time — tapping another drink while one is
+    // already in flight would overwrite validatingDrinkId and un-busy the
+    // first card mid-flight, so ignore taps until it settles.
+    if (validatingDrinkId !== null) return;
+
     if (!isAuthenticated) {
       // Gate behind the sign-in modal; resume the order on success so the
       // user stays on this page instead of being redirected away.
@@ -92,6 +126,98 @@ export const ShopDetailPage: FC = () => {
     proceedToOrder(drinkId);
   };
 
+  // Drinks with nothing to choose (no modifiers, or every group auto-resolves)
+  // go straight into the cart — no separate review screen in between.
+  const addDrinkToCart = (
+    numericShopId: number,
+    drinkId: number,
+    modifiers: SelectedModifier[]
+  ) => {
+    addCartItem.mutate(
+      { shopId: numericShopId, drinkId, quantity: 1, modifiers },
+      {
+        onSuccess: () => toast.success("Added to cart"),
+        onError: (err: any) => {
+          if (isCrossShopCartConflict(err)) {
+            setPendingAdd({ shopId: numericShopId, drinkId, modifiers });
+            setShowCartConflict(true);
+            return;
+          }
+          toast.error(
+            err?.message ??
+              err?.response?.data?.message ??
+              "Couldn't add this to your cart. Please try again."
+          );
+        },
+        onSettled: () => setValidatingDrinkId(null),
+      }
+    );
+  };
+
+  const handleClearAndRetry = () => {
+    if (!pendingAdd) return;
+    clearCart.mutate(undefined, {
+      onSuccess: () => {
+        setShowCartConflict(false);
+        // Show the card busy again during the retried POST; addDrinkToCart's
+        // existing onSettled clears it once this second attempt lands.
+        setValidatingDrinkId(pendingAdd.drinkId);
+        addDrinkToCart(pendingAdd.shopId, pendingAdd.drinkId, pendingAdd.modifiers);
+      },
+      onError: () => {
+        toast.error("Couldn't clear your existing cart. Please try again.");
+      },
+    });
+  };
+
+  // A no-modifier drink maps to exactly one cart line — the one with an empty
+  // modifiers array. Modifier drinks always have non-empty modifiers, so they
+  // never match and keep showing the plain "+" button.
+  const noModifierLineFor = (drinkId: number) =>
+    cart?.items.find((it) => it.drinkId === drinkId && it.modifiers.length === 0) ??
+    null;
+
+  const addPendingCartItemId = (itemId: number) =>
+    setPendingCartItemIds((prev) => new Set(prev).add(itemId));
+  const removePendingCartItemId = (itemId: number) =>
+    setPendingCartItemIds((prev) => {
+      const next = new Set(prev);
+      next.delete(itemId);
+      return next;
+    });
+
+  const handleIncrement = async (line: { id: number; quantity: number }) => {
+    addPendingCartItemId(line.id);
+    try {
+      await updateItemQuantity.mutateAsync({
+        itemId: line.id,
+        quantity: line.quantity + 1,
+      });
+    } catch {
+      toast.error("Couldn't update your cart. Please try again.");
+    } finally {
+      removePendingCartItemId(line.id);
+    }
+  };
+
+  const handleDecrement = async (line: { id: number; quantity: number }) => {
+    addPendingCartItemId(line.id);
+    try {
+      if (line.quantity > 1) {
+        await updateItemQuantity.mutateAsync({
+          itemId: line.id,
+          quantity: line.quantity - 1,
+        });
+      } else {
+        await removeItem.mutateAsync(line.id);
+      }
+    } catch {
+      toast.error("Couldn't update your cart. Please try again.");
+    } finally {
+      removePendingCartItemId(line.id);
+    }
+  };
+
   const proceedToOrder = (drinkId: number) => {
     const numericShopId = Number(shopId);
     setValidatingDrinkId(drinkId);
@@ -100,24 +226,21 @@ export const ShopDetailPage: FC = () => {
       { drinkId, shopId: numericShopId },
       {
         onSuccess: (data) => {
-          setValidatingDrinkId(null);
-
           const groups = data.modifierGroups?.length
             ? data.modifierGroups
             : null;
 
           // Show the modifier page whenever there's a real choice to make:
           // any group with more than one option. Single-option groups are
-          // resolved here so trivial drinks skip straight to the receipt.
+          // resolved here so trivial drinks skip straight into the cart.
           if (groups) {
             const needsModifierSelection = groups.some(
               (g) => (g.options?.length ?? 0) > 1
             );
 
             if (needsModifierSelection) {
-              navigate(`/shops/${numericShopId}/order/modifiers`, {
-                state: { validatedOrder: data },
-              });
+              setValidatingDrinkId(null);
+              setModifierDrink(data);
             } else {
               // Auto-select required single-option groups; optional ones stay
               // empty so we don't force a modifier the customer didn't pick.
@@ -127,12 +250,7 @@ export const ShopDetailPage: FC = () => {
                 )
                 .map((g) => toSelectedModifier(g.options[0], g.key));
 
-              navigate(`/shops/${numericShopId}/order/receipt`, {
-                state: {
-                  validatedOrder: data,
-                  selectedModifiers: autoSelectedModifiers,
-                },
-              });
+              addDrinkToCart(numericShopId, drinkId, autoSelectedModifiers);
             }
             return;
           }
@@ -148,9 +266,8 @@ export const ShopDetailPage: FC = () => {
           );
 
           if (needsModifierSelection) {
-            navigate(`/shops/${numericShopId}/order/modifiers`, {
-              state: { validatedOrder: data },
-            });
+            setValidatingDrinkId(null);
+            setModifierDrink(data);
           } else {
             const autoSelectedModifiers: SelectedModifier[] = modKeys
               .filter(
@@ -160,12 +277,7 @@ export const ShopDetailPage: FC = () => {
               )
               .map((key) => toSelectedModifier(modifications[key][0], key));
 
-            navigate(`/shops/${numericShopId}/order/receipt`, {
-              state: {
-                validatedOrder: data,
-                selectedModifiers: autoSelectedModifiers,
-              },
-            });
+            addDrinkToCart(numericShopId, drinkId, autoSelectedModifiers);
           }
         },
         onError: () => {
@@ -540,28 +652,50 @@ export const ShopDetailPage: FC = () => {
                             {cat.name}
                           </h3>
                           <div className="grid grid-cols-2 gap-3">
-                            {cat.drinks.map((drink) => (
-                              <DrinkCard
-                                key={drink.id}
-                                drink={drink}
-                                onOrderClick={handleDrinkClick}
-                                isValidating={validatingDrinkId === drink.id}
-                              />
-                            ))}
+                            {cat.drinks.map((drink) => {
+                              const cartLine = noModifierLineFor(drink.id);
+                              return (
+                                <DrinkCard
+                                  key={drink.id}
+                                  drink={drink}
+                                  onOrderClick={handleDrinkClick}
+                                  isValidating={validatingDrinkId === drink.id}
+                                  cartLine={cartLine}
+                                  onIncrement={() =>
+                                    cartLine && handleIncrement(cartLine)
+                                  }
+                                  onDecrement={() =>
+                                    cartLine && handleDecrement(cartLine)
+                                  }
+                                  stepperPending={pendingCartItemIds.has(
+                                    cartLine?.id ?? -1
+                                  )}
+                                />
+                              );
+                            })}
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 gap-3">
-                      {allDrinks.map((drink) => (
-                        <DrinkCard
-                          key={drink.id}
-                          drink={drink}
-                          onOrderClick={handleDrinkClick}
-                          isValidating={validatingDrinkId === drink.id}
-                        />
-                      ))}
+                      {allDrinks.map((drink) => {
+                        const cartLine = noModifierLineFor(drink.id);
+                        return (
+                          <DrinkCard
+                            key={drink.id}
+                            drink={drink}
+                            onOrderClick={handleDrinkClick}
+                            isValidating={validatingDrinkId === drink.id}
+                            cartLine={cartLine}
+                            onIncrement={() => cartLine && handleIncrement(cartLine)}
+                            onDecrement={() => cartLine && handleDecrement(cartLine)}
+                            stepperPending={pendingCartItemIds.has(
+                              cartLine?.id ?? -1
+                            )}
+                          />
+                        );
+                      })}
                     </div>
                   )}
                 </>
@@ -570,6 +704,23 @@ export const ShopDetailPage: FC = () => {
           )}
         </div>
       </div>
+
+      <CartConflictDialog
+        open={showCartConflict}
+        onOpenChange={setShowCartConflict}
+        onConfirm={handleClearAndRetry}
+        isPending={clearCart.isPending}
+      />
+
+      <DrinkModifierSheet
+        validatedOrder={modifierDrink}
+        shopId={numericShopIdFromParams}
+        onClose={() => setModifierDrink(null)}
+        onAdded={() => {
+          setModifierDrink(null);
+          toast.success("Added to cart");
+        }}
+      />
     </Page>
   );
 };
@@ -578,6 +729,10 @@ function DrinkCard({
   drink,
   onOrderClick,
   isValidating,
+  cartLine,
+  onIncrement,
+  onDecrement,
+  stepperPending,
 }: {
   drink: {
     id: number;
@@ -587,11 +742,23 @@ function DrinkCard({
   };
   onOrderClick: (drinkId: number) => void;
   isValidating: boolean;
+  cartLine?: { id: number; quantity: number } | null;
+  onIncrement?: () => void;
+  onDecrement?: () => void;
+  stepperPending?: boolean;
 }) {
   return (
     <div
-      className="bg-white rounded-2xl shadow-sm overflow-hidden active:scale-[0.98] transition-transform cursor-pointer"
-      onClick={() => !isValidating && onOrderClick(drink.id)}
+      className={cn(
+        "bg-white rounded-2xl shadow-sm overflow-hidden transition-transform",
+        cartLine ? "" : "active:scale-[0.98] cursor-pointer"
+      )}
+      onClick={() => {
+        // A no-modifier drink already in the cart has nothing left to
+        // configure — only the stepper below can act on it.
+        if (cartLine) return;
+        if (!isValidating) onOrderClick(drink.id);
+      }}
     >
       {drink.pictureUrl ? (
         <AspectRatio ratio={1}>
@@ -617,13 +784,49 @@ function DrinkCard({
             {formatPrice(drink.productPrice)}
           </p>
         </div>
-        <div className="w-8 h-8 rounded-full bg-[var(--color-primary)] flex items-center justify-center flex-shrink-0">
-          {isValidating ? (
-            <Loader2 size={16} className="text-white animate-spin" />
-          ) : (
-            <ChevronRight size={16} className="text-white" />
-          )}
-        </div>
+        {cartLine ? (
+          <div className="flex shrink-0 items-center gap-1 rounded-full bg-gray-50 p-1">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDecrement?.();
+              }}
+              disabled={stepperPending}
+              className="grid h-7 w-7 place-items-center rounded-full bg-white text-[var(--color-primary)] shadow-sm transition-colors active:bg-gray-100 disabled:opacity-40"
+              aria-label="Decrease quantity"
+            >
+              <Minus size={14} />
+            </button>
+            <span className="w-4 text-center text-xs font-semibold text-gray-900">
+              {stepperPending ? (
+                <Loader2 size={12} className="mx-auto animate-spin text-gray-500" />
+              ) : (
+                cartLine.quantity
+              )}
+            </span>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onIncrement?.();
+              }}
+              disabled={stepperPending}
+              className="grid h-7 w-7 place-items-center rounded-full bg-[var(--color-primary)] text-white shadow-sm transition-colors active:bg-[var(--color-primary-dark)] disabled:opacity-40"
+              aria-label="Increase quantity"
+            >
+              <Plus size={14} />
+            </button>
+          </div>
+        ) : (
+          <div className="w-8 h-8 rounded-full bg-[var(--color-primary)] flex items-center justify-center flex-shrink-0">
+            {isValidating ? (
+              <Loader2 size={16} className="text-white animate-spin" />
+            ) : (
+              <Plus size={16} className="text-white" />
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

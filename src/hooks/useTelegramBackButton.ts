@@ -15,8 +15,15 @@ export function useTelegramBackButton() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const backButton = window.Telegram?.WebApp?.BackButton;
-    if (!backButton) return;
+    const tg = window.Telegram?.WebApp;
+    const backButton = tg?.BackButton;
+    // BackButton needs Bot API 6.1+. The property exists even outside a real
+    // Telegram client (and on older clients) — telegram-web-app.js provides a
+    // stub that self-reports version "6.0" in a plain browser — but calling
+    // its methods below the required version just logs a "not supported"
+    // error, so gate on isVersionAtLeast the same way initTelegram() already
+    // does for the fullscreen (8.0+) features.
+    if (!backButton || !tg?.isVersionAtLeast?.("6.1")) return;
 
     if (ROOT_PATHS.has(location.pathname)) {
       backButton.hide();

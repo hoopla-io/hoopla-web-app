@@ -1,8 +1,19 @@
 import { FC, useMemo, useState } from "react";
-import { useParams, useNavigate, useLocation, Navigate } from "react-router-dom";
-import { ArrowLeft, Check, Maximize2, X, Coffee } from "lucide-react";
+import { Check, Coffee, Loader2, Minus, Plus } from "lucide-react";
+import toast from "react-hot-toast";
 
-import { Page } from "@/components/Page";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import {
+  useAddCartItem,
+  useClearCart,
+  isCrossShopCartConflict,
+} from "@/api/hooks/cart.hook";
+import { CartConflictDialog } from "@/components/func/CartConflictDialog";
 import { formatBalance, cn } from "@/helpers/utils";
 import {
   toSelectedModifier,
@@ -55,7 +66,7 @@ function buildGroups(vo: ValidateOrderResponse): WorkingGroup[] {
     }));
 }
 
-/** Short human label for a group's selection rule. */
+/** Short human label for a group's selection rule (e.g. "Required", "Pick 1–2"). */
 function ruleLabel(min: number, max: number | null): string {
   if (min === 0 && max === null) return "Optional";
   if (min === 0 && max === 1) return "Optional";
@@ -66,18 +77,73 @@ function ruleLabel(min: number, max: number | null): string {
   return `Pick ${min}–${max}`;
 }
 
-export const ModifierSelectionPage: FC = () => {
-  const { shopId } = useParams();
-  const navigate = useNavigate();
-  const location = useLocation();
+interface DrinkModifierSheetProps {
+  validatedOrder: ValidateOrderResponse | null; // null = sheet closed; non-null = open for that drink
+  shopId: number;
+  onClose: () => void; // call when the user dismisses the sheet WITHOUT adding (drag-down / backdrop / X)
+  onAdded: () => void; // call after a SUCCESSFUL add-to-cart; parent will close the sheet + show its own toast
+}
 
-  const validatedOrder = (location.state as any)
-    ?.validatedOrder as ValidateOrderResponse | undefined;
+/**
+ * Bottom-sheet modifier selector. Adds a quantity stepper and adds straight to
+ * the cart on tap — the parent stays on the menu and closes the sheet itself.
+ *
+ * The Drawer stays mounted so vaul can animate open/close; the sheet's body
+ * (all the per-drink state) is a separate component keyed on the drink id so
+ * it remounts — and resets — fresh every time a different drink opens.
+ */
+export const DrinkModifierSheet: FC<DrinkModifierSheetProps> = ({
+  validatedOrder,
+  shopId,
+  onClose,
+  onAdded,
+}) => {
+  const open = validatedOrder != null;
 
-  const groups = useMemo(
-    () => (validatedOrder ? buildGroups(validatedOrder) : []),
-    [validatedOrder]
+  return (
+    <Drawer
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
+      <DrawerContent className="max-h-[92dvh]">
+        <DrawerTitle className="sr-only">
+          {validatedOrder?.drink.name ?? "Customize drink"}
+        </DrawerTitle>
+        <DrawerDescription className="sr-only">
+          Choose modifiers and quantity, then add this drink to your cart.
+        </DrawerDescription>
+        {validatedOrder && (
+          <DrinkModifierSheetBody
+            key={validatedOrder.drink.id}
+            validatedOrder={validatedOrder}
+            shopId={shopId}
+            onAdded={onAdded}
+          />
+        )}
+      </DrawerContent>
+    </Drawer>
   );
+};
+
+interface DrinkModifierSheetBodyProps {
+  validatedOrder: ValidateOrderResponse;
+  shopId: number;
+  onAdded: () => void;
+}
+
+const DrinkModifierSheetBody: FC<DrinkModifierSheetBodyProps> = ({
+  validatedOrder,
+  shopId,
+  onAdded,
+}) => {
+  const addCartItem = useAddCartItem();
+  const clearCart = useClearCart();
+  const [showCartConflict, setShowCartConflict] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+
+  const groups = useMemo(() => buildGroups(validatedOrder), [validatedOrder]);
 
   // Selection is an array per group key (supports multi-select). Required
   // single-option groups are pre-selected since there's nothing to decide.
@@ -92,12 +158,6 @@ export const ModifierSelectionPage: FC = () => {
       return init;
     }
   );
-  const [comment, setComment] = useState("");
-  const [imageOpen, setImageOpen] = useState(false);
-
-  if (!validatedOrder) {
-    return <Navigate to={`/shops/${shopId}`} replace />;
-  }
 
   const toggleOption = (group: WorkingGroup, option: ModifierOption) => {
     const id = String(option.modificationId ?? "");
@@ -146,73 +206,84 @@ export const ModifierSelectionPage: FC = () => {
     (sum, m) => sum + (m.modifierPrice ?? 0),
     0
   );
-  const totalPrice = validatedOrder.drink.amount + modifiersTotal;
+  const unitTotal = validatedOrder.drink.amount + modifiersTotal;
 
-  const handleContinue = () => {
-    if (!allGroupsValid) return;
-    navigate(`/shops/${shopId}/order/receipt`, {
-      state: {
-        validatedOrder,
-        selectedModifiers,
-        // Pass the note forward so the receipt knows it was handled here and
-        // doesn't render its own textarea.
-        comment: comment.trim(),
+  const doAddToCart = () => {
+    addCartItem.mutate(
+      {
+        shopId,
+        drinkId: validatedOrder.drink.id,
+        quantity,
+        modifiers: selectedModifiers,
       },
-      replace: true,
+      {
+        onSuccess: () => {
+          onAdded();
+        },
+        onError: (err: any) => {
+          if (isCrossShopCartConflict(err)) {
+            setShowCartConflict(true);
+            return;
+          }
+          toast.error(
+            err?.message ??
+              err?.response?.data?.message ??
+              "Couldn't add this to your cart. Please try again."
+          );
+        },
+      }
+    );
+  };
+
+  const handleAdd = () => {
+    if (!allGroupsValid) return;
+    doAddToCart();
+  };
+
+  // Cross-shop conflict: the customer already has an active cart at a
+  // different shop. Clearing it and retrying is an explicit, confirmed step —
+  // never automatic — so they don't lose another cart's contents by accident.
+  const handleClearAndRetry = () => {
+    clearCart.mutate(undefined, {
+      onSuccess: () => {
+        setShowCartConflict(false);
+        doAddToCart();
+      },
+      onError: () => {
+        toast.error("Couldn't clear your existing cart. Please try again.");
+      },
     });
   };
 
   return (
-    <Page>
-      <div className="max-w-lg mx-auto pb-40">
-        {/* Header */}
-        <div className="flex items-center gap-3 p-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-          >
-            <ArrowLeft size={20} className="text-gray-700" />
-          </button>
-          <h1 className="text-lg font-bold text-gray-900">Customize</h1>
-        </div>
-
-        {/* Drink — compact square thumbnail, tap to expand */}
-        <div className="mx-4 flex items-center gap-3.5">
+    <>
+      {/* Scrollable body: drink banner + modifier groups */}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-1">
+        {/* Drink — banner image, name + price under it */}
+        <div className="pb-1">
           {validatedOrder.drink.imageUrl ? (
-            <button
-              type="button"
-              onClick={() => setImageOpen(true)}
-              className="relative shrink-0 transition-transform active:scale-[0.97]"
-            >
-              <img
-                src={validatedOrder.drink.imageUrl}
-                alt={validatedOrder.drink.name}
-                className="h-[72px] w-[72px] rounded-2xl object-cover shadow-sm ring-1 ring-black/[0.06]"
-              />
-              <span className="absolute bottom-1 right-1 grid h-5 w-5 place-items-center rounded-full bg-black/55 text-white backdrop-blur-sm">
-                <Maximize2 size={11} />
-              </span>
-            </button>
+            <img
+              src={validatedOrder.drink.imageUrl}
+              alt={validatedOrder.drink.name}
+              className="h-44 w-full rounded-2xl object-cover shadow-sm ring-1 ring-black/[0.06]"
+            />
           ) : (
-            <div className="grid h-[72px] w-[72px] shrink-0 place-items-center rounded-2xl bg-gray-100 text-gray-400 ring-1 ring-black/[0.06]">
-              <Coffee size={24} />
+            <div className="grid h-44 w-full place-items-center rounded-2xl bg-gray-100 text-gray-300 ring-1 ring-black/[0.06]">
+              <Coffee size={40} />
             </div>
           )}
-          <div className="min-w-0">
+          <div className="pt-3">
             <h2 className="truncate text-lg font-bold text-gray-900">
               {validatedOrder.drink.name}
             </h2>
-            <p className="truncate text-sm text-gray-500">
-              {validatedOrder.shop.name}
-            </p>
-            <p className="mt-0.5 text-sm font-semibold text-[var(--color-primary)]">
+            <p className="mt-0.5 truncate text-sm font-semibold text-[var(--color-primary)]">
               {formatPrice(validatedOrder.drink.amount)}
             </p>
           </div>
         </div>
 
         {/* Modifier Groups */}
-        <div className="px-4 pt-6 space-y-7">
+        <div className="space-y-7 pb-4 pt-6">
           {groups.map((group) => {
             const count = (selected[group.key] ?? []).length;
             const atMax =
@@ -306,73 +377,62 @@ export const ModifierSelectionPage: FC = () => {
             );
           })}
         </div>
-
-        {/* Note to barista — lives here (not on the receipt) because this drink
-            has modifiers, so the note is captured alongside the choices. */}
-        <div className="px-4 pt-7">
-          <label
-            htmlFor="order-comment"
-            className="mb-2 block px-1 text-[13px] font-semibold uppercase tracking-[0.12em] text-gray-500"
-          >
-            Note to barista{" "}
-            <span className="font-normal normal-case tracking-normal text-gray-400">
-              (optional)
-            </span>
-          </label>
-          <textarea
-            id="order-comment"
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            rows={3}
-            maxLength={500}
-            placeholder="e.g. less ice, oat milk, extra hot…"
-            className="w-full resize-none rounded-2xl border border-gray-200 bg-white p-3.5 text-sm text-gray-900 shadow-sm outline-none transition-colors placeholder:text-gray-400 focus:border-[var(--color-primary)]"
-          />
-          <p className="mt-1 text-right text-xs text-gray-400">
-            {comment.length}/500
-          </p>
-        </div>
       </div>
 
-      {/* Floating action bar — mirrors the receipt's floating pill so it sits
-          above the glass bottom-nav instead of overlapping it. */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+var(--tg-bottom-inset,0px)+5.75rem)] z-30 px-4">
-        <div className="pointer-events-auto mx-auto max-w-lg">
+      {/* Sticky bottom action bar — quantity stepper + Add button */}
+      <div className="shrink-0 border-t border-black/[0.06] bg-white px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px)+var(--tg-bottom-inset,0px))] pt-3">
+        <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-1 rounded-full bg-gray-50 p-1">
+            <button
+              type="button"
+              onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+              disabled={quantity <= 1}
+              className="grid h-10 w-10 place-items-center rounded-full bg-white text-[var(--color-primary)] shadow-sm transition-colors active:bg-gray-100 disabled:opacity-40"
+              aria-label="Decrease quantity"
+            >
+              <Minus size={16} />
+            </button>
+            <span className="w-6 text-center text-[15px] font-semibold text-gray-900">
+              {quantity}
+            </span>
+            <button
+              type="button"
+              onClick={() => setQuantity((q) => q + 1)}
+              className="grid h-10 w-10 place-items-center rounded-full bg-[var(--color-primary)] text-white shadow-sm transition-colors active:bg-[var(--color-primary-dark)]"
+              aria-label="Increase quantity"
+            >
+              <Plus size={16} />
+            </button>
+          </div>
+
           <button
-            onClick={handleContinue}
-            disabled={!allGroupsValid}
+            onClick={handleAdd}
+            disabled={!allGroupsValid || addCartItem.isPending}
             className={cn(
-              "flex w-full items-center justify-center gap-2 rounded-full py-4 text-base font-semibold text-white transition-all active:scale-[0.99]",
-              allGroupsValid
+              "flex flex-1 items-center justify-center gap-2 rounded-full py-3.5 text-base font-semibold text-white transition-all active:scale-[0.99]",
+              allGroupsValid && !addCartItem.isPending
                 ? "bg-[var(--color-primary)] shadow-[0_12px_30px_-8px_rgba(141,11,65,0.55)] active:bg-[var(--color-primary-dark)]"
                 : "cursor-not-allowed bg-gray-300"
             )}
           >
-            Continue · {formatPrice(totalPrice)}
+            {addCartItem.isPending ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                Adding...
+              </>
+            ) : (
+              `Add · ${formatPrice(unitTotal * quantity)}`
+            )}
           </button>
         </div>
       </div>
 
-      {/* Expanded drink image */}
-      {imageOpen && validatedOrder.drink.imageUrl && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4"
-          onClick={() => setImageOpen(false)}
-        >
-          <button
-            onClick={() => setImageOpen(false)}
-            className="absolute right-4 top-[calc(1rem+var(--tg-top-inset,0px))] grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white backdrop-blur-sm transition-colors hover:bg-white/20"
-          >
-            <X size={22} />
-          </button>
-          <img
-            src={validatedOrder.drink.imageUrl}
-            alt={validatedOrder.drink.name}
-            className="max-h-[85vh] max-w-full rounded-2xl object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
-      )}
-    </Page>
+      <CartConflictDialog
+        open={showCartConflict}
+        onOpenChange={setShowCartConflict}
+        onConfirm={handleClearAndRetry}
+        isPending={clearCart.isPending}
+      />
+    </>
   );
 };

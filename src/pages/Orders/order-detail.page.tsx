@@ -11,13 +11,14 @@ import {
   Star,
   Loader2,
   Maximize2,
+  ChevronDown,
   X,
 } from "lucide-react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 
 import { useOrderDetail, useCancelOrder } from "@/api/hooks/orders.hook";
-import { OrdersApi } from "@/api/domains/orders";
+import { OrdersApi, type OrderDetail } from "@/api/domains/orders";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -32,7 +33,43 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Page } from "@/components/Page";
 import { LoadingScreen } from "@/components/func/Loading";
-import { formatBalance } from "@/helpers/utils";
+import { formatBalance, cn } from "@/helpers/utils";
+
+/**
+ * Groups flat order items into drinks with their modifiers nested — cart
+ * checkouts insert all drink rows before any modifier rows (see
+ * createOrderItemsForCart), so the API order alone can't be used for
+ * grouping; parent_item_id is the source of truth. Legacy (pre-cart) orders
+ * never set parent_item_id since there was only ever one drink, so a null
+ * parent falls back to the sole drink — same rule the backend itself uses
+ * when rebuilding vendor tickets.
+ */
+function groupOrderItems(items: OrderDetail["items"]) {
+  const drinks = items.filter((i) => i.item_type === "drink");
+  if (drinks.length === 0) {
+    return items.map((i) => ({ ...i, modifiers: [] as OrderDetail["items"] }));
+  }
+  const others = items.filter((i) => i.item_type !== "drink");
+  const soleDrinkId = drinks.length === 1 ? drinks[0].id : null;
+  const matched = new Set<number>();
+  const grouped = drinks.map((drink) => ({
+    ...drink,
+    modifiers: others.filter((m) => {
+      const belongsToDrink =
+        m.parent_item_id === drink.id ||
+        (m.parent_item_id == null && soleDrinkId === drink.id);
+      if (belongsToDrink) matched.add(m.id);
+      return belongsToDrink;
+    }),
+  }));
+  // Orphaned modifiers (parent_item_id null or unmatched among 2+ drinks)
+  // are kept as top-level rows rather than dropped, so a data anomaly can't
+  // hide a paid line from the receipt.
+  const orphans = others
+    .filter((m) => !matched.has(m.id))
+    .map((m) => ({ ...m, modifiers: [] as OrderDetail["items"] }));
+  return [...grouped, ...orphans];
+}
 
 const statusConfig: Record<string, { label: string; icon: typeof CheckCircle; color: string; bg: string }> = {
   completed: {
@@ -59,6 +96,24 @@ const statusConfig: Record<string, { label: string; icon: typeof CheckCircle; co
     color: "text-blue-600",
     bg: "bg-blue-50",
   },
+  paid: {
+    label: "Preparing",
+    icon: Coffee,
+    color: "text-blue-600",
+    bg: "bg-blue-50",
+  },
+  preparing: {
+    label: "Preparing",
+    icon: Coffee,
+    color: "text-blue-600",
+    bg: "bg-blue-50",
+  },
+  ready: {
+    label: "Ready",
+    icon: CheckCircle,
+    color: "text-emerald-600",
+    bg: "bg-emerald-50",
+  },
   error: {
     label: "Error",
     icon: AlertCircle,
@@ -80,6 +135,19 @@ export const OrderDetailPage: FC = () => {
   const [existingFeedback, setExistingFeedback] = useState<{ rating: number; comment: string } | null>(null);
   const [feedbackLoaded, setFeedbackLoaded] = useState(false);
   const [imageOpen, setImageOpen] = useState(false);
+  const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
+
+  const toggleExpanded = (id: number) => {
+    setExpandedItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
 
   // Lightbox: close on Escape and lock background scroll while open.
   useEffect(() => {
@@ -136,12 +204,26 @@ export const OrderDetailPage: FC = () => {
     );
   }
 
-  const status = statusConfig[order.orderStatus] ?? statusConfig.pending_payment;
+  const status = statusConfig[order.orderStatus] ?? {
+    label: "Processing",
+    icon: Clock,
+    color: "text-gray-500",
+    bg: "bg-gray-100",
+  };
   const StatusIcon = status.icon;
+  // Live payment link — only ever present while the invoice is still open.
+  const checkoutUrl = order.checkout_url;
+  const showCompletePayment =
+    order.orderStatus === "pending_payment" && !!checkoutUrl;
 
   return (
     <Page>
-      <div className="max-w-lg mx-auto px-2 pt-4 pb-28">
+      <div
+        className={cn(
+          "max-w-lg mx-auto px-2 pt-4",
+          showCompletePayment ? "pb-40" : "pb-28"
+        )}
+      >
         <div className="space-y-4">
           {/* Order card — image header, cafe, items and payment all combined
               into a single card, separated by subtle internal dividers. */}
@@ -197,20 +279,77 @@ export const OrderDetailPage: FC = () => {
                 <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
                   Items
                 </h2>
-                <div className="space-y-3">
-                  {order.items.map((item, i) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center">
-                          <Coffee size={16} className="text-gray-400" />
-                        </div>
-                        <span className="text-sm text-gray-900">{item.name}</span>
+                <div className="space-y-1">
+                  {groupOrderItems(order.items).map((drink) => {
+                    const hasModifiers = drink.modifiers.length > 0;
+                    const isExpanded = expandedItems.has(drink.id);
+                    return (
+                      <div key={drink.id}>
+                        <button
+                          type="button"
+                          onClick={() => hasModifiers && toggleExpanded(drink.id)}
+                          className={cn(
+                            "flex w-full items-center justify-between gap-3 py-2",
+                            !hasModifiers && "cursor-default"
+                          )}
+                        >
+                          <div className="flex min-w-0 items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                              {drink.imageUrl ? (
+                                <img
+                                  src={drink.imageUrl}
+                                  alt={drink.name}
+                                  className="h-full w-full rounded-lg object-cover"
+                                />
+                              ) : (
+                                <Coffee size={16} className="text-gray-400" />
+                              )}
+                            </div>
+                            <span className="text-sm text-gray-900 truncate">
+                              {drink.name}
+                            </span>
+                            {drink.quantity > 1 && (
+                              <span className="text-xs text-gray-400 flex-shrink-0">
+                                ×{drink.quantity}
+                              </span>
+                            )}
+                            {hasModifiers && (
+                              <ChevronDown
+                                size={14}
+                                className={cn(
+                                  "text-gray-400 transition-transform flex-shrink-0",
+                                  isExpanded && "rotate-180"
+                                )}
+                              />
+                            )}
+                          </div>
+                          <span className="text-sm font-medium text-gray-900 flex-shrink-0">
+                            {formatBalance(drink.price * (drink.quantity || 1))} UZS
+                          </span>
+                        </button>
+                        {hasModifiers && isExpanded && (
+                          <div className="pl-[3.25rem] pb-2 space-y-1.5">
+                            {drink.modifiers.map((mod) => (
+                              <div
+                                key={mod.id}
+                                className="flex items-center justify-between gap-3"
+                              >
+                                <span className="text-xs text-gray-500">
+                                  {mod.name}
+                                  {mod.quantity > 1 && (
+                                    <span className="text-gray-400"> ×{mod.quantity}</span>
+                                  )}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  {formatBalance(mod.price * (mod.quantity || 1))} UZS
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <span className="text-sm font-medium text-gray-900">
-                        {formatBalance(item.price)} UZS
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -399,6 +538,25 @@ export const OrderDetailPage: FC = () => {
           )}
         </div>
       </div>
+
+      {/* Complete payment — primary CTA for an order that wasn't paid at
+          checkout; the invoice is still open so we can hand the shopper
+          straight back to Rahmat. */}
+      {showCompletePayment && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+var(--tg-bottom-inset,0px)+5.75rem)] z-30 px-4">
+          <div className="pointer-events-auto mx-auto max-w-lg">
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = checkoutUrl!;
+              }}
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] py-4 text-base font-semibold text-white shadow-[0_12px_30px_-8px_rgba(141,11,65,0.55)] transition-all active:scale-[0.99] active:bg-[var(--color-primary-dark)]"
+            >
+              Complete payment
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Fullscreen image lightbox */}
       {imageOpen && (
