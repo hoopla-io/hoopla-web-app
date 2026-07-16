@@ -7,6 +7,7 @@ import {
   Globe,
   Instagram,
   ArrowLeft,
+  Share2,
   Coffee,
   Plus,
   Minus,
@@ -40,6 +41,7 @@ import {
   getShopOpenStatus,
   type WorkingHour,
 } from "@/helpers/utils";
+import { shareShop } from "@/helpers/share";
 import {
   toSelectedModifier,
   type SelectedModifier,
@@ -419,6 +421,13 @@ export const ShopDetailPage: FC = () => {
             className="absolute top-[calc(1rem+var(--tg-top-inset,0px))] left-4 p-2 rounded-full bg-white/80 backdrop-blur-sm shadow-sm hover:bg-white transition-colors"
           >
             <ArrowLeft size={20} className="text-gray-700" />
+          </button>
+          <button
+            onClick={() => shareShop(numericShopIdFromParams, shopDetail.name ?? "")}
+            aria-label="Share this cafe"
+            className="absolute top-[calc(1rem+var(--tg-top-inset,0px))] right-4 p-2 rounded-full bg-white/80 backdrop-blur-sm shadow-sm hover:bg-white transition-colors"
+          >
+            <Share2 size={20} className="text-gray-700" />
           </button>
         </div>
 
