@@ -118,6 +118,15 @@ export const ShopDetailPage: FC = () => {
     // first card mid-flight, so ignore taps until it settles.
     if (validatingDrinkId !== null) return;
 
+    // Shared choke point for every entry into the order flow (drink card tap,
+    // promo banner deep-link, etc.) — re-check out-of-stock here so a banner
+    // pointed at a since-sold-out drink can't skip DrinkCard's own guard.
+    const drink = allDrinks.find((d) => d.id === drinkId);
+    if (drink?.outOfStock) {
+      toast.error("Sold out");
+      return;
+    }
+
     if (!isAuthenticated) {
       // Gate behind the sign-in modal; resume the order on success so the
       // user stays on this page instead of being redirected away.
@@ -667,6 +676,7 @@ export const ShopDetailPage: FC = () => {
                                 <DrinkCard
                                   key={drink.id}
                                   drink={drink}
+                                  outOfStock={drink.outOfStock ?? false}
                                   onOrderClick={handleDrinkClick}
                                   isValidating={validatingDrinkId === drink.id}
                                   cartLine={cartLine}
@@ -694,6 +704,7 @@ export const ShopDetailPage: FC = () => {
                           <DrinkCard
                             key={drink.id}
                             drink={drink}
+                            outOfStock={drink.outOfStock ?? false}
                             onOrderClick={handleDrinkClick}
                             isValidating={validatingDrinkId === drink.id}
                             cartLine={cartLine}
@@ -736,6 +747,7 @@ export const ShopDetailPage: FC = () => {
 
 function DrinkCard({
   drink,
+  outOfStock,
   onOrderClick,
   isValidating,
   cartLine,
@@ -749,6 +761,7 @@ function DrinkCard({
     pictureUrl: string | null;
     productPrice: number;
   };
+  outOfStock?: boolean;
   onOrderClick: (drinkId: number) => void;
   isValidating: boolean;
   cartLine?: { id: number; quantity: number } | null;
@@ -760,32 +773,49 @@ function DrinkCard({
     <div
       className={cn(
         "bg-white rounded-2xl shadow-sm overflow-hidden transition-transform",
-        cartLine ? "" : "active:scale-[0.98] cursor-pointer"
+        outOfStock ? "cursor-default" : cartLine ? "" : "active:scale-[0.98] cursor-pointer"
       )}
       onClick={() => {
+        if (outOfStock) {
+          toast.error("Sold out");
+          return;
+        }
         // A no-modifier drink already in the cart has nothing left to
         // configure — only the stepper below can act on it.
         if (cartLine) return;
         if (!isValidating) onOrderClick(drink.id);
       }}
     >
-      {drink.pictureUrl ? (
-        <AspectRatio ratio={1}>
-          <img
-            src={drink.pictureUrl}
-            alt={drink.name}
-            className="w-full h-full object-cover"
-          />
-        </AspectRatio>
-      ) : (
-        <AspectRatio ratio={1}>
-          <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-            <Coffee size={32} className="text-gray-400" />
-          </div>
-        </AspectRatio>
-      )}
+      <AspectRatio ratio={1}>
+        <div className="relative w-full h-full">
+          {drink.pictureUrl ? (
+            <img
+              src={drink.pictureUrl}
+              alt={drink.name}
+              className={cn(
+                "w-full h-full object-cover",
+                outOfStock && "opacity-50"
+              )}
+            />
+          ) : (
+            <div
+              className={cn(
+                "w-full h-full bg-gray-200 flex items-center justify-center",
+                outOfStock && "opacity-50"
+              )}
+            >
+              <Coffee size={32} className="text-gray-400" />
+            </div>
+          )}
+          {outOfStock && (
+            <div className="absolute top-2 left-2 rounded-full bg-gray-900/75 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">
+              Sold out
+            </div>
+          )}
+        </div>
+      </AspectRatio>
       <div className="p-2.5 flex items-end justify-between">
-        <div>
+        <div className={cn(outOfStock && "opacity-50")}>
           <h3 className="font-medium text-sm text-gray-900 leading-tight">
             {drink.name}
           </h3>
@@ -793,7 +823,9 @@ function DrinkCard({
             {formatPrice(drink.productPrice)}
           </p>
         </div>
-        {cartLine ? (
+        {outOfStock
+          ? null
+          : cartLine ? (
           <div className="flex shrink-0 items-center gap-1 rounded-full bg-gray-50 p-1">
             <button
               type="button"
