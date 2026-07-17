@@ -33,6 +33,9 @@ export interface ShopDrink {
   name: string;
   pictureUrl: string | null;
   productPrice: number;
+  /** True when the drink is temporarily unavailable. Optional/absent on
+   * older backends, in which case the drink is treated as in-stock. */
+  outOfStock?: boolean;
 }
 
 export interface ShopDrinkCategory {
