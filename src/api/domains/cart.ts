@@ -123,7 +123,7 @@ export const CartApi = {
       // Same as OrdersApi.createOrder: a 402 with payment data is a success,
       // not a failure — the customer still needs to complete payment.
       const errorData = error?.data ?? error?.response?.data?.data;
-      if (errorData?.checkout_url) {
+      if (errorData?.checkout_url || errorData?.bridge_order_id) {
         return errorData as CartCheckoutResponse;
       }
       throw error;
