@@ -96,6 +96,9 @@ export interface OrderDetail {
    * "pending_payment" and the invoice is still open. Lets the detail page
    * offer "Complete payment" for an order that wasn't paid at checkout. */
   checkout_url?: string;
+  /** Set instead of checkout_url while a host-platform (Eight) order awaits
+   * payment — pass to the host bridge, don't navigate to it. */
+  bridge_order_id?: string;
 }
 
 export interface OrderListMeta {
@@ -216,6 +219,31 @@ export interface CreateOrderResponse {
   deeplink?: string;
   short_link?: string;
   expires_at?: string;
+  /** Set instead of checkout_url when the order is paid through a host
+   * platform's native sheet (Eight). Pass it to the host bridge, don't
+   * navigate to it — it's an id, not a URL. */
+  bridge_order_id?: string;
+}
+
+export interface PaymentStatus {
+  order_id: number;
+  status: string;
+  receipt_url?: string;
+}
+
+/** Statuses past which no further payment activity is expected — polling stops.
+ * "pending_payment" is deliberately absent: that's the one we wait on. */
+const SETTLED_ORDER_STATUSES = [
+  "paid",
+  "pending",
+  "preparing",
+  "completed",
+  "cancelled",
+  "error",
+];
+
+export function isOrderSettled(status: string | undefined): boolean {
+  return Boolean(status) && SETTLED_ORDER_STATUSES.includes(status as string);
 }
 
 export const OrdersApi = {
@@ -239,6 +267,16 @@ export const OrdersApi = {
     const response: any = await httpClient.get(`/user/orders/${orderId}`);
 
     return (response.data ?? response) as OrderDetail;
+  },
+
+  /** Cheap status-only read, for polling while a payment completes out of band
+   * (a host platform's native sheet, where we get no callback of our own). */
+  getPaymentStatus: async (orderId: number) => {
+    const response: any = await httpClient.get(
+      `/user/orders/${orderId}/payment-status`
+    );
+
+    return (response.data ?? response) as PaymentStatus;
   },
 
   getFeedback: async (orderId: number) => {
@@ -287,9 +325,11 @@ export const OrdersApi = {
       const response: any = await httpClient.post("/user/orders/create-rahmat", data);
       return (response.data ?? response) as CreateOrderResponse;
     } catch (error: any) {
-      // API returns 402 with payment data — treat as success
+      // API returns 402 with payment data — treat as success. Either a Rahmat
+      // checkout_url or a host-platform bridge_order_id counts; which one comes
+      // back depends on how the customer's session was opened.
       const errorData = error?.data ?? error?.response?.data?.data;
-      if (errorData?.checkout_url) {
+      if (errorData?.checkout_url || errorData?.bridge_order_id) {
         return errorData as CreateOrderResponse;
       }
       throw error;

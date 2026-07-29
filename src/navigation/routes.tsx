@@ -14,6 +14,7 @@ import { CartPage } from "@/pages/Cart/cart.page";
 import { OrdersPage } from "@/pages/Orders/orders.page";
 import { OrderDetailPage } from "@/pages/Orders/order-detail.page";
 import { DevicesPage } from "@/pages/Devices/devices.page";
+import { PaymentWaitingPage } from "@/pages/PaymentWaiting/payment-waiting.page";
 
 interface Route {
   path: string;
@@ -58,6 +59,11 @@ export const routes: Route[] = [
     path: "/orders/:orderId",
     protected: true,
     element: <OrderDetailPage />,
+  },
+  {
+    path: "/orders/:orderId/awaiting-payment",
+    protected: true,
+    element: <PaymentWaitingPage />,
   },
   {
     path: "/profile",

@@ -28,6 +28,7 @@ import { usePaymentSystems } from "@/api/hooks/payments.hook";
 import { useRedeemGiftCard } from "@/api/hooks/gift-cards.hook";
 import { useAnimatedNumber } from "@/hooks/useAnimatedNumber";
 import { useAuth } from "@/context/auth.context";
+import { isEightHost } from "@/helpers/eight";
 import PaymentApi from "@/api/domains/payment";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -376,6 +377,9 @@ export const ProfilePage: FC = () => {
 
         {/* Danger zone */}
         <div className="mt-3 space-y-2">
+          {/* Inside a host app the session belongs to the host, and signing out
+              leaves no way back in — there is no SMS login to fall back to. */}
+          {!isEightHost() && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button
@@ -406,6 +410,7 @@ export const ProfilePage: FC = () => {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+          )}
 
           <AlertDialog>
             <AlertDialogTrigger asChild>

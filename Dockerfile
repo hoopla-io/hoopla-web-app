@@ -3,7 +3,9 @@ WORKDIR /app
 COPY package*.json tsconfig*.json vite*.ts ./
 RUN npm install
 COPY . .
-RUN npm run build
+# "anor" builds the Eight miniapp bundle for anor.hoopla.uz (loads .env.anor).
+ARG BUILD_MODE=production
+RUN npm run build -- --mode ${BUILD_MODE}
 
 FROM node:20-slim AS production
 WORKDIR /app

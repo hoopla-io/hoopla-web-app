@@ -79,6 +79,24 @@ export function setTokens(accessToken: string, refreshToken: string): void {
   cs?.setItem(REFRESH_KEY, refreshToken, () => {});
 }
 
+/**
+ * Store a session that has an access token but no refresh token — what a host
+ * platform launch (Eight) gives us, since its /login contract returns a single
+ * token. Any existing refresh token is dropped: it belonged to a different
+ * session and must not be used to extend this one.
+ *
+ * Such a session cannot be refreshed. When the access token expires the customer
+ * has to relaunch the miniapp from the host app, which re-runs its /login.
+ */
+export function setAccessOnlyToken(accessToken: string): void {
+  memory = { access: accessToken, refresh: null };
+  safeSet(ACCESS_KEY, accessToken);
+  safeRemove(REFRESH_KEY);
+  const cs = cloud();
+  cs?.setItem(ACCESS_KEY, accessToken, () => {});
+  cs?.removeItems([REFRESH_KEY], () => {});
+}
+
 export function clearTokens(): void {
   memory = { access: null, refresh: null };
   safeRemove(ACCESS_KEY);
