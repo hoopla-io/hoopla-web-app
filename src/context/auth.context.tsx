@@ -1,16 +1,20 @@
 import type React from "react";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 
+import toast from "react-hot-toast";
+
 import { AuthApi, LoginResponse } from "@/api/domains/auth";
 import { AUTH_EXPIRED_EVENT } from "@/api/http-client";
 import { DEFAULT_USER_NAME } from "@/helpers/utils";
 import {
   setTokens,
+  setAccessOnlyToken,
   clearTokens,
   hydrateTokens,
   getAccessToken,
   getRefreshToken,
 } from "@/helpers/token-storage";
+import { captureEightLaunch, isEightHost, clearEightSession } from "@/helpers/eight";
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -82,6 +86,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     clearTokens();
+    // Drop the host-session flag too, or the next ordinary sign-in in this
+    // browser is still treated as an Eight session and never offered the
+    // sign-in drawer when its token expires.
+    clearEightSession();
     setState({
       isAuthenticated: false,
       isLoading: false,
@@ -90,6 +98,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const openLoginModal = (onSuccess?: () => void) => {
+    // Inside a host app there is nothing useful behind this drawer: an SMS
+    // sign-in would mint an ordinary session, which pays through Rahmat and
+    // navigates the customer out of the host's WebView mid-checkout. Every
+    // caller (ProtectedRoute included) funnels through here, so the guard
+    // belongs here rather than at each call site.
+    if (isEightHost()) {
+      toast.error("Your session expired. Please reopen Hoopla from the app.");
+      return;
+    }
     pendingAction.current = onSuccess ?? null;
     setIsLoginModalOpen(true);
   };
@@ -109,9 +126,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // localStorage may have been evicted), then settle the auth state. Stays
     // `pending` until this resolves so we never flash signed-out on cold start.
     (async () => {
+      // An Eight launch carries its session token on the URL and must be
+      // captured before we decide anything about auth — the host already did
+      // the login server-side, so there is no signed-out state to fall back to.
+      // Awaited: capture waits for the host bridge to confirm we're genuinely
+      // inside its WebView, and a request must not fire before it settles.
+      await captureEightLaunch(setAccessOnlyToken);
+      if (cancelled) return;
+
       await hydrateTokens();
       if (cancelled) return;
-      const authed = Boolean(getAccessToken() && getRefreshToken());
+      // A host-platform session has no refresh token by design, so requiring
+      // both would read every Eight customer as signed out.
+      const authed = isEightHost()
+        ? Boolean(getAccessToken())
+        : Boolean(getAccessToken() && getRefreshToken());
       setState({
         isAuthenticated: authed,
         isLoading: false,
@@ -132,6 +161,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setState({ isAuthenticated: false, isLoading: false, pending: false });
       // Close the edit-profile drawer first so the two never stack.
       setIsEditProfileOpen(false);
+
+      // A host-platform session can't be renewed from here — it has no refresh
+      // token, and the host issued it by calling our /login itself. Offering an
+      // SMS sign-in would build a normal session that then pays through Rahmat,
+      // navigating the customer out of the host's WebView mid-checkout. Tell
+      // them to relaunch instead, which re-runs the host's own login.
+      if (isEightHost()) {
+        toast.error("Your session expired. Please reopen Hoopla from the app.");
+        return;
+      }
+
       setIsLoginModalOpen(true);
     };
     window.addEventListener(AUTH_EXPIRED_EVENT, handler);

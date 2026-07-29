@@ -6,7 +6,9 @@
   "homepage": "https://web.hoopla.uz/hoopla-web-app",
   "scripts": {
     "dev": "vite",
+    "dev:anor": "vite --mode anor",
     "build": "vite build",
+    "build:anor": "vite build --mode anor",
     "start": "serve -s dist -p 3000",
     "lint": "eslint"
   },

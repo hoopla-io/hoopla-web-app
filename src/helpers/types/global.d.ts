@@ -86,10 +86,18 @@ interface TelegramWebApp {
   CloudStorage?: TelegramCloudStorage;
 }
 
+// Injected by the Eight host app's SDK into the miniapp WebView. `start_payment`
+// takes the host_app_order_id returned by hoopla-api at checkout
+// (`bridge_order_id`) and opens the host's native payment sheet.
+interface EightNativeBridge {
+  postMessage(eventName: string, jsonData: Record<string, unknown>): void;
+}
+
 interface Window {
   Telegram?: {
     WebApp: TelegramWebApp;
   };
+  nativeBridge?: EightNativeBridge;
 }
 
 // Injected at build time from package.json `version` (see vite.config.ts).

@@ -5,6 +5,8 @@ import { ArrowLeft, Loader2, Minus, Plus, ShoppingBag, Tag, Trash2, X } from "lu
 import toast from "react-hot-toast";
 
 import { Page } from "@/components/Page";
+import { startEightPayment } from "@/helpers/eight";
+import { beginBridgePayment } from "@/pages/PaymentWaiting/payment-waiting.page";
 import { LoadingScreen } from "@/components/func/Loading";
 import { OrdersApi } from "@/api/domains/orders";
 import {
@@ -59,6 +61,18 @@ async function tryRecoverPendingCheckout(): Promise<boolean> {
   const detail = await OrdersApi.getDetail(pendingOrder.id);
   if (typeof detail.checkout_url === "string" && detail.checkout_url.length > 0) {
     window.location.href = detail.checkout_url;
+    return true;
+  }
+
+  if (typeof detail.bridge_order_id === "string" && detail.bridge_order_id.length > 0) {
+    // Send them to the waiting screen either way. The order really exists and
+    // their cashback is already spent on it, so reporting "checkout failed" and
+    // leaving them on the cart is the one outcome that's certainly wrong; the
+    // waiting screen can re-arm the sheet if the bridge wasn't ready here.
+    startEightPayment(detail.bridge_order_id);
+    // HashRouter: a bare path would reload the SPA at "/" and land the customer
+    // on Home instead of the waiting screen.
+    window.location.hash = `#/orders/${pendingOrder.id}/awaiting-payment`;
     return true;
   }
 
@@ -227,6 +241,20 @@ export const CartPage: FC = () => {
       { useCashback, cashbackAmount: appliedCashback },
       {
         onSuccess: (data) => {
+          // A host-platform order is paid in the host's native sheet, not by
+          // navigating anywhere — hand it to the bridge and wait for the result.
+          if (data.bridge_order_id && data.order_id) {
+            if (!beginBridgePayment(data.bridge_order_id, data.order_id, navigate)) {
+              toast.error(
+                "Couldn't open the payment window. Please reopen Hoopla from the app and try again."
+              );
+              // The order exists and its cashback is already spent, so route to
+              // the waiting screen regardless — it can re-arm the sheet.
+              navigate(`/orders/${data.order_id}/awaiting-payment`, { replace: true });
+            }
+            return;
+          }
+
           if (data.checkout_url) {
             window.location.href = data.checkout_url;
           } else if (data.order_id) {

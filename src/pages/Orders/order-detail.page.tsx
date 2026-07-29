@@ -1,5 +1,5 @@
 import { FC, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   CheckCircle,
   XCircle,
@@ -32,6 +32,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Page } from "@/components/Page";
+import { beginBridgePayment } from "@/pages/PaymentWaiting/payment-waiting.page";
 import { LoadingScreen } from "@/components/func/Loading";
 import { formatBalance, cn } from "@/helpers/utils";
 
@@ -124,6 +125,7 @@ const statusConfig: Record<string, { label: string; icon: typeof CheckCircle; co
 
 export const OrderDetailPage: FC = () => {
   const { orderId } = useParams();
+  const navigate = useNavigate();
 
   const { order, isLoading } = useOrderDetail(Number(orderId));
   const cancelOrder = useCancelOrder();
@@ -211,10 +213,13 @@ export const OrderDetailPage: FC = () => {
     bg: "bg-gray-100",
   };
   const StatusIcon = status.icon;
-  // Live payment link — only ever present while the invoice is still open.
+  // Live payment handle — only ever present while payment is still open. A
+  // Rahmat order carries a URL to navigate to; a host-platform (Eight) order
+  // carries a bridge id to hand to the host's native sheet instead.
   const checkoutUrl = order.checkout_url;
+  const bridgeOrderId = order.bridge_order_id;
   const showCompletePayment =
-    order.orderStatus === "pending_payment" && !!checkoutUrl;
+    order.orderStatus === "pending_payment" && (!!checkoutUrl || !!bridgeOrderId);
 
   return (
     <Page>
@@ -548,6 +553,14 @@ export const OrderDetailPage: FC = () => {
             <button
               type="button"
               onClick={() => {
+                if (bridgeOrderId) {
+                  if (!beginBridgePayment(bridgeOrderId, order.id, navigate)) {
+                    toast.error(
+                      "Couldn't open the payment window. Please reopen Hoopla from the app and try again."
+                    );
+                  }
+                  return;
+                }
                 window.location.href = checkoutUrl!;
               }}
               className="flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] py-4 text-base font-semibold text-white shadow-[0_12px_30px_-8px_rgba(141,11,65,0.55)] transition-all active:scale-[0.99] active:bg-[var(--color-primary-dark)]"

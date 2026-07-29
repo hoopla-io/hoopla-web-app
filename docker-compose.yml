@@ -7,3 +7,15 @@ services:
       - "3013:3000"
     environment:
       - NODE_ENV=production
+
+  # Same code, Eight-miniapp build. Served at anor.hoopla.uz.
+  hoopla_web_anor:
+    build:
+      context: .
+      args:
+        BUILD_MODE: anor
+    restart: always
+    ports:
+      - "3014:3000"
+    environment:
+      - NODE_ENV=production
