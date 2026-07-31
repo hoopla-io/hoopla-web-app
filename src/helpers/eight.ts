@@ -38,6 +38,13 @@ const EIGHT_SESSION_KEY = "eight_session";
 const BRIDGE_WAIT_MS = 3000;
 const BRIDGE_POLL_MS = 100;
 
+/** True in the anor.hoopla.uz bundle regardless of runtime host — for hiding
+ * UI that must not exist on that domain at all (e.g. Rahmat balance top-up,
+ * whose checkout_url would navigate the customer out of the host WebView). */
+export function isEightBuild(): boolean {
+  return IS_EIGHT_BUILD;
+}
+
 /** True only while the host's native bridge is actually callable. */
 export function hasNativeBridge(): boolean {
   return IS_EIGHT_BUILD && typeof window.nativeBridge?.postMessage === "function";
