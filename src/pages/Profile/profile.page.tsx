@@ -28,7 +28,7 @@ import { usePaymentSystems } from "@/api/hooks/payments.hook";
 import { useRedeemGiftCard } from "@/api/hooks/gift-cards.hook";
 import { useAnimatedNumber } from "@/hooks/useAnimatedNumber";
 import { useAuth } from "@/context/auth.context";
-import { isEightHost } from "@/helpers/eight";
+import { isEightHost, isEightBuild } from "@/helpers/eight";
 import PaymentApi from "@/api/domains/payment";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -296,28 +296,34 @@ export const ProfilePage: FC = () => {
             <p className="text-xs text-gray-400 mt-1 uppercase">
               {userInfo?.currency}
             </p>
-            <button
-              onClick={() => setTopUpOpen(true)}
-              className="mt-3 w-full h-9 rounded-xl text-sm font-medium bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)] transition-colors"
-            >
-              Top Up
-            </button>
+            {/* No Rahmat top-up in the Anor build — its checkout_url would
+                navigate the customer out of the host WebView. */}
+            {!isEightBuild() && (
+              <button
+                onClick={() => setTopUpOpen(true)}
+                className="mt-3 w-full h-9 rounded-xl text-sm font-medium bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)] transition-colors"
+              >
+                Top Up
+              </button>
+            )}
           </div>
         </div>
 
         {/* Menu items */}
         <div className="mt-3 space-y-2">
-          <Button
-            variant="outline"
-            className="w-full h-12 justify-between rounded-2xl bg-white border-none shadow-sm text-gray-700 hover:bg-gray-50"
-            onClick={() => setTopUpOpen(true)}
-          >
-            <span className="flex items-center gap-3">
-              <Wallet size={18} className="text-gray-400" />
-              Top up balance
-            </span>
-            <ChevronRight size={18} className="text-gray-400" />
-          </Button>
+          {!isEightBuild() && (
+            <Button
+              variant="outline"
+              className="w-full h-12 justify-between rounded-2xl bg-white border-none shadow-sm text-gray-700 hover:bg-gray-50"
+              onClick={() => setTopUpOpen(true)}
+            >
+              <span className="flex items-center gap-3">
+                <Wallet size={18} className="text-gray-400" />
+                Top up balance
+              </span>
+              <ChevronRight size={18} className="text-gray-400" />
+            </Button>
+          )}
 
           {/* When a subscription occupies the top card, keep gift-card
               redemption reachable here; otherwise the top card already is it. */}
