@@ -9,7 +9,7 @@ import { useStoryList } from "@/api/hooks/stories.hook";
 import { useActiveOrders } from "@/api/hooks/orders.hook";
 import ShopCard from "@/components/func/ShopCard";
 import { CategoryChips } from "@/components/func/CategoryChips";
-import { CurrentOrderCard } from "@/components/func/CurrentOrderCard";
+import { CurrentOrdersCarousel } from "@/components/func/CurrentOrdersCarousel";
 import { BannerCarousel } from "@/components/func/BannerCarousel";
 import { StoryCircles } from "@/components/func/StoryCircles";
 import { StoryViewer } from "@/components/func/StoryViewer";
@@ -105,13 +105,7 @@ export const HomePage: FC = () => {
             />
 
             {/* Active orders */}
-            {activeOrders.length > 0 && (
-              <div className="mb-3 space-y-3">
-                {activeOrders.map((order) => (
-                  <CurrentOrderCard key={order.id} order={order} />
-                ))}
-              </div>
-            )}
+            <CurrentOrdersCarousel orders={activeOrders} />
 
             {/* Category filter */}
             <CategoryChips
