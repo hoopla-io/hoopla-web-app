@@ -1,77 +1,12 @@
-import { FC, useCallback, useEffect, useRef, useState } from "react";
+import { FC, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ReceiptText, Loader2, CheckCircle, XCircle, Clock, AlertCircle, Coffee, Coins } from "lucide-react";
+import { ReceiptText, Loader2, Coffee, Coins } from "lucide-react";
 import { format } from "date-fns";
-import toast from "react-hot-toast";
 
-import { useOrders, useCancelOrder } from "@/api/hooks/orders.hook";
-import type { Order } from "@/api/domains/orders";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { useOrders } from "@/api/hooks/orders.hook";
 import { Page } from "@/components/Page";
 import { LoadingScreen } from "@/components/func/Loading";
 import { formatBalance } from "@/helpers/utils";
-
-const statusConfig: Record<string, { label: string; icon: typeof CheckCircle; color: string; bg: string }> = {
-  completed: {
-    label: "Completed",
-    icon: CheckCircle,
-    color: "text-green-600",
-    bg: "bg-green-50",
-  },
-  cancelled: {
-    label: "Cancelled",
-    icon: XCircle,
-    color: "text-red-500",
-    bg: "bg-red-50",
-  },
-  pending_payment: {
-    label: "Awaiting Payment",
-    icon: Clock,
-    color: "text-yellow-600",
-    bg: "bg-yellow-50",
-  },
-  pending: {
-    label: "Preparing",
-    icon: Coffee,
-    color: "text-blue-600",
-    bg: "bg-blue-50",
-  },
-  paid: {
-    label: "Preparing",
-    icon: Coffee,
-    color: "text-blue-600",
-    bg: "bg-blue-50",
-  },
-  preparing: {
-    label: "Preparing",
-    icon: Coffee,
-    color: "text-blue-600",
-    bg: "bg-blue-50",
-  },
-  ready: {
-    label: "Ready",
-    icon: CheckCircle,
-    color: "text-emerald-600",
-    bg: "bg-emerald-50",
-  },
-  error: {
-    label: "Error",
-    icon: AlertCircle,
-    color: "text-red-500",
-    bg: "bg-red-50",
-  },
-};
-
-const LONG_PRESS_MS = 500;
 
 export const OrdersPage: FC = () => {
   const {
@@ -81,38 +16,7 @@ export const OrdersPage: FC = () => {
     hasNextPage,
     isFetchingNextPage,
   } = useOrders();
-  const cancelOrder = useCancelOrder();
   const observerRef = useRef<HTMLDivElement>(null);
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const longPressTriggered = useRef(false);
-  const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
-
-  const handleCancelConfirm = () => {
-    if (!cancelTarget) return;
-    cancelOrder.mutate(cancelTarget.id, {
-      onSuccess: () => {
-        toast.success("Order cancelled");
-        setCancelTarget(null);
-      },
-      onError: () => toast.error("Failed to cancel order"),
-    });
-  };
-
-  const startLongPress = useCallback((order: Order) => {
-    if (order.orderStatus !== "pending_payment") return;
-    longPressTriggered.current = false;
-    longPressTimer.current = setTimeout(() => {
-      longPressTriggered.current = true;
-      setCancelTarget(order);
-    }, LONG_PRESS_MS);
-  }, []);
-
-  const clearLongPress = useCallback(() => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-  }, []);
 
   useEffect(() => {
     if (!observerRef.current || !hasNextPage) return;
@@ -160,17 +64,9 @@ export const OrdersPage: FC = () => {
         {orders.length > 0 && (
           <div className="space-y-2">
             {orders.map((order) => {
-              const status = statusConfig[order.orderStatus] ?? {
-                label: "Processing",
-                icon: Clock,
-                color: "text-gray-500",
-                bg: "bg-gray-100",
-              };
-              const StatusIcon = status.icon;
-
               const images =
-                order.itemImages && order.itemImages.length > 0
-                  ? order.itemImages
+                order.drinks.length > 0
+                  ? order.drinks.map((d) => d.drinkImageUrl).filter(Boolean)
                   : order.shopIconUrl
                   ? [order.shopIconUrl]
                   : [];
@@ -178,47 +74,35 @@ export const OrdersPage: FC = () => {
               const visibleImages = hasOverflow ? images.slice(0, 3) : images.slice(0, 4);
               const extraCount = hasOverflow ? images.length - 3 : 0;
 
+              const totalPrice = order.drinks.reduce(
+                (sum, d) => sum + d.drinkPrice,
+                0
+              );
+              const drinkNames = order.drinks.map((d) => d.drinkName).join(", ");
+
               return (
                 <Link
                   key={order.id}
                   to={`/orders/${order.id}`}
                   className="bg-white rounded-2xl shadow-sm p-3 active:scale-[0.98] transition-transform block select-none"
-                  onTouchStart={() => startLongPress(order)}
-                  onTouchEnd={clearLongPress}
-                  onTouchMove={clearLongPress}
-                  onMouseDown={() => startLongPress(order)}
-                  onMouseUp={clearLongPress}
-                  onMouseLeave={clearLongPress}
-                  onContextMenu={(e) => {
-                    if (order.orderStatus === "pending_payment") e.preventDefault();
-                  }}
-                  onClick={(e) => {
-                    if (longPressTriggered.current) {
-                      e.preventDefault();
-                      longPressTriggered.current = false;
-                    }
-                  }}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <h3 className="font-semibold text-sm text-gray-900 truncate">
                         {order.shopName}
                       </h3>
+                      {drinkNames && (
+                        <p className="text-xs text-gray-500 mt-0.5 truncate">
+                          {drinkNames}
+                        </p>
+                      )}
                       <p className="text-xs text-gray-400 mt-0.5">
                         {format(new Date(order.purchasedAt), "d MMMM HH:mm, yyyy")}
                       </p>
                     </div>
-                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                      <span className="text-sm font-semibold text-gray-900">
-                        {formatBalance(order.productPrice)} sum
-                      </span>
-                      <span
-                        className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${status.bg} ${status.color}`}
-                      >
-                        <StatusIcon size={12} />
-                        {status.label}
-                      </span>
-                    </div>
+                    <span className="text-sm font-semibold text-gray-900 flex-shrink-0">
+                      {formatBalance(totalPrice)} sum
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-2 mt-3">
@@ -228,7 +112,7 @@ export const OrdersPage: FC = () => {
                           <img
                             key={idx}
                             src={src}
-                            alt={order.drinkName}
+                            alt={drinkNames}
                             className="w-12 h-12 rounded-xl object-cover ring-1 ring-black/5 flex-shrink-0"
                           />
                         ))}
@@ -268,28 +152,6 @@ export const OrdersPage: FC = () => {
           </div>
         )}
       </div>
-
-      <AlertDialog open={!!cancelTarget} onOpenChange={(open) => !open && setCancelTarget(null)}>
-        <AlertDialogContent className="rounded-2xl max-w-sm">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Cancel this order?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to cancel your order
-              {cancelTarget ? ` from ${cancelTarget.shopName}` : ""}? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl">Go back</AlertDialogCancel>
-            <AlertDialogAction
-              className="rounded-xl bg-red-500 text-white hover:bg-red-600"
-              onClick={handleCancelConfirm}
-              disabled={cancelOrder.isPending}
-            >
-              {cancelOrder.isPending ? "Cancelling..." : "Yes, cancel"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </Page>
   );
 };

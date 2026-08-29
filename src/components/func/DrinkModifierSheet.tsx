@@ -279,6 +279,11 @@ const DrinkModifierSheetBody: FC<DrinkModifierSheetBodyProps> = ({
             <p className="mt-0.5 truncate text-sm font-semibold text-[var(--color-primary)]">
               {formatPrice(validatedOrder.drink.amount)}
             </p>
+            {validatedOrder.drink.description && (
+              <p className="mt-1.5 text-sm text-gray-500">
+                {validatedOrder.drink.description}
+              </p>
+            )}
           </div>
         </div>
 

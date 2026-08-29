@@ -1,28 +1,38 @@
 import { FC } from "react";
 
-import { cn, getShopOpenStatus, type WorkingHour } from "@/helpers/utils";
+import {
+  cn,
+  getShopOpenStatus,
+  isWithinWorkingHours,
+  type WorkingHour,
+} from "@/helpers/utils";
 
 type Props = {
   /**
    * Real-time availability (from the shop list endpoint). When provided this
-   * takes precedence over `workingHours`.
+   * takes precedence over `todayWorkingHours`/`workingHours`.
    */
   acceptingOrders?: boolean;
   /** ISO timestamp the shop is paused until, or null when not paused. */
   pausedUntil?: string | null;
-  /** Weekly hours fallback (used where real-time availability isn't available). */
+  /** Today's hours, resolved server-side. Preferred over `workingHours` when
+   * `acceptingOrders` isn't available — avoids a client weekday lookup. */
+  todayWorkingHours?: { openAt: string; closeAt: string } | null;
+  /** Weekly hours fallback, used only when `todayWorkingHours` isn't passed. */
   workingHours?: WorkingHour[] | null;
   className?: string;
 };
 
 /**
  * Small pill showing whether a shop is currently Open or Closed. Prefers the
- * real-time `acceptingOrders` flag; otherwise derives status from today's
- * working hours (and renders nothing when neither is available).
+ * real-time `acceptingOrders` flag, then `todayWorkingHours`, then derives
+ * status from the weekly `workingHours` (and renders nothing when none of
+ * these are available).
  */
 export const ShopStatusBadge: FC<Props> = ({
   acceptingOrders,
   pausedUntil,
+  todayWorkingHours,
   workingHours,
   className,
 }) => {
@@ -37,6 +47,9 @@ export const ShopStatusBadge: FC<Props> = ({
       paused = Number.isNaN(until) || until > Date.now();
     }
     isOpen = acceptingOrders === true && !paused;
+  } else if (todayWorkingHours !== undefined) {
+    if (!todayWorkingHours) return null;
+    isOpen = isWithinWorkingHours(todayWorkingHours);
   } else {
     const status = getShopOpenStatus(workingHours);
     if (!status.todayHours) return null;

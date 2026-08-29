@@ -42,6 +42,7 @@ const ShopCard = ({ shop }: ShopCardProps) => {
           <ShopStatusBadge
             acceptingOrders={shop.acceptingOrders}
             pausedUntil={shop.pausedUntil}
+            todayWorkingHours={shop.todayWorkingHours}
             className="absolute right-3 top-3"
           />
         </div>

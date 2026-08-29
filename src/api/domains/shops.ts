@@ -26,6 +26,13 @@ export interface Shop {
     openAt: string;
     closeAt: string;
   }[];
+  /** Today's hours only, resolved server-side (no client weekday lookup
+   * needed). Null when the shop has no schedule entry for today. */
+  todayWorkingHours?: {
+    weekDay: string;
+    openAt: string;
+    closeAt: string;
+  } | null;
 }
 
 export interface ShopDrink {

@@ -1,29 +1,31 @@
 import { httpClient } from "@/api/http-client";
 
+/** One drink line within a settled order, as returned by GET /user/orders/history. */
+export interface OrderHistoryDrink {
+  drinkId: number;
+  drinkName: string;
+  drinkPrice: number;
+  status: string;
+  drinkImageUrl: string;
+}
+
+/**
+ * A settled order on the "Order History" list. Returned by
+ * GET /user/orders/history — distinct from `ActiveOrder` (in-progress orders
+ * on the home screen), so there is no top-level `orderStatus` here: an order
+ * that still needs action (payment, cancellation) lives in `ActiveOrder`
+ * instead. Each drink carries its own `status` since a multi-item order can
+ * settle its items independently (e.g. one refunded, the rest fulfilled).
+ */
 export interface Order {
   id: number;
   shopName: string;
   shopIconUrl: string;
-  drinkName: string;
-  /** Drink-item thumbnails for the order card. Empty for none; a legacy
-   * single-item order yields one, a multi-item cart order yields several. */
-  itemImages?: string[] | null;
-  // Full backend status set. `paid`/`preparing`/`ready` were previously
-  // missing here, which made the status pill fall through to a wrong default.
-  orderStatus:
-    | "completed"
-    | "cancelled"
-    | "pending_payment"
-    | "paid"
-    | "pending"
-    | "preparing"
-    | "ready"
-    | "error"
-    | (string & {});
-  productPrice: number;
+  drinks: OrderHistoryDrink[];
   purchasedAt: string;
   purchasedAtUnix: number;
   cashback_earned: number;
+  hasFeedback: boolean;
 }
 
 /**
@@ -122,6 +124,7 @@ export interface ValidateOrderResponse {
     name: string;
     amount: number;
     imageUrl: string;
+    description?: string | null;
   };
   validatedAt: string;
   validatedAtUnix: number;
@@ -248,14 +251,22 @@ export function isOrderSettled(status: string | undefined): boolean {
 
 export const OrdersApi = {
   getList: async (page: number, limit: number = 10) => {
-    const response: any = await httpClient.get("/user/orders/orders-list", {
+    const response: any = await httpClient.get("/user/orders/history", {
       params: { page, limit },
     });
+    const data = (response.data ?? []) as Order[];
 
-    return {
-      data: (response.data ?? []) as Order[],
-      meta: response.meta as OrderListMeta,
+    // Fall back to a single-page shape if the endpoint doesn't echo pagination
+    // meta, so infinite-scroll just stops after the first page instead of
+    // looping forever.
+    const meta: OrderListMeta = response.meta ?? {
+      itemsPerPage: limit,
+      totalItems: data.length,
+      currentPage: page,
+      lastPage: page,
     };
+
+    return { data, meta };
   },
 
   getActive: async () => {

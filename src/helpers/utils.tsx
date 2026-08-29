@@ -24,17 +24,44 @@ export type ShopOpenStatus = {
 };
 
 /**
+ * Whether the current time of day falls within an openAt/closeAt window.
+ * Handles overnight ranges (e.g. 22:00–02:00). Malformed times report
+ * closed rather than guessing open.
+ */
+export function isWithinWorkingHours(hours: {
+  openAt: string;
+  closeAt: string;
+}): boolean {
+  // Returns minutes-since-midnight, or NaN for a malformed "HH:mm" string.
+  const toMinutes = (time: string) => {
+    const [h, m] = (time ?? "").split(":").map(Number);
+    if (Number.isNaN(h) || Number.isNaN(m)) return NaN;
+    return h * 60 + m;
+  };
+  const now = new Date();
+  const current = now.getHours() * 60 + now.getMinutes();
+  const open = toMinutes(hours.openAt);
+  const close = toMinutes(hours.closeAt);
+
+  if (Number.isNaN(open) || Number.isNaN(close)) return false;
+  return close > open
+    ? current >= open && current < close
+    : current >= open || current < close; // overnight range
+}
+
+/**
  * Compute whether a shop is currently open from its weekly working hours.
- * Handles overnight ranges (e.g. 22:00–02:00). Returns `todayHours: null`
- * when there is no schedule entry for today (treated as closed / unknown).
+ * Returns `todayHours: null` when there is no schedule entry for today
+ * (treated as closed / unknown). Prefer the backend-provided
+ * `todayWorkingHours` (see `Shop`) over this where available — it avoids the
+ * client-locale weekday lookup this does below.
  */
 export function getShopOpenStatus(
   workingHours?: WorkingHour[] | null
 ): ShopOpenStatus {
   if (!workingHours?.length) return { isOpen: false, todayHours: null };
 
-  const now = new Date();
-  const today = now
+  const today = new Date()
     .toLocaleString("en-US", { weekday: "long" })
     .toLowerCase();
   const todayHours = workingHours.find(
@@ -42,26 +69,8 @@ export function getShopOpenStatus(
   );
   if (!todayHours) return { isOpen: false, todayHours: null };
 
-  // Returns minutes-since-midnight, or NaN for a malformed "HH:mm" string.
-  const toMinutes = (time: string) => {
-    const [h, m] = (time ?? "").split(":").map(Number);
-    if (Number.isNaN(h) || Number.isNaN(m)) return NaN;
-    return h * 60 + m;
-  };
-  const current = now.getHours() * 60 + now.getMinutes();
-  const open = toMinutes(todayHours.openAt);
-  const close = toMinutes(todayHours.closeAt);
-
-  // If the hours can't be parsed, report closed rather than guessing open.
-  const isOpen =
-    Number.isNaN(open) || Number.isNaN(close)
-      ? false
-      : close > open
-      ? current >= open && current < close
-      : current >= open || current < close; // overnight range
-
   return {
-    isOpen,
+    isOpen: isWithinWorkingHours(todayHours),
     todayHours: { openAt: todayHours.openAt, closeAt: todayHours.closeAt },
   };
 }

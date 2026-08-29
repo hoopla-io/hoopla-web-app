@@ -22,7 +22,7 @@ import { startEightPayment } from "@/helpers/eight";
 import { beginBridgePayment } from "@/pages/PaymentWaiting/payment-waiting.page";
 import { LoadingScreen } from "@/components/func/Loading";
 import { OrdersApi } from "@/api/domains/orders";
-import { useShop, useShopDrinks } from "@/api/hooks/shops.hook";
+import { useShop } from "@/api/hooks/shops.hook";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -106,14 +106,6 @@ export const CartPage: FC = () => {
   const checkout = useCheckoutCart();
   const { userInfo } = useGetMe();
   const { shopDetail } = useShop({ shopId: cart?.shopId ?? 0 });
-  const { categories: shopDrinkCategories } = useShopDrinks(cart?.shopId ?? 0);
-
-  const drinkPictureById = new Map<number, string | null>();
-  for (const category of shopDrinkCategories) {
-    for (const drink of category.drinks) {
-      drinkPictureById.set(drink.id, drink.pictureUrl);
-    }
-  }
 
   const [promoInput, setPromoInput] = useState("");
   const [promoError, setPromoError] = useState<string | null>(null);
@@ -381,13 +373,12 @@ export const CartPage: FC = () => {
             {/* Items */}
             <div className="mx-4 space-y-3">
               {items.map((item) => {
-                const pictureUrl = drinkPictureById.get(item.drinkId);
                 return (
                   <div key={item.id} className="bg-white rounded-2xl shadow-sm p-4">
                     <div className="flex items-start gap-3">
-                      {pictureUrl ? (
+                      {item.imageUrl ? (
                         <img
-                          src={pictureUrl}
+                          src={item.imageUrl}
                           alt={item.name}
                           className="w-14 h-14 flex-shrink-0 rounded-xl object-cover bg-gray-50"
                         />

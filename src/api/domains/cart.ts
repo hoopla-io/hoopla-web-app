@@ -10,6 +10,7 @@ export interface CartItem {
   id: number;
   drinkId: number;
   name: string;
+  imageUrl: string | null;
   quantity: number;
   unitPrice: number;
   lineTotal: number;
