@@ -1,5 +1,10 @@
 # Telegram Mini Apps React Template
 
+The Hoopla build uses the customer API v2. Set `VITE_API_URL` to the API base
+including `/v2`; it defaults to `https://api.hoopla.uz/v2`. To use a local API
+during development, set `VITE_API_URL=/v2`; Vite proxies that path to
+`http://127.0.0.1:8000`.
+
 This template demonstrates how developers can implement a single-page
 application on the Telegram Mini Apps platform using the following technologies
 and libraries:

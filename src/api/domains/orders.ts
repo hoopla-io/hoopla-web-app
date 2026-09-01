@@ -271,13 +271,13 @@ export const OrdersApi = {
 
   getActive: async () => {
     const response: any = await httpClient.get("/user/orders/active");
-    return (response.data ?? []) as ActiveOrder[];
+    return (response.data ?? []).map(adaptOrderListItem) as ActiveOrder[];
   },
 
   getDetail: async (orderId: number) => {
     const response: any = await httpClient.get(`/user/orders/${orderId}`);
 
-    return (response.data ?? response) as OrderDetail;
+    return adaptOrderDetail(response.data ?? response);
   },
 
   /** Cheap status-only read, for polling while a payment completes out of band
@@ -315,17 +315,37 @@ export const OrdersApi = {
 
   validateOrder: async (drinkId: number, shopId: number) => {
     const response: any = await httpClient.post("/user/orders/validate-order", {
-      drinkId,
+      productId: drinkId,
       shopId,
     });
 
-    return (response.data ?? response) as ValidateOrderResponse;
+    const value = response.data ?? response;
+    return {
+      ...value,
+      drink: value.product,
+      modifierGroups: (value.modifierGroups ?? []).map((group: any) => ({
+        ...group,
+        key: String(group.id),
+        name: group.name ?? String(group.id),
+        options: (group.options ?? []).map((option: any) => ({
+          ...option,
+          modificationKey: String(group.id),
+        })),
+      })),
+    } as ValidateOrderResponse;
   },
 
   checkPromocode: async (data: CheckPromocodeRequest) => {
     const response: any = await httpClient.post(
       "/user/orders/check-promocode",
-      data
+      {
+        code: data.code,
+        shopId: data.shopId,
+        productId: data.drinkId,
+        modifierIds: (data.modifiers ?? []).map((modifier) =>
+          Number(modifier.modifierId)
+        ),
+      }
     );
 
     return (response.data ?? response) as CheckPromocodeResult;
@@ -333,7 +353,15 @@ export const OrdersApi = {
 
   createOrder: async (data: CreateOrderRequest) => {
     try {
-      const response: any = await httpClient.post("/user/orders/create-rahmat", data);
+      const response: any = await httpClient.post("/user/orders/create-rahmat", {
+        ...data,
+        productId: data.drinkId,
+        drinkId: undefined,
+        quantity: 1,
+        modifiers: data.modifiers.map((modifier) => ({
+          modifierId: Number(modifier.modifierId),
+        })),
+      });
       return (response.data ?? response) as CreateOrderResponse;
     } catch (error: any) {
       // API returns 402 with payment data — treat as success. Either a Rahmat
@@ -347,3 +375,18 @@ export const OrdersApi = {
     }
   },
 };
+
+function adaptOrderListItem(value: any): any {
+  return {
+    ...value,
+    drinkName: value.productName,
+  };
+}
+
+function adaptOrderDetail(value: any): OrderDetail {
+  return {
+    ...value,
+    drinkName: value.productName,
+    drinkImageUrl: value.productImageUrl,
+  } as OrderDetail;
+}

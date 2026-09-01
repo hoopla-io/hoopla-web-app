@@ -70,10 +70,24 @@ export const ShopsApi = {
   },
 
   getShopDrinks: async (shopId: number) => {
-    const response = await httpClient.get('/shops/drinks', {
+    const response = await httpClient.get('/shops/products', {
       params: { shopId },
     });
 
-    return (response.data ?? { categories: [] }) as ShopDrinksResponse;
+    const data = (response.data ?? { categories: [] }) as {
+      categories?: Array<{
+        id: number;
+        name: string;
+        products?: ShopDrink[];
+      }>;
+    };
+
+    return {
+      categories: (data.categories ?? []).map((category) => ({
+        id: category.id,
+        name: category.name,
+        drinks: category.products ?? [],
+      })),
+    } as ShopDrinksResponse;
   },
 };

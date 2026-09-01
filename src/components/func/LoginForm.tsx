@@ -1,4 +1,4 @@
-import { Loader2, Phone, ShieldCheck } from "lucide-react";
+import { Loader2, MessageSquareText, Send, ShieldCheck } from "lucide-react";
 import { FC, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/func/PhoneInput";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth.context";
+import type { OTPChannel } from "@/api/domains/auth";
 
 const phoneSchema = z.object({
   phoneNumber: z.string().min(9, "Invalid phone number"),
@@ -24,7 +25,7 @@ const phoneSchema = z.object({
 const codeSchema = z.object({
   code: z
     .string()
-    .length(5, "Code must be 5 digits")
+    .length(6, "Code must be 6 digits")
     .regex(/^\d+$/, "Code must contain only digits"),
 });
 
@@ -35,6 +36,7 @@ type Props = {
 
 export const LoginForm: FC<Props> = ({ onSuccess }) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [channel, setChannel] = useState<OTPChannel | null>(null);
   const { login, confirmCode } = useAuth();
   const codeSectionRef = useRef<HTMLDivElement>(null);
 
@@ -60,14 +62,27 @@ export const LoginForm: FC<Props> = ({ onSuccess }) => {
     return () => cancelAnimationFrame(id);
   }, [sessionId]);
 
-  const onPhoneSubmit = async (data: { phoneNumber: string }) => {
+  const onPhoneSubmit = async (
+    data: { phoneNumber: string },
+    selectedChannel: OTPChannel
+  ) => {
+    setChannel(selectedChannel);
     try {
       const cleaned = data.phoneNumber.replace(/\+/g, "");
-      const { sessionId } = await login(cleaned);
+      const { sessionId } = await login(cleaned, selectedChannel);
       setSessionId(sessionId);
     } catch {
-      toast.error("Invalid phone number");
+      setChannel(null);
+      toast.error(
+        `Could not send the ${selectedChannel === "sms" ? "SMS" : "Telegram"} code`
+      );
     }
+  };
+
+  const requestCode = (selectedChannel: OTPChannel) => {
+    void phoneForm.handleSubmit((data) =>
+      onPhoneSubmit(data, selectedChannel)
+    )();
   };
 
   const onCodeSubmit = async (data: { code: string }) => {
@@ -85,7 +100,7 @@ export const LoginForm: FC<Props> = ({ onSuccess }) => {
         <h2 className="text-xl font-semibold text-gray-900">Sign In</h2>
         <p className="text-sm text-gray-500 mt-1">
           {sessionId
-            ? "Enter the verification code to continue"
+            ? `Enter the 6-digit code sent via ${channel === "telegram" ? "Telegram" : "SMS"}`
             : "Enter your phone number to get started"}
         </p>
       </div>
@@ -97,7 +112,7 @@ export const LoginForm: FC<Props> = ({ onSuccess }) => {
           /* Step 1 — Phone Number */
           <Form {...phoneForm}>
             <form
-              onSubmit={phoneForm.handleSubmit(onPhoneSubmit)}
+              onSubmit={(event) => event.preventDefault()}
               className="space-y-4"
             >
               <FormField
@@ -121,20 +136,40 @@ export const LoginForm: FC<Props> = ({ onSuccess }) => {
                   </FormItem>
                 )}
               />
-              <Button
-                type="submit"
-                className="w-full h-12 text-base font-medium text-white rounded-xl"
-                disabled={phoneForm.formState.isSubmitting}
-              >
-                {phoneForm.formState.isSubmitting ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    <Phone size={18} />
-                    Send Code
-                  </>
-                )}
-              </Button>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  type="button"
+                  value="sms"
+                  className="h-12 text-base font-medium text-white rounded-xl"
+                  disabled={phoneForm.formState.isSubmitting}
+                  onClick={() => requestCode("sms")}
+                >
+                  {phoneForm.formState.isSubmitting && channel === "sms" ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      <MessageSquareText size={18} />
+                      SMS
+                    </>
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  value="telegram"
+                  className="h-12 text-base font-medium text-white rounded-xl"
+                  disabled={phoneForm.formState.isSubmitting}
+                  onClick={() => requestCode("telegram")}
+                >
+                  {phoneForm.formState.isSubmitting && channel === "telegram" ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      <Send size={18} />
+                      Telegram
+                    </>
+                  )}
+                </Button>
+              </div>
             </form>
           </Form>
         ) : (
@@ -159,8 +194,8 @@ export const LoginForm: FC<Props> = ({ onSuccess }) => {
                           autoFocus
                           type="tel"
                           inputMode="numeric"
-                          maxLength={5}
-                          placeholder="12345"
+                          maxLength={6}
+                          placeholder="123456"
                           className="h-12 rounded-xl text-base px-4 tracking-[0.3em] text-center font-semibold"
                         />
                       </FormControl>
@@ -169,6 +204,7 @@ export const LoginForm: FC<Props> = ({ onSuccess }) => {
                         type="button"
                         onClick={() => {
                           setSessionId(null);
+                          setChannel(null);
                           codeForm.reset();
                         }}
                         className="text-sm font-medium text-[var(--color-primary)] hover:underline"

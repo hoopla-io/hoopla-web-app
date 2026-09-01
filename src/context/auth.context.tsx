@@ -3,7 +3,11 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 
 import toast from "react-hot-toast";
 
-import { AuthApi, LoginResponse } from "@/api/domains/auth";
+import {
+  AuthApi,
+  LoginResponse,
+  type OTPChannel,
+} from "@/api/domains/auth";
 import { AUTH_EXPIRED_EVENT } from "@/api/http-client";
 import { DEFAULT_USER_NAME } from "@/helpers/utils";
 import {
@@ -23,7 +27,7 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  login: (phoneNumber: string) => Promise<LoginResponse>;
+  login: (phoneNumber: string, channel: OTPChannel) => Promise<LoginResponse>;
   confirmCode: (sessionId: string, code: number) => Promise<void>;
   logout: () => void;
   isLoginModalOpen: boolean;
@@ -47,8 +51,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const pendingAction = useRef<(() => void) | null>(null);
 
-  const login = async (phoneNumber: string) => {
-    const response = await AuthApi.login(phoneNumber);
+  const login = async (phoneNumber: string, channel: OTPChannel) => {
+    const response = await AuthApi.login(phoneNumber, channel);
 
     return response;
   };

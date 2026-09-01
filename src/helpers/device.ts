@@ -1,5 +1,5 @@
 // Best-effort device identity for the current browser/session. Sent as the
-// optional fields on /auth/confirm-sms so the /user/devices list shows a real
+// optional fields on /auth/confirm so the /user/devices list shows a real
 // label instead of null. The web exposes no true device model or hardware id,
 // so these are heuristic — but stable within a given browser.
 

@@ -1,6 +1,5 @@
 import { httpClient } from "@/api/http-client";
 import { getDeviceInfo } from "@/helpers/device";
-import { getRefreshToken } from "@/helpers/token-storage";
 
 export interface LoginResponse {
   phoneNumber: string;
@@ -8,6 +7,8 @@ export interface LoginResponse {
   sessionExpiresAt: number;
   sessionExpireAtMs: number;
 }
+
+export type OTPChannel = "sms" | "telegram";
 
 interface JWT {
   accessToken: string;
@@ -28,28 +29,29 @@ interface User {
   phoneNumber: string;
   name: string;
   balance: number;
-  currency: "uzs" | "usd";
+  currency: string;
   subscription: {
     id: number;
     name: string;
     endDate: string;
     endDateUnix: number;
-  };
+  } | null;
   unreadNotifications: number;
 }
 export const AuthApi = {
-  login: async (phoneNumber: string) => {
+  login: async (phoneNumber: string, channel: OTPChannel) => {
     const response = await httpClient.post("/auth/login", {
       phoneNumber,
+      channel,
     });
 
     return response.data as LoginResponse;
   },
 
   confirmSms: async (sessionId: string, code: number) => {
-    const response = await httpClient.post(`/auth/confirm-sms`, {
+    const response = await httpClient.post(`/auth/confirm`, {
       sessionId,
-      code,
+      code: String(code),
       // Optional device fields — labels this session in the /user/devices list.
       // Omitting them is valid; we always send our best-effort values.
       ...getDeviceInfo(),
@@ -59,15 +61,7 @@ export const AuthApi = {
   },
 
   logout: async () => {
-    // Pass this device's refresh token so only the current session is logged
-    // out; other devices stay signed in. Without it the backend (old behavior)
-    // would log out every device. Falls back to that if the token is missing.
-    const refreshToken = getRefreshToken();
-    await httpClient.post(
-      "/user/logout",
-      null,
-      refreshToken ? { params: { refreshToken } } : undefined
-    );
+    await httpClient.post("/user/logout");
   },
 
   deleteAccount: async () => {
@@ -86,7 +80,7 @@ export const AuthApi = {
   },
 
   updateProfile: async (data: { name?: string; gender?: string; dateOfBirth?: string }) => {
-    const response = await httpClient.put("/user/update-me", data);
+    const response = await httpClient.post("/user/update-me", data);
     return response.data;
   },
 

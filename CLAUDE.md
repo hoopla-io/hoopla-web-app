@@ -7,8 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 The consumer-facing PWA for Hoopla — the customer's front door. Customers browse partner coffee
 shops on a map, order + pay, earn/spend cashback, redeem gift cards and promocodes, and track
 order pickup. It also runs embedded as a **Telegram Mini App** (see `src/helpers/telegram.ts`).
-It talks to exactly one backend, **hoopla-api**, at `VITE_API_URL` (prod:
-`https://api.hoopla.uz/api/v1`). It never touches the shared `qahvazor` DB directly and has no
+It talks to exactly one backend, **hoopla-api-v2**, at `VITE_API_URL` (prod:
+`https://api.hoopla.uz/v2`). It never touches the shared `qahvazor` DB directly and has no
 knowledge of the other 9 repos in the workspace.
 
 ## Commands
@@ -30,7 +30,7 @@ Vite/esbuild strips types without erroring on them). There is no `hoopla-pos`-st
 
 Env is Vite-style (`import.meta.env`, `.env` at repo root, must be prefixed `VITE_`):
 
-- `VITE_API_URL` — hoopla-api base URL, **includes** the `/api/v1` path segment (domain calls
+- `VITE_API_URL` — hoopla-api-v2 base URL, **includes** the `/v2` path segment (domain calls
   append bare paths like `/auth/login`, `/user/cart`).
 - `VITE_HOOPLA_TEST_MODE` — `"true"` sends `X-Hoopla-Test: true` on every request, which makes
   hoopla-api reveal `type=test` partners/shops/orders otherwise hidden from real customers. Not
@@ -55,7 +55,7 @@ Verified by grepping the built bundles: `start_payment`/`nativeBridge` appear 0�
 build and `captureEightLaunch` compiles down to `return false`.
 
 In the Eight build: auth is access-token-only (no refresh token, so `hydrateTokens` treats a
-lone access token as signed in), 412 tells the customer to relaunch instead of opening the SMS
+lone access token as signed in), 401 tells the customer to relaunch instead of opening the SMS
 drawer (the guard lives in `openLoginModal`, so `ProtectedRoute` can't route around it), the
 Profile log-out button is hidden (signing out of a host session leaves no way back), and
 checkout's 402 carries `bridge_order_id` → `nativeBridge.postMessage("start_payment")` →
@@ -95,16 +95,16 @@ Vite + React 18 + TypeScript, no framework router beyond `react-router-dom` v6. 
 ## Integration contracts with hoopla-api (verified from code)
 
 - **Auth is Bearer**, token read synchronously per-request from `token-storage` (not cookies —
-  unlike dashboard-api/vendor). Login flow: `POST /auth/login {phoneNumber}` → SMS →
-  `POST /auth/confirm-sms {sessionId, code, ...deviceInfo}` → `data.jwt.{accessToken,
+  unlike dashboard-api/vendor). Login flow: `POST /auth/login {phoneNumber, channel}` → SMS →
+  `POST /auth/confirm {sessionId, code, ...deviceInfo}` → `data.jwt.{accessToken,
   refreshToken}` (jwt is a nested object, not top-level fields).
-- **Token expiry is HTTP 412**, not 401. The response interceptor in `http-client.tsx` catches
-  412, calls `PATCH /user/refresh-token?refreshToken=...` with a **bare `axios` instance** (not
+- **Token expiry is HTTP 401** (412 remains supported during rollout). The response interceptor
+  in `http-client.tsx` calls `POST /user/refresh-token {refreshToken}` with a **bare `axios` instance** (not
   `httpClient`, to skip re-attaching the expired token and the response-envelope extractor —
   tokens are read from `body.data`, not `body`), retries the original request once, and queues
-  concurrent 412s behind a single in-flight refresh. A bare 401 is treated as unrecoverable and
-  clears tokens immediately (`AUTH_EXPIRED_EVENT` dispatched → `AuthProvider` opens the login
-  drawer instead of navigating to a route).
+  concurrent failures behind a single in-flight refresh. An unauthenticated 401, or a failed
+  refresh, clears tokens (`AUTH_EXPIRED_EVENT` dispatched → `AuthProvider` opens the login drawer
+  instead of navigating to a route).
 - **`extractorResponseInterceptor`** flattens the `{code, message, data, meta}` envelope onto the
   axios response object itself (`response.data`/`response.meta` become directly accessible) —
   this is why domain files read `response.data` after an `httpClient` call returns what looks
@@ -138,8 +138,8 @@ Vite + React 18 + TypeScript, no framework router beyond `react-router-dom` v6. 
   deliberately never pushes local tokens *up* to an empty CloudStorage (can't distinguish
   first-time migration from a store just cleared by logout/401); cloud durability re-establishes
   on the next login/refresh via `setTokens`' write-through.
-- **`AuthApi.logout` passes the current device's `refreshToken` as a query param** so only that
-  session is revoked; omitting it (old backend behavior) logs out every device on the account.
+- **`AuthApi.logout` needs only the access token**; v2 revokes the session identified by that
+  token, leaving the user's other devices signed in.
 - Telegram fullscreen/safe-area handling (`telegram.ts`) mirrors Telegram's safe-area insets into
   CSS vars (`--tg-top-inset` etc.) so the fixed header/bottom-nav clear the status bar and
   Telegram's floating controls; fullscreen itself is Bot API 8.0+ and fails silently (no-op) on

@@ -49,5 +49,13 @@ export default defineConfig({
     // Exposes your dev server and makes it accessible for the devices in the same network.
     host: true,
     allowedHosts: true,
+    // Optional local API proxy: set VITE_API_URL=/v2 to use it. The v2 API
+    // already includes the prefix, so no path rewrite is needed.
+    proxy: {
+      "/v2": {
+        target: "http://127.0.0.1:8000",
+        changeOrigin: true,
+      },
+    },
   },
 });

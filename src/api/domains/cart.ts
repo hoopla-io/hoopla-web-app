@@ -59,7 +59,7 @@ export type CartCheckoutResponse = CreateOrderResponse;
 export const CartApi = {
   getCart: async () => {
     const response: any = await httpClient.get("/user/cart");
-    return (response.data ?? null) as Cart | null;
+    return adaptCart(response.data ?? null);
   },
 
   getCount: async () => {
@@ -68,20 +68,27 @@ export const CartApi = {
   },
 
   addItem: async (data: AddCartItemRequest) => {
-    const response: any = await httpClient.post("/user/cart/items", data);
-    return (response.data ?? null) as Cart | null;
+    const response: any = await httpClient.post("/user/cart/items", {
+      shopId: data.shopId,
+      productId: data.drinkId,
+      quantity: data.quantity,
+      modifiers: (data.modifiers ?? []).map((modifier) => ({
+        modifierId: Number(modifier.modifierId),
+      })),
+    });
+    return adaptCart(response.data ?? null);
   },
 
   updateItemQuantity: async (itemId: number, quantity: number) => {
     const response: any = await httpClient.patch(`/user/cart/items/${itemId}`, {
       quantity,
     });
-    return (response.data ?? null) as Cart | null;
+    return adaptCart(response.data ?? null);
   },
 
   removeItem: async (itemId: number) => {
     const response: any = await httpClient.delete(`/user/cart/items/${itemId}`);
-    return (response.data ?? null) as Cart | null;
+    return adaptCart(response.data ?? null);
   },
 
   clearCart: async () => {
@@ -90,19 +97,19 @@ export const CartApi = {
 
   applyPromo: async (code: string) => {
     const response: any = await httpClient.post("/user/cart/promo", { code });
-    return (response.data ?? null) as Cart | null;
+    return adaptCart(response.data ?? null);
   },
 
   clearPromo: async () => {
     const response: any = await httpClient.delete("/user/cart/promo");
-    return (response.data ?? null) as Cart | null;
+    return adaptCart(response.data ?? null);
   },
 
   setComment: async (comment: string) => {
     const response: any = await httpClient.post("/user/cart/comment", {
       comment: comment.trim() || null,
     });
-    return (response.data ?? null) as Cart | null;
+    return adaptCart(response.data ?? null);
   },
 
   checkout: async (data: CartCheckoutRequest = {}) => {
@@ -131,3 +138,15 @@ export const CartApi = {
     }
   },
 };
+
+function adaptCart(value: any): Cart | null {
+  if (!value) return null;
+
+  return {
+    ...value,
+    items: (value.items ?? []).map((item: any) => ({
+      ...item,
+      drinkId: item.productId,
+    })),
+  } as Cart;
+}

@@ -40,6 +40,8 @@ const processQueue = (error: unknown, token: string | null = null) => {
 };
 
 export const AUTH_EXPIRED_EVENT = "auth:expired";
+export const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "https://api.hoopla.uz/v2";
 
 const redirectToLogin = () => {
   clearTokens();
@@ -60,10 +62,12 @@ export const applyExtractorResponseInterceptor = (
         | RetryableRequestConfig
         | undefined;
 
-      // Handle token expiry (412) — refresh and retry once
+      // v2 reports expired/invalid access tokens as 401. Keep 412 support so
+      // deployments can be rolled over without immediately breaking sessions.
       if (
-        error.response?.status === 412 &&
+        (error.response?.status === 401 || error.response?.status === 412) &&
         originalRequest &&
+        Boolean(originalRequest.headers?.Authorization) &&
         !originalRequest._isRetry
       ) {
         const refreshToken = getRefreshToken();
@@ -96,8 +100,9 @@ export const applyExtractorResponseInterceptor = (
           // interceptor. NOTE: this also skips our response extractor, so
           // `body` is the full API envelope { code, message, data, meta } — the
           // tokens live under body.data, not on body itself.
-          const { data: body } = await axios.patch(
-            `${import.meta.env.VITE_API_URL}/user/refresh-token?refreshToken=${refreshToken}`
+          const { data: body } = await axios.post(
+            `${API_BASE_URL}/user/refresh-token`,
+            { refreshToken }
           );
 
           const accessToken: string | undefined = body?.data?.accessToken;
@@ -167,7 +172,7 @@ export const applyAuthorizationInterceptor = (axiosInstance: AxiosInstance) => {
 };
 
 export const httpClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },

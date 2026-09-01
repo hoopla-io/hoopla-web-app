@@ -2,6 +2,8 @@ services:
   hoopla_web_app:
     build:
       context: .
+      args:
+        VITE_API_URL: ${VITE_API_URL:-https://api.hoopla.uz/v2}
     restart: always
     ports:
       - "3013:3000"
@@ -14,6 +16,7 @@ services:
       context: .
       args:
         BUILD_MODE: anor
+        VITE_API_URL: ${VITE_API_URL:-https://api.hoopla.uz/v2}
     restart: always
     ports:
       - "3014:3000"
