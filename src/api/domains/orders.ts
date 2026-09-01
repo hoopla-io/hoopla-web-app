@@ -254,7 +254,7 @@ export const OrdersApi = {
     const response: any = await httpClient.get("/user/orders/history", {
       params: { page, limit },
     });
-    const data = (response.data ?? []) as Order[];
+    const data = (response.data ?? []).map(adaptOrderHistoryItem) as Order[];
 
     // Fall back to a single-page shape if the endpoint doesn't echo pagination
     // meta, so infinite-scroll just stops after the first page instead of
@@ -381,6 +381,26 @@ function adaptOrderListItem(value: any): any {
     ...value,
     drinkName: value.productName,
   };
+}
+
+function adaptOrderHistoryItem(value: any): Order {
+  if (Array.isArray(value?.drinks)) {
+    return value as Order;
+  }
+
+  return {
+    ...value,
+    drinks: [
+      {
+        drinkId: value?.productId ?? value?.drinkId ?? 0,
+        drinkName: value?.productName ?? value?.drinkName ?? "",
+        drinkPrice: value?.productPrice ?? 0,
+        status: value?.orderStatus ?? "",
+        drinkImageUrl:
+          value?.itemImages?.[0] ?? value?.productImageUrl ?? null,
+      },
+    ],
+  } as Order;
 }
 
 function adaptOrderDetail(value: any): OrderDetail {
