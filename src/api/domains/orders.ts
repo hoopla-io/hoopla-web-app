@@ -54,6 +54,37 @@ export interface ActiveOrder {
   hasFeedback: boolean;
 }
 
+/** One feedback row; `order_item_id` is null on legacy order-level rows. */
+export interface OrderItemFeedback {
+  id: number;
+  order_id: number;
+  order_item_id: number | null;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+}
+
+export interface PendingFeedbackDrink {
+  orderItemId: number;
+  drinkId: number;
+  drinkName: string;
+  drinkPrice: number;
+  status: string;
+  drinkImageUrl: string | null;
+}
+
+/** Returned by GET /orders/feedbacks/pending — shaped like a history entry,
+ * with the order item id on each drink so items can be rated one by one. */
+export interface PendingFeedbackOrder {
+  id: number;
+  shopName: string;
+  shopIconUrl: string | null;
+  drinks: PendingFeedbackDrink[];
+  purchasedAt: string;
+  purchasedAtUnix: number;
+  cashback_earned: number;
+}
+
 export interface OrderDetail {
   id: number;
   shopName: string;
@@ -290,13 +321,17 @@ export const OrdersApi = {
     return (response.data ?? response) as PaymentStatus;
   },
 
-  getFeedback: async (orderId: number) => {
-    try {
-      const response = await httpClient.get(`/orders/feedbacks/${orderId}`);
-      return response.data as { rating: number; comment: string } | null;
-    } catch {
-      return null;
-    }
+  /** All feedbacks left on an order — one per rated item, or a single row
+   * with `order_item_id: null` for legacy order-level feedback. */
+  getFeedbacks: async (orderId: number) => {
+    const response = await httpClient.get(`/orders/feedbacks/${orderId}`);
+    return (response.data ?? []) as OrderItemFeedback[];
+  },
+
+  /** Latest completed order still waiting for a rating, or null. */
+  getPendingFeedback: async () => {
+    const response = await httpClient.get(`/orders/feedbacks/pending`);
+    return (response.data ?? null) as PendingFeedbackOrder | null;
   },
 
   cancelOrder: async (orderId: number) => {
@@ -304,11 +339,11 @@ export const OrdersApi = {
     return response.data;
   },
 
-  leaveFeedback: async (orderId: number, rating: number, comment: string) => {
-    const response = await httpClient.post(`/orders/feedbacks/${orderId}/feedback`, {
-      rating,
-      comment,
-    });
+  leaveFeedback: async (orderItemId: number, rating: number, comment?: string) => {
+    const response = await httpClient.post(
+      `/orders/feedbacks/${orderItemId}/feedback`,
+      { rating, comment: comment || null }
+    );
 
     return response.data;
   },

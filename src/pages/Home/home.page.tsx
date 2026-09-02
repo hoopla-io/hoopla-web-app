@@ -13,6 +13,7 @@ import { CurrentOrdersCarousel } from "@/components/func/CurrentOrdersCarousel";
 import { BannerCarousel } from "@/components/func/BannerCarousel";
 import { StoryCircles } from "@/components/func/StoryCircles";
 import { StoryViewer } from "@/components/func/StoryViewer";
+import { FeedbackSheet } from "@/components/func/FeedbackSheet";
 import { Page } from "@/components/Page";
 import { LoadingScreen } from "@/components/func/Loading";
 import { useUserLocation } from "@/hooks/useUserLocation";
@@ -173,6 +174,8 @@ export const HomePage: FC = () => {
           </div>
         )}
       </div>
+
+      <FeedbackSheet />
     </Page>
   );
 };

@@ -17,8 +17,13 @@ import {
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 
-import { useOrderDetail, useCancelOrder } from "@/api/hooks/orders.hook";
-import { OrdersApi, type OrderDetail } from "@/api/domains/orders";
+import {
+  useOrderDetail,
+  useCancelOrder,
+  useOrderFeedbacks,
+  useLeaveFeedback,
+} from "@/api/hooks/orders.hook";
+import { type OrderDetail } from "@/api/domains/orders";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -46,11 +51,14 @@ import { formatBalance, cn } from "@/helpers/utils";
  * when rebuilding vendor tickets.
  */
 function groupOrderItems(items: OrderDetail["items"]) {
-  const drinks = items.filter((i) => i.item_type === "drink");
+  // v2 calls product rows "product"; legacy orders still say "drink".
+  const isDrink = (i: OrderDetail["items"][number]) =>
+    i.item_type === "drink" || i.item_type === "product";
+  const drinks = items.filter(isDrink);
   if (drinks.length === 0) {
     return items.map((i) => ({ ...i, modifiers: [] as OrderDetail["items"] }));
   }
-  const others = items.filter((i) => i.item_type !== "drink");
+  const others = items.filter((i) => !isDrink(i));
   const soleDrinkId = drinks.length === 1 ? drinks[0].id : null;
   const matched = new Set<number>();
   const grouped = drinks.map((drink) => ({
@@ -130,12 +138,12 @@ export const OrderDetailPage: FC = () => {
   const { order, isLoading } = useOrderDetail(Number(orderId));
   const cancelOrder = useCancelOrder();
 
-  const [rating, setRating] = useState(0);
-  const [hoverRating, setHoverRating] = useState(0);
-  const [comment, setComment] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [existingFeedback, setExistingFeedback] = useState<{ rating: number; comment: string } | null>(null);
-  const [feedbackLoaded, setFeedbackLoaded] = useState(false);
+  const { feedbacks, isLoading: feedbacksLoading } = useOrderFeedbacks(
+    Number(orderId),
+    order?.orderStatus === "completed"
+  );
+  const leaveFeedback = useLeaveFeedback();
+  const [pendingRatings, setPendingRatings] = useState<Record<number, number>>({});
   const [imageOpen, setImageOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
 
@@ -166,16 +174,6 @@ export const OrderDetailPage: FC = () => {
     };
   }, [imageOpen]);
 
-  useEffect(() => {
-    if (!orderId || !order || order.orderStatus !== "completed") return;
-    OrdersApi.getFeedback(Number(orderId)).then((fb) => {
-      if (fb) {
-        setExistingFeedback(fb);
-      }
-      setFeedbackLoaded(true);
-    });
-  }, [orderId, order]);
-
   const handleCancelOrder = () => {
     cancelOrder.mutate(Number(orderId), {
       onSuccess: () => toast.success("Order cancelled"),
@@ -183,21 +181,23 @@ export const OrderDetailPage: FC = () => {
     });
   };
 
-  const handleSubmitFeedback = async () => {
-    if (rating === 0) {
-      toast.error("Please select a rating");
-      return;
-    }
-    setSubmitting(true);
-    try {
-      await OrdersApi.leaveFeedback(Number(orderId), rating, comment);
-      toast.success("Feedback submitted!");
-      setExistingFeedback({ rating, comment });
-    } catch {
-      toast.error("Failed to submit feedback");
-    } finally {
-      setSubmitting(false);
-    }
+  const handleRateItem = (orderItemId: number, rating: number) => {
+    if (pendingRatings[orderItemId]) return;
+    setPendingRatings((prev) => ({ ...prev, [orderItemId]: rating }));
+    leaveFeedback.mutate(
+      { orderItemId, rating },
+      {
+        onSuccess: () => toast.success("Thanks for your feedback!"),
+        onError: () => {
+          setPendingRatings((prev) => {
+            const next = { ...prev };
+            delete next[orderItemId];
+            return next;
+          });
+          toast.error("Failed to submit feedback");
+        },
+      }
+    );
   };
 
   if (isLoading || !order) {
@@ -465,82 +465,84 @@ export const OrderDetailPage: FC = () => {
             </AlertDialog>
           )}
 
-          {/* Feedback */}
-          {order.orderStatus === "completed" && feedbackLoaded && (
-            <div className="bg-white rounded-2xl shadow-sm p-4">
-              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-                Feedback
-              </h2>
-              {existingFeedback ? (
-                <div className="py-2">
-                  <div className="flex justify-center gap-1 mb-2">
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <Star
-                        key={s}
-                        size={24}
-                        className={
-                          s <= existingFeedback.rating
-                            ? "fill-yellow-400 text-yellow-400"
-                            : "text-gray-200"
-                        }
-                      />
-                    ))}
-                  </div>
-                  {existingFeedback.comment && (
-                    <p className="text-sm text-gray-600 text-center mt-2">
-                      "{existingFeedback.comment}"
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-2">
-                      How was your order?
-                    </p>
-                    <div className="flex justify-center gap-2">
+          {/* Feedback — one rating per drink; a legacy row with no item id
+              covers the whole order and is shown read-only. */}
+          {order.orderStatus === "completed" && !feedbacksLoading && (() => {
+            const orderLevel = feedbacks.find((f) => f.order_item_id === null);
+            const drinkItems = order.items.filter(
+              (i) => i.item_type === "product" || i.item_type === "drink"
+            );
+
+            return (
+              <div className="bg-white rounded-2xl shadow-sm p-4">
+                <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                  Feedback
+                </h2>
+                {orderLevel ? (
+                  <div className="py-2">
+                    <div className="flex justify-center gap-1 mb-2">
                       {[1, 2, 3, 4, 5].map((s) => (
-                        <button
+                        <Star
                           key={s}
-                          onMouseEnter={() => setHoverRating(s)}
-                          onMouseLeave={() => setHoverRating(0)}
-                          onClick={() => setRating(s)}
-                          className="p-1 transition-transform hover:scale-110"
-                        >
-                          <Star
-                            size={32}
-                            className={
-                              s <= (hoverRating || rating)
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-gray-200"
-                            }
-                          />
-                        </button>
+                          size={24}
+                          className={
+                            s <= orderLevel.rating
+                              ? "fill-yellow-400 text-yellow-400"
+                              : "text-gray-200"
+                          }
+                        />
                       ))}
                     </div>
-                  </div>
-                  <textarea
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    placeholder="Leave a comment (optional)"
-                    rows={3}
-                    className="w-full rounded-xl border border-input bg-transparent px-4 py-3 text-base shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
-                  />
-                  <Button
-                    className="w-full h-11 rounded-xl text-white"
-                    disabled={submitting || rating === 0}
-                    onClick={handleSubmitFeedback}
-                  >
-                    {submitting ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : (
-                      "Submit Feedback"
+                    {orderLevel.comment && (
+                      <p className="text-sm text-gray-600 text-center mt-2">
+                        "{orderLevel.comment}"
+                      </p>
                     )}
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-100">
+                    {drinkItems.map((item) => {
+                      const saved = feedbacks.find(
+                        (f) => f.order_item_id === item.id
+                      )?.rating;
+                      const rating = saved ?? pendingRatings[item.id] ?? 0;
+
+                      return (
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between gap-3 py-3 first:pt-1 last:pb-1"
+                        >
+                          <p className="min-w-0 flex-1 truncate text-sm font-medium text-gray-900">
+                            {item.name}
+                          </p>
+                          <div className="flex gap-1">
+                            {[1, 2, 3, 4, 5].map((s) => (
+                              <button
+                                key={s}
+                                aria-label={`Rate ${item.name} ${s} stars`}
+                                disabled={rating > 0}
+                                onClick={() => handleRateItem(item.id, s)}
+                                className="transition-transform active:scale-110"
+                              >
+                                <Star
+                                  size={22}
+                                  className={
+                                    s <= rating
+                                      ? "fill-yellow-400 text-yellow-400"
+                                      : "fill-gray-200 text-gray-200"
+                                  }
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
 

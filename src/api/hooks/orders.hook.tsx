@@ -5,6 +5,8 @@ import {
   type Order,
   type ActiveOrder,
   type OrderDetail,
+  type OrderItemFeedback,
+  type PendingFeedbackOrder,
   type CreateOrderRequest,
   type CheckPromocodeRequest,
 } from "@/api/domains/orders";
@@ -93,6 +95,62 @@ export function useOrderDetail(orderId: number) {
   );
 
   return { order, isLoading, isError };
+}
+
+export function useOrderFeedbacks(orderId: number, enabled: boolean) {
+  const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
+
+  const { data: feedbacks, isLoading } = useQuery<OrderItemFeedback[]>(
+    {
+      queryKey: ["order-feedbacks", orderId],
+      queryFn: () => OrdersApi.getFeedbacks(orderId),
+      staleTime: 60000,
+      enabled: Boolean(orderId) && enabled && isAuthenticated,
+    },
+    queryClient
+  );
+
+  return { feedbacks: feedbacks ?? [], isLoading };
+}
+
+export function usePendingFeedback() {
+  const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
+
+  const { data: pendingOrder, isLoading } = useQuery<PendingFeedbackOrder | null>(
+    {
+      queryKey: ["pending-feedback"],
+      queryFn: () => OrdersApi.getPendingFeedback(),
+      staleTime: 60000,
+      enabled: isAuthenticated,
+    },
+    queryClient
+  );
+
+  return { pendingOrder: pendingOrder ?? null, isLoading };
+}
+
+export function useLeaveFeedback() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      orderItemId,
+      rating,
+      comment,
+    }: {
+      orderItemId: number;
+      rating: number;
+      comment?: string;
+    }) => OrdersApi.leaveFeedback(orderItemId, rating, comment),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["order-feedbacks"] });
+      queryClient.invalidateQueries({ queryKey: ["pending-feedback"] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["active-orders"] });
+    },
+  });
 }
 
 export function useCancelOrder() {
