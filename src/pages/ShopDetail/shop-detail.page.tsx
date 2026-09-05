@@ -1,4 +1,4 @@
-import { FC, useEffect, useMemo, useRef, useState } from "react";
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   MapPin,
@@ -13,7 +13,10 @@ import {
   Minus,
   ChevronDown,
   Loader2,
+  Search,
+  X,
 } from "lucide-react";
+import debounce from "lodash/debounce";
 import toast from "react-hot-toast";
 
 import { useShop, useShopDrinks } from "@/api/hooks/shops.hook";
@@ -91,8 +94,35 @@ export const ShopDetailPage: FC = () => {
     shopId: numericShopIdFromParams,
   });
 
-  const { categories: drinkCategories, isLoading: drinksLoading } =
-    useShopDrinks(numericShopIdFromParams);
+  // `searchInput` drives the field; `drinkSearch` is the debounced value the
+  // menu query actually filters on (productName on /shops/products).
+  const [searchInput, setSearchInput] = useState("");
+  const [drinkSearch, setDrinkSearch] = useState("");
+
+  const debouncedSetDrinkSearch = useCallback(
+    debounce((value: string) => setDrinkSearch(value), 400),
+    []
+  );
+
+  // Drop any pending trailing call so an unmount can't set state afterwards.
+  useEffect(() => () => debouncedSetDrinkSearch.cancel(), [debouncedSetDrinkSearch]);
+
+  const handleSearchChange = (value: string) => {
+    setSearchInput(value);
+    debouncedSetDrinkSearch(value);
+  };
+
+  const clearSearch = () => {
+    debouncedSetDrinkSearch.cancel();
+    setSearchInput("");
+    setDrinkSearch("");
+  };
+
+  const {
+    categories: drinkCategories,
+    isLoading: drinksLoading,
+    isFetching: drinksFetching,
+  } = useShopDrinks(numericShopIdFromParams, drinkSearch);
 
   const { banners, isLoading: bannersLoading } = usePartnerBanners(
     shopDetail.partnerId ?? 0
@@ -318,7 +348,9 @@ export const ShopDetailPage: FC = () => {
   const visibilityRef = useRef<Record<string, boolean>>({});
 
   useEffect(() => {
-    if (categories.length > 0 && !activeCategory) {
+    // Also re-seeds when a search narrows the menu and the previously active
+    // category is no longer in the results, which would strand the pill row.
+    if (categories.length > 0 && !categories.includes(activeCategory)) {
       setActiveCategory(categories[0]);
     }
   }, [categories, activeCategory]);
@@ -604,11 +636,49 @@ export const ShopDetailPage: FC = () => {
           )}
 
           {/* Menu */}
-          {(drinksLoading || allDrinks.length > 0) && (
+          {(drinksLoading || allDrinks.length > 0 || searchInput !== "") && (
             <div>
+              {/* Sits above the sticky category bar and outside the loading
+                  branch, so the field keeps focus while results swap in. */}
+              <div className="px-4 pb-3">
+                <div className="flex items-center gap-2.5 rounded-full bg-gray-500/5 px-4 py-2.5 ring-1 ring-black/[0.04]">
+                  <Search size={18} className="shrink-0 text-gray-400" />
+                  <input
+                    value={searchInput}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    placeholder="Search menu..."
+                    className="flex-1 bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
+                  />
+                  {drinksFetching && !drinksLoading && (
+                    <Loader2 size={16} className="shrink-0 animate-spin text-gray-400" />
+                  )}
+                  {searchInput !== "" && (
+                    <button
+                      onClick={clearSearch}
+                      aria-label="Clear search"
+                      className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gray-500/10 text-gray-600 transition-all duration-200 hover:bg-gray-500/[0.16] active:scale-90"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
               {drinksLoading ? (
                 <div className="flex items-center justify-center py-10">
                   <Loader2 size={24} className="animate-spin text-[var(--color-primary)]" />
+                </div>
+              ) : allDrinks.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                    <Coffee size={28} className="text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    No drinks found
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Try a different search term
+                  </p>
                 </div>
               ) : (
                 <>

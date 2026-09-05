@@ -1,5 +1,10 @@
 import { useMemo } from "react";
-import { useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useInfiniteQuery,
+  useQueryClient,
+  keepPreviousData,
+} from "@tanstack/react-query";
 
 import {
   ShopsApi,
@@ -166,17 +171,22 @@ export function useShop(params: ShopDetailParams) {
   };
 }
 
-export function useShopDrinks(shopId: number) {
+export function useShopDrinks(shopId: number, productName: string = "") {
   const queryClient = useQueryClient();
+  const search = productName.trim();
 
   const {
     data,
     isLoading,
+    isFetching,
     isError,
   } = useQuery<ShopDrinksResponse>(
     {
-      queryKey: ["shop-drinks", shopId],
-      queryFn: () => ShopsApi.getShopDrinks(shopId),
+      queryKey: ["shop-drinks", shopId, search],
+      queryFn: () => ShopsApi.getShopDrinks(shopId, search || undefined),
+      // Hold the previous menu on screen while a new search resolves, so typing
+      // doesn't flash the whole list back to the loading spinner per keystroke.
+      placeholderData: keepPreviousData,
       staleTime: 300000,
       enabled: Boolean(shopId),
     },
@@ -186,6 +196,7 @@ export function useShopDrinks(shopId: number) {
   return {
     categories: data?.categories ?? [],
     isLoading,
+    isFetching,
     isError,
   };
 }

@@ -69,9 +69,9 @@ export const ShopsApi = {
     return response.data;
   },
 
-  getShopDrinks: async (shopId: number) => {
+  getShopDrinks: async (shopId: number, productName?: string) => {
     const response = await httpClient.get('/shops/products', {
-      params: { shopId },
+      params: { shopId, productName },
     });
 
     const data = (response.data ?? { categories: [] }) as {
