@@ -54,16 +54,6 @@ export interface ActiveOrder {
   hasFeedback: boolean;
 }
 
-/** One feedback row; `order_item_id` is null on legacy order-level rows. */
-export interface OrderItemFeedback {
-  id: number;
-  order_id: number;
-  order_item_id: number | null;
-  rating: number;
-  comment: string | null;
-  created_at: string;
-}
-
 export interface PendingFeedbackDrink {
   orderItemId: number;
   drinkId: number;
@@ -85,11 +75,39 @@ export interface PendingFeedbackOrder {
   cashback_earned: number;
 }
 
+/** A modifier chosen on a drink, nested under it by the backend. */
+export interface OrderDetailModifier {
+  id: number;
+  name: string;
+  price: number;
+  quantity: number;
+  imageUrl?: string | null;
+}
+
+/** One drink line on an order. The backend nests modifiers and feedback under
+ * their drink and pre-computes `amount`, so the client no longer regroups a
+ * flat item list or fetches ratings separately. */
+export interface OrderDetailItem {
+  id: number;
+  item_type: string;
+  name: string;
+  /** Base price, before modifiers and quantity. Use `amount` for the line total. */
+  price: number;
+  quantity: number;
+  imageUrl?: string | null;
+  /** Always null now that modifiers are nested; kept as the backend still sends it. */
+  parent_item_id: number | null;
+  /** The rating left on this drink, or null if it hasn't been rated. */
+  feedback: { rating: number; comment: string | null } | null;
+  modifiers: OrderDetailModifier[];
+  /** Line total: (price + modifiers) × quantity. */
+  amount: number;
+}
+
 export interface OrderDetail {
   id: number;
   shopName: string;
-  drinkName: string;
-  drinkImageUrl: string;
+  shopIconUrl: string | null;
   // Full backend status set. `paid`/`preparing`/`ready` were previously
   // missing here, which made the status pill fall through to a wrong default.
   orderStatus:
@@ -102,21 +120,11 @@ export interface OrderDetail {
     | "ready"
     | "error"
     | (string & {});
-  productPrice: number;
+  /** Order total, in sum. */
+  amount: number;
   purchasedAt: string;
   purchasedAtUnix: number;
-  items: {
-    id: number;
-    item_type: string;
-    name: string;
-    price: number;
-    quantity: number;
-    /** Drink-row image; null for modifier rows and drinks with no image. */
-    imageUrl?: string | null;
-    /** Links a "modifier" row to the "drink" row it belongs to — null for
-     * drink rows, and for modifiers on every legacy (pre-cart) order. */
-    parent_item_id: number | null;
-  }[];
+  items: OrderDetailItem[];
   cashback_used: number;
   cashback_earned: number;
   fiscalLink: string | null;
@@ -308,7 +316,7 @@ export const OrdersApi = {
   getDetail: async (orderId: number) => {
     const response: any = await httpClient.get(`/user/orders/${orderId}`);
 
-    return adaptOrderDetail(response.data ?? response);
+    return (response.data ?? response) as OrderDetail;
   },
 
   /** Cheap status-only read, for polling while a payment completes out of band
@@ -319,13 +327,6 @@ export const OrdersApi = {
     );
 
     return (response.data ?? response) as PaymentStatus;
-  },
-
-  /** All feedbacks left on an order — one per rated item, or a single row
-   * with `order_item_id: null` for legacy order-level feedback. */
-  getFeedbacks: async (orderId: number) => {
-    const response = await httpClient.get(`/orders/feedbacks/${orderId}`);
-    return (response.data ?? []) as OrderItemFeedback[];
   },
 
   /** Latest completed order still waiting for a rating, or null. */
@@ -438,10 +439,3 @@ function adaptOrderHistoryItem(value: any): Order {
   } as Order;
 }
 
-function adaptOrderDetail(value: any): OrderDetail {
-  return {
-    ...value,
-    drinkName: value.productName,
-    drinkImageUrl: value.productImageUrl,
-  } as OrderDetail;
-}

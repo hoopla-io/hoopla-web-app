@@ -43,9 +43,8 @@ export const FeedbackSheet: FC = () => {
   if (!order) return null;
 
   const modifiersFor = (orderItemId: number) =>
-    (detail?.items ?? [])
-      .filter((i) => i.parent_item_id === orderItemId)
-      .map((i) => (i.quantity > 1 ? `${i.name} ×${i.quantity}` : i.name))
+    (detail?.items.find((i) => i.id === orderItemId)?.modifiers ?? [])
+      .map((m) => (m.quantity > 1 ? `${m.name} ×${m.quantity}` : m.name))
       .join(", ");
 
   const close = () => {

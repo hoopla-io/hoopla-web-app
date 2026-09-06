@@ -125,8 +125,9 @@ Vite + React 18 + TypeScript, no framework router beyond `react-router-dom` v6. 
   (`OrdersApi.validateOrder` → `createOrder`) and the newer multi-item cart flow (`CartApi`,
   `/user/cart/*` + `/user/orders/cart-checkout`). Both share `SelectedModifier` /
   `CreateOrderResponse` shapes from `orders.ts`.
-- Feedback lives under `GET/POST /orders/feedbacks/{orderId}[/feedback]`, **not**
-  `/user/orders/{id}/feedback`.
+- Feedback is **submitted** at `POST /orders/feedbacks/{orderItemId}/feedback`, **not**
+  `/user/orders/{id}/feedback`. It is **read** off `items[].feedback` on the order detail
+  payload — there is no feedback-list endpoint.
 
 ## Gotchas
 

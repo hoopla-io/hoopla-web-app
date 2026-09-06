@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from "react";
+import { FC, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   CheckCircle,
@@ -10,9 +10,7 @@ import {
   Receipt,
   Star,
   Loader2,
-  Maximize2,
   ChevronDown,
-  X,
 } from "lucide-react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
@@ -20,10 +18,8 @@ import toast from "react-hot-toast";
 import {
   useOrderDetail,
   useCancelOrder,
-  useOrderFeedbacks,
   useLeaveFeedback,
 } from "@/api/hooks/orders.hook";
-import { type OrderDetail } from "@/api/domains/orders";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -40,45 +36,6 @@ import { Page } from "@/components/Page";
 import { beginBridgePayment } from "@/pages/PaymentWaiting/payment-waiting.page";
 import { LoadingScreen } from "@/components/func/Loading";
 import { formatBalance, cn } from "@/helpers/utils";
-
-/**
- * Groups flat order items into drinks with their modifiers nested — cart
- * checkouts insert all drink rows before any modifier rows (see
- * createOrderItemsForCart), so the API order alone can't be used for
- * grouping; parent_item_id is the source of truth. Legacy (pre-cart) orders
- * never set parent_item_id since there was only ever one drink, so a null
- * parent falls back to the sole drink — same rule the backend itself uses
- * when rebuilding vendor tickets.
- */
-function groupOrderItems(items: OrderDetail["items"]) {
-  // v2 calls product rows "product"; legacy orders still say "drink".
-  const isDrink = (i: OrderDetail["items"][number]) =>
-    i.item_type === "drink" || i.item_type === "product";
-  const drinks = items.filter(isDrink);
-  if (drinks.length === 0) {
-    return items.map((i) => ({ ...i, modifiers: [] as OrderDetail["items"] }));
-  }
-  const others = items.filter((i) => !isDrink(i));
-  const soleDrinkId = drinks.length === 1 ? drinks[0].id : null;
-  const matched = new Set<number>();
-  const grouped = drinks.map((drink) => ({
-    ...drink,
-    modifiers: others.filter((m) => {
-      const belongsToDrink =
-        m.parent_item_id === drink.id ||
-        (m.parent_item_id == null && soleDrinkId === drink.id);
-      if (belongsToDrink) matched.add(m.id);
-      return belongsToDrink;
-    }),
-  }));
-  // Orphaned modifiers (parent_item_id null or unmatched among 2+ drinks)
-  // are kept as top-level rows rather than dropped, so a data anomaly can't
-  // hide a paid line from the receipt.
-  const orphans = others
-    .filter((m) => !matched.has(m.id))
-    .map((m) => ({ ...m, modifiers: [] as OrderDetail["items"] }));
-  return [...grouped, ...orphans];
-}
 
 const statusConfig: Record<string, { label: string; icon: typeof CheckCircle; color: string; bg: string }> = {
   completed: {
@@ -138,13 +95,8 @@ export const OrderDetailPage: FC = () => {
   const { order, isLoading } = useOrderDetail(Number(orderId));
   const cancelOrder = useCancelOrder();
 
-  const { feedbacks, isLoading: feedbacksLoading } = useOrderFeedbacks(
-    Number(orderId),
-    order?.orderStatus === "completed"
-  );
   const leaveFeedback = useLeaveFeedback();
   const [pendingRatings, setPendingRatings] = useState<Record<number, number>>({});
-  const [imageOpen, setImageOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
 
   const toggleExpanded = (id: number) => {
@@ -158,21 +110,6 @@ export const OrderDetailPage: FC = () => {
       return next;
     });
   };
-
-  // Lightbox: close on Escape and lock background scroll while open.
-  useEffect(() => {
-    if (!imageOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setImageOpen(false);
-    };
-    document.addEventListener("keydown", onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
-    };
-  }, [imageOpen]);
 
   const handleCancelOrder = () => {
     cancelOrder.mutate(Number(orderId), {
@@ -230,28 +167,26 @@ export const OrderDetailPage: FC = () => {
         )}
       >
         <div className="space-y-4">
-          {/* Order card — image header, cafe, items and payment all combined
-              into a single card, separated by subtle internal dividers. */}
+          {/* Order card — shop header, items and payment all combined into a
+              single card, separated by subtle internal dividers. */}
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-            {/* Header — tappable thumbnail beside the title, date and status */}
+            {/* Header — the shop the order was placed at, with date and status.
+                An order can hold several drinks, so it's the shop that names it. */}
             <div className="flex items-center gap-4 p-4">
-              <button
-                onClick={() => setImageOpen(true)}
-                aria-label="View image"
-                className="group relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-2xl bg-gray-100 ring-1 ring-black/[0.04] transition-transform active:scale-[0.97]"
-              >
-                <img
-                  src={order.drinkImageUrl}
-                  alt={order.drinkName}
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                <span className="absolute bottom-1.5 right-1.5 grid h-6 w-6 place-items-center rounded-lg bg-black/45 text-white backdrop-blur-sm">
-                  <Maximize2 size={13} />
-                </span>
-              </button>
+              <div className="grid h-16 w-16 flex-shrink-0 place-items-center overflow-hidden rounded-2xl bg-[var(--color-primary)]/10 ring-1 ring-black/[0.04]">
+                {order.shopIconUrl ? (
+                  <img
+                    src={order.shopIconUrl}
+                    alt={order.shopName}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <Store size={24} className="text-[var(--color-primary)]" />
+                )}
+              </div>
               <div className="min-w-0 flex-1">
                 <h1 className="text-xl font-bold leading-tight text-gray-900 line-clamp-2">
-                  {order.drinkName}
+                  {order.shopName}
                 </h1>
                 <p className="mt-1 text-sm text-gray-500">
                   {format(new Date(order.purchasedAt), "MMMM d, yyyy · HH:mm")}
@@ -265,19 +200,6 @@ export const OrderDetailPage: FC = () => {
               </div>
             </div>
 
-            {/* Cafe */}
-            <div className="flex items-center gap-3 p-4 border-t border-gray-100">
-              <div className="w-9 h-9 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center flex-shrink-0">
-                <Store size={18} className="text-[var(--color-primary)]" />
-              </div>
-              <div>
-                <p className="text-xs text-gray-500">Cafe</p>
-                <p className="text-sm font-medium text-gray-900">
-                  {order.shopName}
-                </p>
-              </div>
-            </div>
-
             {/* Items */}
             {order.items && order.items.length > 0 && (
               <div className="p-4 border-t border-gray-100">
@@ -285,7 +207,7 @@ export const OrderDetailPage: FC = () => {
                   Items
                 </h2>
                 <div className="space-y-1">
-                  {groupOrderItems(order.items).map((drink) => {
+                  {order.items.map((drink) => {
                     const hasModifiers = drink.modifiers.length > 0;
                     const isExpanded = expandedItems.has(drink.id);
                     return (
@@ -329,7 +251,7 @@ export const OrderDetailPage: FC = () => {
                             )}
                           </div>
                           <span className="text-sm font-medium text-gray-900 flex-shrink-0">
-                            {formatBalance(drink.price * (drink.quantity || 1))} UZS
+                            {formatBalance(drink.amount)} UZS
                           </span>
                         </button>
                         {hasModifiers && isExpanded && (
@@ -378,7 +300,7 @@ export const OrderDetailPage: FC = () => {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Total</span>
                   <span className="font-medium text-gray-900">
-                    {formatBalance(order.productPrice)} UZS
+                    {formatBalance(order.amount)} UZS
                   </span>
                 </div>
                 {order.promoCode && (
@@ -465,84 +387,55 @@ export const OrderDetailPage: FC = () => {
             </AlertDialog>
           )}
 
-          {/* Feedback — one rating per drink; a legacy row with no item id
-              covers the whole order and is shown read-only. */}
-          {order.orderStatus === "completed" && !feedbacksLoading && (() => {
-            const orderLevel = feedbacks.find((f) => f.order_item_id === null);
-            const drinkItems = order.items.filter(
-              (i) => i.item_type === "product" || i.item_type === "drink"
-            );
+          {/* Feedback — one rating per drink, carried on the item itself. */}
+          {order.orderStatus === "completed" && order.items.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-sm p-4">
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                Feedback
+              </h2>
+              <div className="divide-y divide-gray-100">
+                {order.items.map((item) => {
+                  const rating =
+                    item.feedback?.rating ?? pendingRatings[item.id] ?? 0;
 
-            return (
-              <div className="bg-white rounded-2xl shadow-sm p-4">
-                <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-                  Feedback
-                </h2>
-                {orderLevel ? (
-                  <div className="py-2">
-                    <div className="flex justify-center gap-1 mb-2">
-                      {[1, 2, 3, 4, 5].map((s) => (
-                        <Star
-                          key={s}
-                          size={24}
-                          className={
-                            s <= orderLevel.rating
-                              ? "fill-yellow-400 text-yellow-400"
-                              : "text-gray-200"
-                          }
-                        />
-                      ))}
-                    </div>
-                    {orderLevel.comment && (
-                      <p className="text-sm text-gray-600 text-center mt-2">
-                        "{orderLevel.comment}"
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="divide-y divide-gray-100">
-                    {drinkItems.map((item) => {
-                      const saved = feedbacks.find(
-                        (f) => f.order_item_id === item.id
-                      )?.rating;
-                      const rating = saved ?? pendingRatings[item.id] ?? 0;
-
-                      return (
-                        <div
-                          key={item.id}
-                          className="flex items-center justify-between gap-3 py-3 first:pt-1 last:pb-1"
-                        >
-                          <p className="min-w-0 flex-1 truncate text-sm font-medium text-gray-900">
-                            {item.name}
-                          </p>
-                          <div className="flex gap-1">
-                            {[1, 2, 3, 4, 5].map((s) => (
-                              <button
-                                key={s}
-                                aria-label={`Rate ${item.name} ${s} stars`}
-                                disabled={rating > 0}
-                                onClick={() => handleRateItem(item.id, s)}
-                                className="transition-transform active:scale-110"
-                              >
-                                <Star
-                                  size={22}
-                                  className={
-                                    s <= rating
-                                      ? "fill-yellow-400 text-yellow-400"
-                                      : "fill-gray-200 text-gray-200"
-                                  }
-                                />
-                              </button>
-                            ))}
-                          </div>
+                  return (
+                    <div key={item.id} className="py-3 first:pt-1 last:pb-1">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="min-w-0 flex-1 truncate text-sm font-medium text-gray-900">
+                          {item.name}
+                        </p>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <button
+                              key={s}
+                              aria-label={`Rate ${item.name} ${s} stars`}
+                              disabled={rating > 0}
+                              onClick={() => handleRateItem(item.id, s)}
+                              className="transition-transform active:scale-110"
+                            >
+                              <Star
+                                size={22}
+                                className={
+                                  s <= rating
+                                    ? "fill-yellow-400 text-yellow-400"
+                                    : "fill-gray-200 text-gray-200"
+                                }
+                              />
+                            </button>
+                          ))}
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
+                      </div>
+                      {item.feedback?.comment && (
+                        <p className="mt-1.5 text-sm text-gray-600">
+                          "{item.feedback.comment}"
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })()}
+            </div>
+          )}
         </div>
       </div>
 
@@ -570,30 +463,6 @@ export const OrderDetailPage: FC = () => {
               Complete payment
             </button>
           </div>
-        </div>
-      )}
-
-      {/* Fullscreen image lightbox */}
-      {imageOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setImageOpen(false)}
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-6 backdrop-blur-sm duration-200 animate-in fade-in"
-        >
-          <button
-            onClick={() => setImageOpen(false)}
-            aria-label="Close image"
-            className="absolute right-4 top-[calc(1rem+var(--tg-top-inset,0px))] grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white backdrop-blur-md transition hover:bg-white/20 active:scale-90"
-          >
-            <X size={22} />
-          </button>
-          <img
-            src={order.drinkImageUrl}
-            alt={order.drinkName}
-            onClick={(e) => e.stopPropagation()}
-            className="max-h-[85vh] max-w-full rounded-2xl object-contain shadow-2xl duration-200 animate-in zoom-in-95"
-          />
         </div>
       )}
     </Page>
