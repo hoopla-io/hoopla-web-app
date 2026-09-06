@@ -251,7 +251,7 @@ export const OrderDetailPage: FC = () => {
                             )}
                           </div>
                           <span className="text-sm font-medium text-gray-900 flex-shrink-0">
-                            {formatBalance(drink.amount)} UZS
+                            {formatBalance(drink.totalAmount)} UZS
                           </span>
                         </button>
                         {hasModifiers && isExpanded && (
@@ -300,7 +300,7 @@ export const OrderDetailPage: FC = () => {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Total</span>
                   <span className="font-medium text-gray-900">
-                    {formatBalance(order.amount)} UZS
+                    {formatBalance(order.totalAmount)} UZS
                   </span>
                 </div>
                 {order.promoCode && (

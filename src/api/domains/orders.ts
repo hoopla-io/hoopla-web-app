@@ -101,7 +101,7 @@ export interface OrderDetailItem {
   feedback: { rating: number; comment: string | null } | null;
   modifiers: OrderDetailModifier[];
   /** Line total: (price + modifiers) × quantity. */
-  amount: number;
+  totalAmount: number;
 }
 
 export interface OrderDetail {
@@ -121,7 +121,7 @@ export interface OrderDetail {
     | "error"
     | (string & {});
   /** Order total, in sum. */
-  amount: number;
+  totalAmount: number;
   purchasedAt: string;
   purchasedAtUnix: number;
   items: OrderDetailItem[];
