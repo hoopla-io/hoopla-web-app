@@ -1,6 +1,8 @@
 import { FC, useMemo, useState } from "react";
 import { Check, Coffee, Loader2, Minus, Plus } from "lucide-react";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 import {
   Drawer,
@@ -14,7 +16,7 @@ import {
   isCrossShopCartConflict,
 } from "@/api/hooks/cart.hook";
 import { CartConflictDialog } from "@/components/func/CartConflictDialog";
-import { formatBalance, cn } from "@/helpers/utils";
+import { formatMoney, cn } from "@/helpers/utils";
 import {
   toSelectedModifier,
   type ValidateOrderResponse,
@@ -22,10 +24,6 @@ import {
   type ModifierGroup,
   type ModifierOption,
 } from "@/api/domains/orders";
-
-function formatPrice(price: number): string {
-  return formatBalance(price) + " UZS";
-}
 
 /** A normalized group the UI renders, derived from new or legacy data. */
 type WorkingGroup = {
@@ -67,14 +65,14 @@ function buildGroups(vo: ValidateOrderResponse): WorkingGroup[] {
 }
 
 /** Short human label for a group's selection rule (e.g. "Required", "Pick 1–2"). */
-function ruleLabel(min: number, max: number | null): string {
-  if (min === 0 && max === null) return "Optional";
-  if (min === 0 && max === 1) return "Optional";
-  if (min === 0 && max != null) return `Up to ${max}`;
-  if (min >= 1 && max === 1 && min === max) return "Required";
-  if (min === max) return `Pick ${min}`;
-  if (min >= 1 && max === null) return `At least ${min}`;
-  return `Pick ${min}–${max}`;
+function ruleLabel(min: number, max: number | null, t: TFunction): string {
+  if (min === 0 && max === null) return t("drinkModifierSheet.optional");
+  if (min === 0 && max === 1) return t("drinkModifierSheet.optional");
+  if (min === 0 && max != null) return t("drinkModifierSheet.upTo", { max });
+  if (min >= 1 && max === 1 && min === max) return t("drinkModifierSheet.required");
+  if (min === max) return t("drinkModifierSheet.pickExact", { count: min });
+  if (min >= 1 && max === null) return t("drinkModifierSheet.atLeast", { min });
+  return t("drinkModifierSheet.pickRange", { min, max });
 }
 
 interface DrinkModifierSheetProps {
@@ -98,6 +96,7 @@ export const DrinkModifierSheet: FC<DrinkModifierSheetProps> = ({
   onClose,
   onAdded,
 }) => {
+  const { t } = useTranslation();
   const open = validatedOrder != null;
 
   return (
@@ -109,10 +108,10 @@ export const DrinkModifierSheet: FC<DrinkModifierSheetProps> = ({
     >
       <DrawerContent className="max-h-[92dvh]">
         <DrawerTitle className="sr-only">
-          {validatedOrder?.drink.name ?? "Customize drink"}
+          {validatedOrder?.drink.name ?? t("drinkModifierSheet.customizeDrinkFallback")}
         </DrawerTitle>
         <DrawerDescription className="sr-only">
-          Choose modifiers and quantity, then add this drink to your cart.
+          {t("drinkModifierSheet.description")}
         </DrawerDescription>
         {validatedOrder && (
           <DrinkModifierSheetBody
@@ -138,6 +137,7 @@ const DrinkModifierSheetBody: FC<DrinkModifierSheetBodyProps> = ({
   shopId,
   onAdded,
 }) => {
+  const { t } = useTranslation();
   const addCartItem = useAddCartItem();
   const clearCart = useClearCart();
   const [showCartConflict, setShowCartConflict] = useState(false);
@@ -228,7 +228,7 @@ const DrinkModifierSheetBody: FC<DrinkModifierSheetBodyProps> = ({
           toast.error(
             err?.message ??
               err?.response?.data?.message ??
-              "Couldn't add this to your cart. Please try again."
+              t("drinkModifierSheet.addError")
           );
         },
       }
@@ -250,7 +250,7 @@ const DrinkModifierSheetBody: FC<DrinkModifierSheetBodyProps> = ({
         doAddToCart();
       },
       onError: () => {
-        toast.error("Couldn't clear your existing cart. Please try again.");
+        toast.error(t("drinkModifierSheet.clearCartError"));
       },
     });
   };
@@ -277,7 +277,7 @@ const DrinkModifierSheetBody: FC<DrinkModifierSheetBodyProps> = ({
               {validatedOrder.drink.name}
             </h2>
             <p className="mt-0.5 truncate text-sm font-semibold text-[var(--color-primary)]">
-              {formatPrice(validatedOrder.drink.amount)}
+              {formatMoney(validatedOrder.drink.amount, t)}
             </p>
             {validatedOrder.drink.description && (
               <p className="mt-1.5 text-sm text-gray-500">
@@ -310,7 +310,7 @@ const DrinkModifierSheetBody: FC<DrinkModifierSheetBodyProps> = ({
                         : "bg-gray-100 text-gray-500"
                     )}
                   >
-                    {ruleLabel(group.minSelect, group.maxSelect)}
+                    {ruleLabel(group.minSelect, group.maxSelect, t)}
                   </span>
                 </div>
                 <div className="space-y-2.5">
@@ -359,7 +359,8 @@ const DrinkModifierSheetBody: FC<DrinkModifierSheetBodyProps> = ({
                               isSelected ? "text-gray-900" : "text-gray-700"
                             )}
                           >
-                            {option.modificationName ?? `Option ${idx + 1}`}
+                            {option.modificationName ??
+                              t("drinkModifierSheet.optionFallback", { number: idx + 1 })}
                           </span>
                         </div>
                         {(option.modificationPrice ?? 0) > 0 && (
@@ -371,7 +372,7 @@ const DrinkModifierSheetBody: FC<DrinkModifierSheetBodyProps> = ({
                                 : "text-gray-500"
                             )}
                           >
-                            +{formatPrice(option.modificationPrice)}
+                            +{formatMoney(option.modificationPrice, t)}
                           </span>
                         )}
                       </button>
@@ -393,7 +394,7 @@ const DrinkModifierSheetBody: FC<DrinkModifierSheetBodyProps> = ({
               onClick={() => setQuantity((q) => Math.max(1, q - 1))}
               disabled={quantity <= 1}
               className="grid h-10 w-10 place-items-center rounded-full bg-white text-[var(--color-primary)] shadow-sm transition-colors active:bg-gray-100 disabled:opacity-40"
-              aria-label="Decrease quantity"
+              aria-label={t("drinkModifierSheet.decreaseQuantity")}
             >
               <Minus size={16} />
             </button>
@@ -404,7 +405,7 @@ const DrinkModifierSheetBody: FC<DrinkModifierSheetBodyProps> = ({
               type="button"
               onClick={() => setQuantity((q) => q + 1)}
               className="grid h-10 w-10 place-items-center rounded-full bg-[var(--color-primary)] text-white shadow-sm transition-colors active:bg-[var(--color-primary-dark)]"
-              aria-label="Increase quantity"
+              aria-label={t("drinkModifierSheet.increaseQuantity")}
             >
               <Plus size={16} />
             </button>
@@ -423,10 +424,12 @@ const DrinkModifierSheetBody: FC<DrinkModifierSheetBodyProps> = ({
             {addCartItem.isPending ? (
               <>
                 <Loader2 size={18} className="animate-spin" />
-                Adding...
+                {t("drinkModifierSheet.adding")}
               </>
             ) : (
-              `Add · ${formatPrice(unitTotal * quantity)}`
+              t("drinkModifierSheet.addButton", {
+                price: formatMoney(unitTotal * quantity, t),
+              })
             )}
           </button>
         </div>

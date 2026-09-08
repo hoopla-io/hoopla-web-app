@@ -3,9 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Smartphone, Monitor, Loader2, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 import { useDevices, useRevokeDevice, type Device } from "@/api/hooks/devices.hook";
 import { Page } from "@/components/Page";
+import { getDateFnsLocale } from "@/helpers/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,13 +28,13 @@ const platformIcon = (platform: string | null) => {
     : Smartphone;
 };
 
-/** Best display name for a session; falls back to platform, then "Unknown device". */
-const deviceTitle = (device: Device): string => {
+/** Best display name for a session; falls back to platform, then a generic label. */
+const deviceTitle = (device: Device, t: TFunction): string => {
   const name = device.deviceName?.trim();
   if (name) return name;
   const platform = device.platform?.trim();
   if (platform) return platform.charAt(0).toUpperCase() + platform.slice(1);
-  return "Unknown device";
+  return t("devices.unknownDevice");
 };
 
 /** Joins the non-null "platform • v2.3.1 • 91.90.216.179" line, skipping blanks. */
@@ -46,10 +49,14 @@ const deviceSubtitle = (device: Device): string => {
 const lastActiveLabel = (unixSeconds: number): string => {
   const date = new Date(unixSeconds * 1000);
   if (Number.isNaN(date.getTime())) return "";
-  return formatDistanceToNow(date, { addSuffix: true });
+  return formatDistanceToNow(date, {
+    addSuffix: true,
+    locale: getDateFnsLocale(),
+  });
 };
 
 export const DevicesPage: FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { devices, isLoading, isError } = useDevices();
   const revoke = useRevokeDevice();
@@ -59,10 +66,10 @@ export const DevicesPage: FC = () => {
     if (!target) return;
     revoke.mutate(target.id, {
       onSuccess: () => {
-        toast.success("Device logged out");
+        toast.success(t("devices.deviceLoggedOut"));
         setTarget(null);
       },
-      onError: () => toast.error("Couldn't log out this device"),
+      onError: () => toast.error(t("devices.revokeError")),
     });
   };
 
@@ -74,14 +81,16 @@ export const DevicesPage: FC = () => {
           <button
             onClick={() => navigate(-1)}
             className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors"
-            aria-label="Go back"
+            aria-label={t("devices.goBack")}
           >
             <ArrowLeft size={20} className="text-gray-700" />
           </button>
-          <h1 className="text-xl font-semibold text-gray-900">Devices</h1>
+          <h1 className="text-xl font-semibold text-gray-900">
+            {t("devices.title")}
+          </h1>
         </div>
         <p className="text-sm text-gray-500 mb-4 px-1">
-          These devices are currently signed in to your account.
+          {t("devices.subtitle")}
         </p>
 
         {/* Loading */}
@@ -98,10 +107,10 @@ export const DevicesPage: FC = () => {
               <Smartphone size={28} className="text-red-400" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900">
-              Couldn't load your devices
+              {t("devices.loadErrorTitle")}
             </h3>
             <p className="mt-1 text-sm text-gray-500">
-              Check your connection and try again
+              {t("devices.loadErrorDescription")}
             </p>
           </div>
         )}
@@ -113,10 +122,10 @@ export const DevicesPage: FC = () => {
               <Smartphone size={28} className="text-gray-400" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900">
-              No active sessions
+              {t("devices.emptyTitle")}
             </h3>
             <p className="mt-1 text-sm text-gray-500">
-              You're not signed in on any other devices
+              {t("devices.emptyDescription")}
             </p>
           </div>
         )}
@@ -128,6 +137,7 @@ export const DevicesPage: FC = () => {
               const Icon = platformIcon(device.platform);
               const subtitle = deviceSubtitle(device);
               const active = lastActiveLabel(device.lastActiveAt);
+              const title = deviceTitle(device, t);
               return (
                 <div key={device.id} className="flex items-center gap-3 p-4">
                   <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary)]/10">
@@ -135,21 +145,21 @@ export const DevicesPage: FC = () => {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-gray-900">
-                      {deviceTitle(device)}
+                      {title}
                     </p>
                     {subtitle && (
                       <p className="truncate text-xs text-gray-500">{subtitle}</p>
                     )}
                     {active && (
                       <p className="mt-0.5 text-xs text-gray-400">
-                        Active {active}
+                        {t("devices.activeLabel", { time: active })}
                       </p>
                     )}
                   </div>
                   <button
                     onClick={() => setTarget(device)}
                     className="flex-shrink-0 rounded-full p-2 text-red-500 transition-colors hover:bg-red-50"
-                    aria-label={`Log out ${deviceTitle(device)}`}
+                    aria-label={t("devices.logOutDeviceAriaLabel", { name: title })}
                   >
                     <Trash2 size={18} />
                   </button>
@@ -163,14 +173,19 @@ export const DevicesPage: FC = () => {
       <AlertDialog open={!!target} onOpenChange={(open) => !open && setTarget(null)}>
         <AlertDialogContent className="max-w-sm rounded-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Log out this device?</AlertDialogTitle>
+            <AlertDialogTitle>{t("devices.confirmTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {target ? `"${deviceTitle(target)}" ` : "This device "}
-              will be signed out and will need to log in again.
+              {target
+                ? t("devices.confirmDescriptionNamed", {
+                    name: deviceTitle(target, t),
+                  })
+                : t("devices.confirmDescriptionGeneric")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-xl">
+              {t("common.cancel")}
+            </AlertDialogCancel>
             <AlertDialogAction
               className="rounded-xl bg-red-500 text-white hover:bg-red-600"
               // Keep the dialog open until the request resolves so the pending
@@ -181,7 +196,7 @@ export const DevicesPage: FC = () => {
               }}
               disabled={revoke.isPending}
             >
-              {revoke.isPending ? "Logging out..." : "Log out"}
+              {revoke.isPending ? t("devices.loggingOut") : t("devices.logOut")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

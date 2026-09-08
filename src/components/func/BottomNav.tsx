@@ -1,6 +1,7 @@
 import { cn } from "@/helpers/utils";
 import { Home, MapPin, ReceiptText, ShoppingBag, User } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import { useEditableFocused } from "@/hooks/useEditableFocused";
 import { useAuth } from "@/context/auth.context";
@@ -19,15 +20,16 @@ const BottomNav = () => {
   const editableFocused = useEditableFocused();
   const { isAuthenticated } = useAuth();
   const cartCount = useCartCount();
+  const { t } = useTranslation();
 
   const navItems: NavItem[] = [
-    { to: "/", end: true, icon: Home, label: "Home" },
-    { to: "/map", icon: MapPin, label: "Map" },
+    { to: "/", end: true, icon: Home, label: t("nav.home") },
+    { to: "/map", icon: MapPin, label: t("nav.map") },
     ...(isAuthenticated
-      ? [{ to: "/cart", icon: ShoppingBag, label: "Cart", badge: cartCount }]
+      ? [{ to: "/cart", icon: ShoppingBag, label: t("nav.cart"), badge: cartCount }]
       : []),
-    { to: "/orders", icon: ReceiptText, label: "Orders" },
-    { to: "/profile", icon: User, label: "Profile" },
+    { to: "/orders", icon: ReceiptText, label: t("nav.orders") },
+    { to: "/profile", icon: User, label: t("nav.profile") },
   ];
 
   return (

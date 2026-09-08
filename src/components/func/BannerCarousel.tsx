@@ -1,6 +1,7 @@
 import { FC } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination, Autoplay } from "swiper/modules";
+import { useTranslation } from "react-i18next";
 
 import type { Banner } from "@/api/domains/banners";
 
@@ -18,6 +19,8 @@ export const BannerCarousel: FC<Props> = ({
   isLoading,
   onBannerClick,
 }) => {
+  const { t } = useTranslation();
+
   if (isLoading) {
     return (
       <div className="mb-3">
@@ -46,7 +49,7 @@ export const BannerCarousel: FC<Props> = ({
             >
               <img
                 src={banner.imageUrl}
-                alt={banner.title ?? "Banner"}
+                alt={banner.title ?? t("bannerCarousel.bannerAlt")}
                 className="w-full aspect-[2/1] object-cover rounded-xl"
               />
               <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-black/30 via-transparent to-black/10" />

@@ -1,6 +1,7 @@
 import { FC, useEffect, useState } from "react";
 import { Coffee, Star, X } from "lucide-react";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 
 import {
   Drawer,
@@ -13,7 +14,7 @@ import {
   useOrderDetail,
   usePendingFeedback,
 } from "@/api/hooks/orders.hook";
-import { formatBalance } from "@/helpers/utils";
+import { formatMoney } from "@/helpers/utils";
 import type { PendingFeedbackOrder } from "@/api/domains/orders";
 
 const dismissKey = (orderId: number) => `feedback-sheet-dismissed-${orderId}`;
@@ -24,6 +25,7 @@ const dismissKey = (orderId: number) => `feedback-sheet-dismissed-${orderId}`;
  * card per ordered drink; tapping a star submits that item's rating.
  */
 export const FeedbackSheet: FC = () => {
+  const { t } = useTranslation();
   const { pendingOrder } = usePendingFeedback();
   // Snapshot the first pending order so the sheet doesn't swap content when
   // the query refetches mid-interaction (rating any item clears "pending").
@@ -59,7 +61,7 @@ export const FeedbackSheet: FC = () => {
       { orderItemId, rating },
       {
         onSuccess: () => {
-          toast.success("Thanks for your feedback!");
+          toast.success(t("feedbackSheet.toastThanks"));
           const rated = { ...ratings, [orderItemId]: rating };
           if (order.drinks.every((d) => rated[d.orderItemId])) {
             setTimeout(close, 600);
@@ -71,7 +73,7 @@ export const FeedbackSheet: FC = () => {
             delete next[orderItemId];
             return next;
           });
-          toast.error("Failed to submit feedback");
+          toast.error(t("feedbackSheet.toastFailed"));
         },
       }
     );
@@ -80,14 +82,14 @@ export const FeedbackSheet: FC = () => {
   return (
     <Drawer open={open} onOpenChange={(o) => (o ? setOpen(true) : close())}>
       <DrawerContent className="max-h-[92dvh]">
-        <DrawerTitle className="sr-only">How was your experience?</DrawerTitle>
+        <DrawerTitle className="sr-only">{t("feedbackSheet.title")}</DrawerTitle>
         <DrawerDescription className="sr-only">
-          Rate the drinks from your last order at {order.shopName}
+          {t("feedbackSheet.description", { shopName: order.shopName })}
         </DrawerDescription>
 
         <div className="relative px-4 pb-6 pt-1">
           <button
-            aria-label="Close"
+            aria-label={t("common.close")}
             onClick={close}
             className="absolute right-3 top-0 grid h-8 w-8 place-items-center rounded-full bg-gray-100 text-gray-500 transition-colors hover:bg-gray-200"
           >
@@ -95,7 +97,7 @@ export const FeedbackSheet: FC = () => {
           </button>
 
           <h2 className="mb-4 pt-1 text-center text-lg font-bold text-gray-900">
-            How was your experience?
+            {t("feedbackSheet.title")}
           </h2>
 
           <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -124,13 +126,13 @@ export const FeedbackSheet: FC = () => {
                       {drink.drinkName}
                     </p>
                     <p className="mt-0.5 line-clamp-2 text-xs text-gray-400">
-                      {modifiers || `${formatBalance(drink.drinkPrice)} UZS`}
+                      {modifiers || formatMoney(drink.drinkPrice, t)}
                     </p>
                     <div className="mt-2 flex gap-1">
                       {[1, 2, 3, 4, 5].map((s) => (
                         <button
                           key={s}
-                          aria-label={`Rate ${s} stars`}
+                          aria-label={t("feedbackSheet.rateStarsAria", { count: s })}
                           disabled={rated > 0}
                           onClick={() => rateItem(drink.orderItemId, s)}
                           className="transition-transform active:scale-110"

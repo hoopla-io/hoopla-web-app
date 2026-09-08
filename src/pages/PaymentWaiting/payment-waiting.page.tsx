@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Loader2, AlertCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 
 import { OrdersApi, isOrderSettled } from "@/api/domains/orders";
 import { startEightPayment } from "@/helpers/eight";
@@ -24,6 +25,7 @@ const POLL_TIMEOUT_MS = 3 * 60 * 1000;
  * received the platform's callback or reconciled the payment itself.
  */
 export const PaymentWaitingPage: FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { orderId } = useParams<{ orderId: string }>();
   const numericOrderId = Number(orderId);
@@ -84,16 +86,16 @@ export const PaymentWaitingPage: FC = () => {
       setTimedOut(false);
       return;
     }
-    toast.error("Couldn't open the payment window. Please reopen Hoopla from the app.");
-  }, [order?.bridge_order_id]);
+    toast.error(t("paymentWaiting.bridgeUnavailable"));
+  }, [order?.bridge_order_id, t]);
 
   if (!validOrderId) {
     return (
       <Page>
         <div className="flex min-h-[70vh] flex-col items-center justify-center gap-4 px-6 text-center">
           <AlertCircle className="h-10 w-10 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">That order doesn&apos;t exist.</p>
-          <Button onClick={() => navigate("/orders")}>All orders</Button>
+          <p className="text-sm text-muted-foreground">{t("paymentWaiting.orderNotFound")}</p>
+          <Button onClick={() => navigate("/orders")}>{t("paymentWaiting.allOrders")}</Button>
         </div>
       </Page>
     );
@@ -112,25 +114,24 @@ export const PaymentWaitingPage: FC = () => {
             <AlertCircle className="h-10 w-10 text-muted-foreground" />
             <div className="space-y-2">
               <h1 className="text-lg font-semibold">
-                Still waiting for your payment
+                {t("paymentWaiting.stillWaitingTitle")}
               </h1>
               <p className="text-sm text-muted-foreground">
-                If you completed it, the order will update on its own shortly —
-                you don&apos;t need to pay again.
+                {t("paymentWaiting.stillWaitingDescription")}
               </p>
             </div>
             <div className="flex w-full max-w-xs flex-col gap-2">
               {canRetry && (
-                <Button onClick={retryPayment}>Try payment again</Button>
+                <Button onClick={retryPayment}>{t("paymentWaiting.retryPayment")}</Button>
               )}
               <Button
                 variant={canRetry ? "outline" : "default"}
                 onClick={() => navigate(`/orders/${numericOrderId}`, { replace: true })}
               >
-                View order
+                {t("paymentWaiting.viewOrder")}
               </Button>
               <Button variant="ghost" onClick={() => navigate("/orders")}>
-                All orders
+                {t("paymentWaiting.allOrders")}
               </Button>
             </div>
           </>
@@ -138,10 +139,9 @@ export const PaymentWaitingPage: FC = () => {
           <>
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
             <div className="space-y-2">
-              <h1 className="text-lg font-semibold">Confirming your payment</h1>
+              <h1 className="text-lg font-semibold">{t("paymentWaiting.confirmingTitle")}</h1>
               <p className="text-sm text-muted-foreground">
-                Finish paying in the window that opened. This updates
-                automatically.
+                {t("paymentWaiting.confirmingDescription")}
               </p>
             </div>
           </>

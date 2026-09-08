@@ -2,6 +2,7 @@ import { FC, useCallback, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Bell, Search, X } from "lucide-react";
 import debounce from "lodash/debounce";
+import { useTranslation } from "react-i18next";
 
 import { useGetMe } from "@/api/hooks/profile.hook";
 import { useSearch } from "@/context/search.context";
@@ -9,6 +10,7 @@ import { useSecretActivator } from "@/hooks/useSecretActivator";
 import { toggleTestMode } from "@/helpers/testMode";
 
 export const Header: FC = () => {
+  const { t } = useTranslation();
   const { userInfo } = useGetMe();
   const unreadCount = userInfo?.unreadNotifications ?? 0;
 
@@ -57,10 +59,10 @@ export const Header: FC = () => {
                 autoFocus
                 defaultValue={searchText}
                 onChange={(e) => debouncedSetSearch(e.target.value)}
-                placeholder="Search cafes..."
+                placeholder={t("header.searchPlaceholder")}
                 className="flex-1 bg-transparent text-base text-gray-900 outline-none placeholder:text-gray-400"
               />
-              <button onClick={handleClose} aria-label="Close search" className={control}>
+              <button onClick={handleClose} aria-label={t("header.closeSearch")} className={control}>
                 <X size={18} />
               </button>
             </div>
@@ -75,13 +77,13 @@ export const Header: FC = () => {
               </Link>
               <div className="flex items-center gap-2">
                 {isHome && (
-                  <button onClick={openSearch} aria-label="Search cafes" className={control}>
+                  <button onClick={openSearch} aria-label={t("header.searchCafes")} className={control}>
                     <Search size={19} />
                   </button>
                 )}
                 <Link
                   to="/notifications"
-                  aria-label="Notifications"
+                  aria-label={t("header.notifications")}
                   className={`relative ${control}`}
                 >
                   <Bell size={19} />

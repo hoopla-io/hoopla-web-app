@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { X, Loader2, ChevronUp } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 
 import { useStoryDetail } from "@/api/hooks/stories.hook";
 import { StoriesApi } from "@/api/domains/stories";
@@ -17,6 +18,7 @@ type Props = {
 const TICK_MS = 50;
 
 export const StoryViewer: FC<Props> = ({ stories, initialIndex, onClose }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -173,9 +175,9 @@ export const StoryViewer: FC<Props> = ({ stories, initialIndex, onClose }) => {
 
   const getLinkLabel = (linkType: string | null) => {
     switch (linkType) {
-      case "partner": return "View Partner";
-      case "drink": return "View Drink";
-      case "url": return "Learn More";
+      case "partner": return t("storyViewer.viewPartner");
+      case "drink": return t("storyViewer.viewDrink");
+      case "url": return t("storyViewer.learnMore");
       default: return "";
     }
   };

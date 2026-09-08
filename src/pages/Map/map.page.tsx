@@ -1,6 +1,7 @@
 import { FC, useEffect, useRef, useState } from "react";
 import { MapPin, X, ChevronRight, LocateFixed } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import { useAllShops, type Shop } from "@/api/hooks/shops.hook";
 import { formatDistance } from "@/components/func/ShopCard";
@@ -34,6 +35,7 @@ function loadYandexMaps(): Promise<void> {
 }
 
 export const MapPage: FC = () => {
+  const { t } = useTranslation();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   // `map` (state) drives the marker effect; `mapInstanceRef` mirrors it so the
   // cleanup can destroy the instance directly — a setState updater isn't a
@@ -154,8 +156,8 @@ export const MapPage: FC = () => {
   if (!userLocation) {
     return (
       <LoadingScreen
-        header="Finding your location"
-        description="Loading the map..."
+        header={t("map.findingLocationHeader")}
+        description={t("map.loadingMapDescription")}
       />
     );
   }
@@ -183,7 +185,7 @@ export const MapPage: FC = () => {
         {isLoading && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white rounded-full px-4 py-2 shadow-md text-sm text-gray-600 flex items-center gap-2">
             <div className="w-4 h-4 border-2 border-gray-300 border-t-[var(--color-primary)] rounded-full animate-spin" />
-            Loading cafes...
+            {t("map.loadingCafes")}
           </div>
         )}
 
@@ -211,14 +213,14 @@ export const MapPage: FC = () => {
                   </h3>
                   <div className="flex items-center gap-1.5 mt-1.5 text-sm text-gray-500">
                     <MapPin size={16} />
-                    <span>{formatDistance(selectedShop.distance)}</span>
+                    <span>{formatDistance(selectedShop.distance, t)}</span>
                   </div>
                 </div>
                 <button
                   onClick={() => navigate(`/shops/${selectedShop.shopId}`)}
                   className="flex items-center gap-1 px-3 py-2 rounded-xl bg-[var(--color-primary)] text-white text-sm font-medium hover:bg-[var(--color-primary-dark)] transition-colors"
                 >
-                  Details
+                  {t("map.details")}
                   <ChevronRight size={16} />
                 </button>
               </div>

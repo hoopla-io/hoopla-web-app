@@ -1,12 +1,14 @@
 import { MapPin, ArrowUpRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import type { Shop } from "@/api/domains/shops";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { ShopStatusBadge } from "@/components/func/ShopStatusBadge";
 
-function formatDistance(distance: number): string {
-  if (distance >= 1) return `${distance.toFixed(1)} km`;
-  return `${(distance * 1000).toFixed(0)} m`;
+function formatDistance(distance: number, t: TFunction): string {
+  if (distance >= 1) return t("shopCard.km", { value: distance.toFixed(1) });
+  return t("shopCard.m", { value: (distance * 1000).toFixed(0) });
 }
 
 interface ShopCardProps {
@@ -14,6 +16,7 @@ interface ShopCardProps {
 }
 
 const ShopCard = ({ shop }: ShopCardProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   return (
@@ -35,7 +38,7 @@ const ShopCard = ({ shop }: ShopCardProps) => {
           {/* Distance chip */}
           <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/80 px-2.5 py-1 text-xs font-medium text-gray-800 shadow-sm ring-1 ring-white/60 backdrop-blur-md">
             <MapPin size={12} className="text-[var(--color-primary)]" />
-            {formatDistance(shop.distance)}
+            {formatDistance(shop.distance, t)}
           </span>
 
           {/* Open / Closed status */}
@@ -70,7 +73,7 @@ const ShopCard = ({ shop }: ShopCardProps) => {
 
             <div className="min-w-0 flex-1 pb-0.5">
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--color-primary)]/70">
-                Cafe
+                {t("shopCard.cafeLabel")}
               </p>
               <h3 className="truncate text-[17px] font-semibold leading-snug tracking-tight text-gray-900">
                 {shop.name}

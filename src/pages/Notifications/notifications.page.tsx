@@ -1,6 +1,7 @@
 import { FC, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Bell, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { useNotifications, useMarkNotificationsRead } from "@/api/hooks/notifications.hook";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
@@ -9,6 +10,7 @@ import { LoadingScreen } from "@/components/func/Loading";
 import { useAuth } from "@/context/auth.context";
 
 export const NotificationsPage: FC = () => {
+  const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
   const {
     notifications,
@@ -45,8 +47,8 @@ export const NotificationsPage: FC = () => {
   if (isLoading) {
     return (
       <LoadingScreen
-        header="Loading notifications"
-        description="Please wait..."
+        header={t("notifications.loadingHeader")}
+        description={t("common.pleaseWait")}
       />
     );
   }
@@ -55,7 +57,7 @@ export const NotificationsPage: FC = () => {
     <Page>
       <div className="max-w-lg mx-auto px-4 pt-2 pb-28">
         <h1 className="text-xl font-semibold text-gray-900 mb-4">
-          Notifications
+          {t("notifications.title")}
         </h1>
 
         {notifications.length === 0 && (
@@ -64,10 +66,10 @@ export const NotificationsPage: FC = () => {
               <Bell size={28} className="text-gray-400" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900">
-              No notifications yet
+              {t("notifications.emptyTitle")}
             </h3>
             <p className="text-sm text-gray-500 mt-1">
-              You'll see updates and alerts here
+              {t("notifications.emptyDescription")}
             </p>
           </div>
         )}

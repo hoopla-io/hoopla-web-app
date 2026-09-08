@@ -1,4 +1,5 @@
 import { FC } from "react";
+import { useTranslation } from "react-i18next";
 
 import {
   Drawer,
@@ -15,6 +16,7 @@ import { useAuth } from "@/context/auth.context";
  * the pending action, so the user stays on the page they came from.
  */
 export const AuthModal: FC = () => {
+  const { t } = useTranslation();
   const { isLoginModalOpen, closeLoginModal } = useAuth();
 
   return (
@@ -25,9 +27,9 @@ export const AuthModal: FC = () => {
       }}
     >
       <DrawerContent className="max-h-[92dvh]">
-        <DrawerTitle className="sr-only">Sign In</DrawerTitle>
+        <DrawerTitle className="sr-only">{t("authModal.signIn")}</DrawerTitle>
         <DrawerDescription className="sr-only">
-          Sign in with your phone number to continue.
+          {t("authModal.description")}
         </DrawerDescription>
         {/* Scrollable body: caps the sheet height and keeps the verification
             code field reachable above the keyboard / device bottom inset. */}

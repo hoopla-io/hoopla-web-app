@@ -1,4 +1,5 @@
 import { FC } from "react";
+import { useTranslation } from "react-i18next";
 
 import {
   cn,
@@ -36,6 +37,7 @@ export const ShopStatusBadge: FC<Props> = ({
   workingHours,
   className,
 }) => {
+  const { t } = useTranslation();
   let isOpen: boolean;
 
   if (acceptingOrders !== undefined) {
@@ -74,7 +76,7 @@ export const ShopStatusBadge: FC<Props> = ({
       ) : (
         <span className="h-2 w-2 rounded-full bg-gray-300" />
       )}
-      {isOpen ? "Open" : "Closed"}
+      {isOpen ? t("shopStatusBadge.open") : t("shopStatusBadge.closed")}
     </span>
   );
 };

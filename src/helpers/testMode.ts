@@ -1,5 +1,7 @@
 import toast from "react-hot-toast";
 
+import i18n from "@/i18n";
+
 // Runtime "test mode" — enabled by a hidden gesture (tap the logo 5×, see
 // useSecretActivator + Header). When on:
 //   • every API request carries `X-Hoopla-Test: true` (reveals test partners/
@@ -46,7 +48,7 @@ export async function toggleTestMode(): Promise<void> {
     } catch {
       /* storage unavailable */
     }
-    toast("Test mode off — reloading");
+    toast(i18n.t("testMode.off"));
     // vConsole can't be cleanly torn down, so reload to remove it.
     setTimeout(() => window.location.reload(), 400);
     return;
@@ -57,5 +59,5 @@ export async function toggleTestMode(): Promise<void> {
     /* storage unavailable */
   }
   await loadVConsole();
-  toast.success("Test mode on");
+  toast.success(i18n.t("testMode.on"));
 }

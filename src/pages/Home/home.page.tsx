@@ -1,6 +1,7 @@
 import { FC, useEffect, useRef, useState } from "react";
 import { Loader2, Coffee, LocateFixed } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import { useShops } from "@/api/hooks/shops.hook";
 import { useCategories } from "@/api/hooks/categories.hook";
@@ -21,6 +22,7 @@ import { useSearch } from "@/context/search.context";
 import type { Banner } from "@/api/domains/banners";
 
 export const HomePage: FC = () => {
+  const { t } = useTranslation();
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [storyViewerIndex, setStoryViewerIndex] = useState<number | null>(null);
   const navigate = useNavigate();
@@ -71,8 +73,8 @@ export const HomePage: FC = () => {
   if (!userLocation) {
     return (
       <LoadingScreen
-        header="Finding your location"
-        description="Getting nearby cafes for you..."
+        header={t("home.findingLocationHeader")}
+        description={t("home.findingLocationDescription")}
       />
     );
   }
@@ -121,7 +123,7 @@ export const HomePage: FC = () => {
         {/* Section title */}
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold text-gray-900">
-            {searchText ? "Search Results" : "Nearby Cafes"}
+            {searchText ? t("home.searchResults") : t("home.nearbyCafes")}
           </h2>
           <button
             onClick={refreshLocation}
@@ -138,8 +140,8 @@ export const HomePage: FC = () => {
         {/* Loading */}
         {isLoading && (
           <LoadingScreen
-            header="Loading cafes"
-            description="Please wait..."
+            header={t("home.loadingCafesHeader")}
+            description={t("common.pleaseWait")}
           />
         )}
 
@@ -166,10 +168,10 @@ export const HomePage: FC = () => {
               <Coffee size={28} className="text-gray-400" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900">
-              No cafes found
+              {t("home.emptyTitle")}
             </h3>
             <p className="text-sm text-gray-500 mt-1">
-              Try a different search term
+              {t("home.emptyDescription")}
             </p>
           </div>
         )}

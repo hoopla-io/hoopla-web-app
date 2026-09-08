@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 
 import { Page } from "@/components/Page";
 import { startEightPayment } from "@/helpers/eight";
@@ -44,11 +45,7 @@ import {
   useCheckoutCart,
 } from "@/api/hooks/cart.hook";
 import { useGetMe } from "@/api/hooks/profile.hook";
-import { formatBalance, cn } from "@/helpers/utils";
-
-function formatPrice(price: number): string {
-  return formatBalance(price) + " UZS";
-}
+import { formatBalance, formatMoney, cn } from "@/helpers/utils";
 
 // Checkout dispatches to a slow external billing/POS service. If the request
 // still fails or times out client-side, the backend may already have created
@@ -94,6 +91,7 @@ async function tryRecoverPendingCheckout(): Promise<boolean> {
 }
 
 export const CartPage: FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { cart, isLoading } = useCart();
@@ -136,7 +134,12 @@ export const CartPage: FC = () => {
   }, [queryClient]);
 
   if (isLoading) {
-    return <LoadingScreen header="Loading your cart" description="Please wait..." />;
+    return (
+      <LoadingScreen
+        header={t("cart.loadingHeader")}
+        description={t("common.pleaseWait")}
+      />
+    );
   }
 
   const items = cart?.items ?? [];
@@ -161,7 +164,7 @@ export const CartPage: FC = () => {
         await updateQuantity.mutateAsync({ itemId, quantity: nextQuantity });
       }
     } catch {
-      toast.error("Couldn't update your cart. Please try again.");
+      toast.error(t("cart.updateError"));
     } finally {
       removePendingItemId(itemId);
     }
@@ -177,7 +180,7 @@ export const CartPage: FC = () => {
         setPromoError(
           err?.message ??
             err?.response?.data?.message ??
-            "This promocode can't be applied to this cart."
+            t("cart.promoApplyError")
         );
       },
     });
@@ -185,7 +188,7 @@ export const CartPage: FC = () => {
 
   const handleRemovePromo = () => {
     clearPromo.mutate(undefined, {
-      onError: () => toast.error("Couldn't remove the promocode. Please try again."),
+      onError: () => toast.error(t("cart.promoRemoveError")),
     });
     setPromoInput("");
     setPromoError(null);
@@ -227,7 +230,7 @@ export const CartPage: FC = () => {
     setCommentDirty(false);
     if (comment.trim() !== (cart?.comment ?? "")) {
       setCartComment.mutate(comment, {
-        onError: () => toast.error("Couldn't save your note. Please try again."),
+        onError: () => toast.error(t("cart.commentSaveError")),
       });
     }
   };
@@ -236,9 +239,9 @@ export const CartPage: FC = () => {
     clearCart.mutate(undefined, {
       onSuccess: () => {
         setConfirmClear(false);
-        toast.success("Cart cleared");
+        toast.success(t("cart.cartCleared"));
       },
-      onError: () => toast.error("Couldn't clear your cart. Please try again."),
+      onError: () => toast.error(t("cart.clearError")),
     });
   };
 
@@ -250,7 +253,7 @@ export const CartPage: FC = () => {
       try {
         await setCartComment.mutateAsync(comment);
       } catch {
-        toast.error("Couldn't save your note. Please try again.");
+        toast.error(t("cart.commentSaveError"));
         return;
       }
     }
@@ -263,9 +266,7 @@ export const CartPage: FC = () => {
           // navigating anywhere — hand it to the bridge and wait for the result.
           if (data.bridge_order_id && data.order_id) {
             if (!beginBridgePayment(data.bridge_order_id, data.order_id, navigate)) {
-              toast.error(
-                "Couldn't open the payment window. Please reopen Hoopla from the app and try again."
-              );
+              toast.error(t("cart.paymentWindowError"));
               // The order exists and its cashback is already spent, so route to
               // the waiting screen regardless — it can re-arm the sheet.
               navigate(`/orders/${data.order_id}/awaiting-payment`, { replace: true });
@@ -276,7 +277,7 @@ export const CartPage: FC = () => {
           if (data.checkout_url) {
             window.location.href = data.checkout_url;
           } else if (data.order_id) {
-            toast.success("Order placed successfully!");
+            toast.success(t("cart.orderPlaced"));
             navigate(`/orders/${data.order_id}`, { replace: true });
           }
         },
@@ -305,7 +306,7 @@ export const CartPage: FC = () => {
           toast.error(
             err?.message ??
               err?.response?.data?.message ??
-              "Failed to check out. Please try again."
+              t("cart.checkoutError")
           );
         },
       }
@@ -336,7 +337,7 @@ export const CartPage: FC = () => {
               <ArrowLeft size={20} className="text-gray-700" />
             </button>
             <div>
-              <h1 className="text-lg font-bold text-gray-900">Your Cart</h1>
+              <h1 className="text-lg font-bold text-gray-900">{t("cart.title")}</h1>
               {shopDetail?.name && (
                 <p className="text-xs text-gray-500">{shopDetail.name}</p>
               )}
@@ -347,7 +348,7 @@ export const CartPage: FC = () => {
               onClick={() => setConfirmClear(true)}
               className="text-sm font-medium text-gray-500 hover:text-red-500 transition-colors"
             >
-              Clear
+              {t("cart.clear")}
             </button>
           )}
         </div>
@@ -357,15 +358,15 @@ export const CartPage: FC = () => {
             <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
               <ShoppingBag size={28} className="text-gray-400" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900">Your cart is empty</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{t("cart.emptyTitle")}</h3>
             <p className="text-sm text-gray-500 mt-1 mb-6">
-              Browse a cafe and add some drinks to get started
+              {t("cart.emptyDescription")}
             </p>
             <button
               onClick={() => navigate("/")}
               className="rounded-full bg-[var(--color-primary)] px-6 py-3 text-sm font-semibold text-white active:bg-[var(--color-primary-dark)] transition-colors"
             >
-              Browse cafes
+              {t("cart.browseCafes")}
             </button>
           </div>
         ) : (
@@ -413,7 +414,7 @@ export const CartPage: FC = () => {
 
                     <div className="flex items-center justify-between gap-3 mt-3">
                       <p className="text-lg font-bold text-gray-900">
-                        {formatPrice(item.lineTotal)}
+                        {formatMoney(item.lineTotal, t)}
                       </p>
 
                       <div className="flex items-center gap-1 bg-gray-50 rounded-full p-1">
@@ -421,7 +422,7 @@ export const CartPage: FC = () => {
                           onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
                           disabled={isBusy(item.id)}
                           className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center active:bg-gray-100 disabled:opacity-50"
-                          aria-label={item.quantity === 1 ? "Remove item" : "Decrease quantity"}
+                          aria-label={item.quantity === 1 ? t("cart.removeItem") : t("cart.decreaseQuantity")}
                         >
                           {item.quantity === 1 ? (
                             <Trash2 size={15} className="text-red-500" />
@@ -440,7 +441,7 @@ export const CartPage: FC = () => {
                           onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
                           disabled={isBusy(item.id)}
                           className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center active:bg-gray-100 disabled:opacity-50"
-                          aria-label="Increase quantity"
+                          aria-label={t("cart.increaseQuantity")}
                         >
                           <Plus size={15} className="text-gray-600" />
                         </button>
@@ -467,7 +468,7 @@ export const CartPage: FC = () => {
                     className="flex shrink-0 items-center gap-1 text-xs font-medium text-gray-500 transition-colors hover:text-gray-700"
                   >
                     <X size={14} />
-                    Remove
+                    {t("cart.remove")}
                   </button>
                 </div>
               ) : (
@@ -478,7 +479,7 @@ export const CartPage: FC = () => {
                   >
                     <div className="flex items-center gap-3">
                       <Ticket size={20} className="shrink-0 text-gray-400" />
-                      <span className="font-medium text-gray-900">Promo code</span>
+                      <span className="font-medium text-gray-900">{t("cart.promoCodeLabel")}</span>
                     </div>
                     {promoExpanded ? (
                       <ChevronDown size={18} className="text-gray-400" />
@@ -500,7 +501,7 @@ export const CartPage: FC = () => {
                           onKeyDown={(e) => {
                             if (e.key === "Enter") handleApplyPromo();
                           }}
-                          placeholder="Enter code"
+                          placeholder={t("cart.enterCode")}
                           className="flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm uppercase outline-none transition-colors placeholder:normal-case placeholder:text-gray-400 focus:border-[var(--color-primary)]"
                         />
                         <button
@@ -516,7 +517,7 @@ export const CartPage: FC = () => {
                           {applyPromo.isPending ? (
                             <Loader2 size={16} className="animate-spin" />
                           ) : (
-                            "Apply"
+                            t("cart.apply")
                           )}
                         </button>
                       </div>
@@ -534,9 +535,11 @@ export const CartPage: FC = () => {
                   <div className="flex items-center gap-3">
                     <Wallet size={20} className="shrink-0 text-gray-400" />
                     <div>
-                      <p className="font-medium text-gray-900">Cashback:</p>
+                      <p className="font-medium text-gray-900">{t("cart.cashbackLabel")}</p>
                       <p className="text-xs text-gray-500">
-                        Available: {formatBalance(userInfo?.balance ?? 0)}
+                        {t("cart.availableBalance", {
+                          amount: formatBalance(userInfo?.balance ?? 0),
+                        })}
                       </p>
                     </div>
                   </div>
@@ -566,7 +569,7 @@ export const CartPage: FC = () => {
                     </button>
                     <div className="text-center">
                       <p className="text-lg font-bold text-green-600">
-                        -{formatPrice(appliedCashback)}
+                        -{formatMoney(appliedCashback, t)}
                       </p>
                     </div>
                     <button
@@ -583,7 +586,7 @@ export const CartPage: FC = () => {
             {/* Note to barista — one note for the whole cart. */}
             <div className="mx-4 mt-3">
               <label htmlFor="cart-comment" className="sr-only">
-                Note to barista (optional)
+                {t("cart.noteLabel")}
               </label>
               <textarea
                 id="cart-comment"
@@ -595,7 +598,7 @@ export const CartPage: FC = () => {
                 onBlur={handleCommentBlur}
                 rows={3}
                 maxLength={500}
-                placeholder="Add additional comment…"
+                placeholder={t("cart.notePlaceholder")}
                 className="w-full resize-none rounded-2xl border-none bg-white p-3.5 text-sm text-gray-900 shadow-sm outline-none transition-colors placeholder:text-gray-400 focus:ring-2 focus:ring-[var(--color-primary)]"
               />
             </div>
@@ -615,7 +618,7 @@ export const CartPage: FC = () => {
                     hasDiscount ? "text-gray-400 line-through" : "text-gray-500"
                   )}
                 >
-                  Drinks:
+                  {t("cart.drinksLabel")}
                 </p>
                 <p
                   className={cn(
@@ -623,29 +626,29 @@ export const CartPage: FC = () => {
                     hasDiscount ? "text-gray-400 line-through" : "text-gray-900"
                   )}
                 >
-                  {formatPrice(cart?.subtotal ?? 0)}
+                  {formatMoney(cart?.subtotal ?? 0, t)}
                 </p>
               </div>
               {(cart?.promoDiscount ?? 0) > 0 && (
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-gray-500">Promo:</p>
+                  <p className="text-sm text-gray-500">{t("cart.promoLabel")}</p>
                   <p className="text-sm font-medium text-green-600">
-                    -{formatPrice(cart!.promoDiscount)}
+                    -{formatMoney(cart!.promoDiscount, t)}
                   </p>
                 </div>
               )}
               {appliedCashback > 0 && (
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-gray-500">Cashback:</p>
+                  <p className="text-sm text-gray-500">{t("cart.cashbackLabel")}</p>
                   <p className="text-sm font-medium text-green-600">
-                    -{formatPrice(appliedCashback)}
+                    -{formatMoney(appliedCashback, t)}
                   </p>
                 </div>
               )}
               <div className="flex items-center justify-between pt-1">
-                <p className="text-base font-bold text-gray-900">Total:</p>
+                <p className="text-base font-bold text-gray-900">{t("cart.totalLabel")}</p>
                 <p className="text-xl font-bold text-gray-900">
-                  {formatPrice(Math.max(0, afterPromo - appliedCashback))}
+                  {formatMoney(Math.max(0, afterPromo - appliedCashback), t)}
                 </p>
               </div>
             </div>
@@ -663,10 +666,10 @@ export const CartPage: FC = () => {
               {checkout.isPending ? (
                 <>
                   <Loader2 size={18} className="animate-spin" />
-                  Processing...
+                  {t("cart.processing")}
                 </>
               ) : (
-                "Checkout"
+                t("cart.checkout")
               )}
             </button>
           </div>
@@ -677,19 +680,19 @@ export const CartPage: FC = () => {
       <AlertDialog open={confirmClear} onOpenChange={setConfirmClear}>
         <AlertDialogContent className="rounded-2xl max-w-sm">
           <AlertDialogHeader>
-            <AlertDialogTitle>Clear your cart?</AlertDialogTitle>
+            <AlertDialogTitle>{t("cart.clearCartTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This removes everything in your cart. This action cannot be undone.
+              {t("cart.clearCartDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl">Go back</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-xl">{t("cart.goBack")}</AlertDialogCancel>
             <AlertDialogAction
               className="rounded-xl bg-red-500 text-white hover:bg-red-600"
               onClick={handleClearCart}
               disabled={clearCart.isPending}
             >
-              Clear cart
+              {t("cart.clearCartConfirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import debounce from "lodash/debounce";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 
 import { useShop, useShopDrinks } from "@/api/hooks/shops.hook";
 import { useValidateOrder } from "@/api/hooks/orders.hook";
@@ -39,7 +40,7 @@ import { ShopStatusBadge } from "@/components/func/ShopStatusBadge";
 import { CartConflictDialog } from "@/components/func/CartConflictDialog";
 import { DrinkModifierSheet } from "@/components/func/DrinkModifierSheet";
 import {
-  formatBalance,
+  formatMoney,
   cn,
   getShopOpenStatus,
   type WorkingHour,
@@ -52,19 +53,23 @@ import {
 } from "@/api/domains/orders";
 import type { Banner } from "@/api/domains/banners";
 
-function formatWorkingHours(hours: WorkingHour[]): string {
+function formatWorkingHours(
+  hours: WorkingHour[],
+  t: (key: string) => string
+): string {
   // Reuse the shared helper so the displayed hours and the Open/Closed badge
   // always agree (same case-insensitive weekday lookup).
   const { todayHours } = getShopOpenStatus(hours);
-  if (!todayHours) return "Closed today";
+  if (!todayHours) return t("shopDetail.closedToday");
   return `${todayHours.openAt} - ${todayHours.closeAt}`;
 }
 
-function formatPrice(price: number): string {
-  return formatBalance(price) + " UZS";
+function formatPrice(price: number, t: (key: string) => string): string {
+  return formatMoney(price, t);
 }
 
 export const ShopDetailPage: FC = () => {
+  const { t } = useTranslation();
   const { shopId } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated, openLoginModal } = useAuth();
@@ -168,7 +173,7 @@ export const ShopDetailPage: FC = () => {
     addCartItem.mutate(
       { shopId: numericShopId, drinkId, quantity: 1, modifiers },
       {
-        onSuccess: () => toast.success("Added to cart"),
+        onSuccess: () => toast.success(t("shopDetail.addedToCart")),
         onError: (err: any) => {
           if (isCrossShopCartConflict(err)) {
             setPendingAdd({ shopId: numericShopId, drinkId, modifiers });
@@ -178,7 +183,7 @@ export const ShopDetailPage: FC = () => {
           toast.error(
             err?.message ??
               err?.response?.data?.message ??
-              "Couldn't add this to your cart. Please try again."
+              t("shopDetail.addToCartError")
           );
         },
         onSettled: () => setValidatingDrinkId(null),
@@ -197,7 +202,7 @@ export const ShopDetailPage: FC = () => {
         addDrinkToCart(pendingAdd.shopId, pendingAdd.drinkId, pendingAdd.modifiers);
       },
       onError: () => {
-        toast.error("Couldn't clear your existing cart. Please try again.");
+        toast.error(t("shopDetail.clearCartError"));
       },
     });
   };
@@ -226,7 +231,7 @@ export const ShopDetailPage: FC = () => {
         quantity: line.quantity + 1,
       });
     } catch {
-      toast.error("Couldn't update your cart. Please try again.");
+      toast.error(t("shopDetail.updateCartError"));
     } finally {
       removePendingCartItemId(line.id);
     }
@@ -244,7 +249,7 @@ export const ShopDetailPage: FC = () => {
         await removeItem.mutateAsync(line.id);
       }
     } catch {
-      toast.error("Couldn't update your cart. Please try again.");
+      toast.error(t("shopDetail.updateCartError"));
     } finally {
       removePendingCartItemId(line.id);
     }
@@ -314,7 +319,7 @@ export const ShopDetailPage: FC = () => {
         },
         onError: () => {
           setValidatingDrinkId(null);
-          toast.error("Failed to validate order. Please try again.");
+          toast.error(t("shopDetail.validateOrderError"));
         },
       }
     );
@@ -428,7 +433,10 @@ export const ShopDetailPage: FC = () => {
 
   if (isLoading || !shopDetail?.name) {
     return (
-      <LoadingScreen header="Loading cafe" description="Please wait..." />
+      <LoadingScreen
+        header={t("shopDetail.loadingCafeHeader")}
+        description={t("common.pleaseWait")}
+      />
     );
   }
 
@@ -456,7 +464,7 @@ export const ShopDetailPage: FC = () => {
           </button>
           <button
             onClick={() => shareShop(numericShopIdFromParams, shopDetail.name ?? "")}
-            aria-label="Share this cafe"
+            aria-label={t("shopDetail.shareThisCafe")}
             className="absolute top-[calc(1rem+var(--tg-top-inset,0px))] right-4 p-2 rounded-full bg-white/80 backdrop-blur-sm shadow-sm hover:bg-white transition-colors"
           >
             <Share2 size={20} className="text-gray-700" />
@@ -494,16 +502,16 @@ export const ShopDetailPage: FC = () => {
                     {shopDetail.workingHours.length > 0 ? (
                       <>
                         <div className="flex items-center gap-2">
-                          <p className="text-xs text-gray-500">Today's hours</p>
+                          <p className="text-xs text-gray-500">{t("shopDetail.todaysHours")}</p>
                           <ShopStatusBadge workingHours={shopDetail.workingHours} />
                         </div>
                         <p className="text-sm font-medium text-gray-900">
-                          {formatWorkingHours(shopDetail.workingHours)}
+                          {formatWorkingHours(shopDetail.workingHours, t)}
                         </p>
                       </>
                     ) : (
                       <p className="text-sm font-medium text-gray-900">
-                        Cafe details
+                        {t("shopDetail.cafeDetails")}
                       </p>
                     )}
                   </div>
@@ -548,7 +556,7 @@ export const ShopDetailPage: FC = () => {
                               rel="noopener noreferrer"
                               className="text-sm font-medium text-[var(--color-primary)] hover:underline"
                             >
-                              Open in Yandex Maps
+                              {t("shopDetail.openInYandexMaps")}
                             </a>
                           </div>
                         )}
@@ -591,7 +599,9 @@ export const ShopDetailPage: FC = () => {
                                   rel="noopener noreferrer"
                                   className="text-sm font-medium text-[var(--color-primary)] hover:underline"
                                 >
-                                  {url.urlType === "instagram" ? "Instagram" : "Website"}
+                                  {url.urlType === "instagram"
+                                    ? t("shopDetail.instagram")
+                                    : t("shopDetail.website")}
                                 </a>
                               ))}
                             </div>
@@ -609,7 +619,7 @@ export const ShopDetailPage: FC = () => {
           {shopDetail.pictures.length > 1 && (
             <div>
               <h2 className="text-lg font-semibold text-gray-900 mb-3">
-                Photos
+                {t("shopDetail.photos")}
               </h2>
               <div className="flex gap-2 overflow-x-auto pb-2">
                 {shopDetail.pictures.map((pic, i) => (
@@ -797,7 +807,7 @@ export const ShopDetailPage: FC = () => {
         onClose={() => setModifierDrink(null)}
         onAdded={() => {
           setModifierDrink(null);
-          toast.success("Added to cart");
+          toast.success(t("shopDetail.addedToCart"));
         }}
       />
     </Page>
@@ -826,6 +836,7 @@ function DrinkCard({
   onDecrement?: () => void;
   stepperPending?: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <div
       className={cn(
@@ -860,7 +871,7 @@ function DrinkCard({
             {drink.name}
           </h3>
           <p className="text-sm font-semibold text-[var(--color-primary)] mt-1">
-            {formatPrice(drink.productPrice)}
+            {formatPrice(drink.productPrice, t)}
           </p>
         </div>
         {cartLine ? (
@@ -873,7 +884,7 @@ function DrinkCard({
               }}
               disabled={stepperPending}
               className="grid h-7 w-7 place-items-center rounded-full bg-white text-[var(--color-primary)] shadow-sm transition-colors active:bg-gray-100 disabled:opacity-40"
-              aria-label="Decrease quantity"
+              aria-label={t("shopDetail.decreaseQuantity")}
             >
               <Minus size={14} />
             </button>
@@ -892,7 +903,7 @@ function DrinkCard({
               }}
               disabled={stepperPending}
               className="grid h-7 w-7 place-items-center rounded-full bg-[var(--color-primary)] text-white shadow-sm transition-colors active:bg-[var(--color-primary-dark)] disabled:opacity-40"
-              aria-label="Increase quantity"
+              aria-label={t("shopDetail.increaseQuantity")}
             >
               <Plus size={14} />
             </button>

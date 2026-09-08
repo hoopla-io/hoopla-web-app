@@ -13,6 +13,7 @@ import {
   clearTokens,
 } from "@/helpers/token-storage";
 import { isTestModeEnabled } from "@/helpers/testMode";
+import { getLanguage } from "@/helpers/language";
 
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _isRetry?: boolean;
@@ -155,6 +156,7 @@ export const applyAuthorizationInterceptor = (axiosInstance: AxiosInstance) => {
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+      config.headers["X-App-Language"] = getLanguage();
       // Reveals type='test' partners/shops/orders to this client — the
       // backend hides them from every real customer unless this header is
       // present. Gated on the runtime test-mode toggle (hidden 5-tap gesture)

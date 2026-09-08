@@ -1,16 +1,44 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { enUS, ru, uz, type Locale as DateFnsLocale } from "date-fns/locale";
+
+import { getLanguage, type AppLanguage } from "@/helpers/language";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+const INTL_LOCALES: Record<AppLanguage, string> = {
+  en: "en-US",
+  ru: "ru-RU",
+  uz: "uz-UZ",
+};
+
 export function formatBalance(amount: number): string {
-  return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return new Intl.NumberFormat(INTL_LOCALES[getLanguage()]).format(amount);
+}
+
+/**
+ * `formatBalance` followed by the translated currency label (`common.currency`
+ * — "UZS"/"сум"/"so'm"). Pass the `t` from `useTranslation()`.
+ */
+export function formatMoney(amount: number, t: (key: string) => string): string {
+  return `${formatBalance(amount)} ${t("common.currency")}`;
 }
 
 /** Placeholder name new accounts get until the user sets their own. */
 export const DEFAULT_USER_NAME = "qahvazor";
+
+const DATE_FNS_LOCALES: Record<AppLanguage, DateFnsLocale> = {
+  en: enUS,
+  ru,
+  uz,
+};
+
+/** Current app language's date-fns locale, for `format`/`formatDistanceToNow` calls. */
+export function getDateFnsLocale(): DateFnsLocale {
+  return DATE_FNS_LOCALES[getLanguage()];
+}
 
 export type WorkingHour = {
   weekDay: string;

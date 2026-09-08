@@ -1,5 +1,7 @@
 import toast from "react-hot-toast";
 
+import i18n from "@/i18n";
+
 // Sharing a shop as a Telegram Mini App deep link.
 //
 // A share opens a `https://t.me/<bot>/<app>?startapp=shop_<id>` link. When a
@@ -55,8 +57,8 @@ export async function shareShop(shopId: number, shopName: string): Promise<void>
 
   try {
     await navigator.clipboard.writeText(url);
-    toast.success("Link copied");
+    toast.success(i18n.t("share.linkCopied"));
   } catch {
-    toast.error("Couldn't share this shop.");
+    toast.error(i18n.t("share.shareError"));
   }
 }

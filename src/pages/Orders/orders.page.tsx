@@ -2,13 +2,15 @@ import { FC, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { ReceiptText, Loader2, Coffee, Coins } from "lucide-react";
 import { format } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 import { useOrders } from "@/api/hooks/orders.hook";
 import { Page } from "@/components/Page";
 import { LoadingScreen } from "@/components/func/Loading";
-import { formatBalance } from "@/helpers/utils";
+import { formatMoney, getDateFnsLocale } from "@/helpers/utils";
 
 export const OrdersPage: FC = () => {
+  const { t } = useTranslation();
   const {
     orders,
     isLoading,
@@ -36,7 +38,7 @@ export const OrdersPage: FC = () => {
 
   if (isLoading) {
     return (
-      <LoadingScreen header="Loading orders" description="Please wait..." />
+      <LoadingScreen header={t("orders.loadingHeader")} description={t("common.pleaseWait")} />
     );
   }
 
@@ -44,7 +46,7 @@ export const OrdersPage: FC = () => {
     <Page>
       <div className="max-w-lg mx-auto px-4 pt-2 pb-28">
         <h1 className="text-xl font-semibold text-gray-900 mb-4">
-          Order History
+          {t("orders.title")}
         </h1>
 
         {orders.length === 0 && (
@@ -53,10 +55,10 @@ export const OrdersPage: FC = () => {
               <ReceiptText size={28} className="text-gray-400" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900">
-              No orders yet
+              {t("orders.emptyTitle")}
             </h3>
             <p className="text-sm text-gray-500 mt-1">
-              Your order history will appear here
+              {t("orders.emptyDescription")}
             </p>
           </div>
         )}
@@ -97,11 +99,13 @@ export const OrdersPage: FC = () => {
                         </p>
                       )}
                       <p className="text-xs text-gray-400 mt-0.5">
-                        {format(new Date(order.purchasedAt), "d MMMM HH:mm, yyyy")}
+                        {format(new Date(order.purchasedAt), "d MMMM HH:mm, yyyy", {
+                          locale: getDateFnsLocale(),
+                        })}
                       </p>
                     </div>
                     <span className="text-sm font-semibold text-gray-900 flex-shrink-0">
-                      {formatBalance(totalPrice)} sum
+                      {formatMoney(totalPrice, t)}
                     </span>
                   </div>
 
@@ -135,9 +139,9 @@ export const OrdersPage: FC = () => {
                     <div className="mt-2.5 flex items-center gap-1.5">
                       <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-600">
                         <Coins size={13} />
-                        +{formatBalance(order.cashback_earned)} UZS
+                        +{formatMoney(order.cashback_earned, t)}
                       </span>
-                      <span className="text-xs text-gray-400">cashback earned</span>
+                      <span className="text-xs text-gray-400">{t("orders.cashbackEarned")}</span>
                     </div>
                   )}
                 </Link>

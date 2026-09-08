@@ -4,6 +4,7 @@ import { StrictMode } from "react";
 import { Root } from "@/components/Root";
 import { initTelegram } from "@/helpers/telegram";
 import { initTestMode } from "@/helpers/testMode";
+import { initI18n } from "@/i18n";
 
 import "@/index.css";
 
@@ -12,10 +13,18 @@ initTelegram();
 // Restore vConsole if test mode was left on from a previous session.
 initTestMode();
 
-const root = ReactDOM.createRoot(document.getElementById("root")!);
+async function bootstrap() {
+  // Load the customer's language before the first render so nothing flashes
+  // in the wrong language.
+  await initI18n();
 
-root.render(
-  <StrictMode>
-    <Root />
-  </StrictMode>
-);
+  const root = ReactDOM.createRoot(document.getElementById("root")!);
+
+  root.render(
+    <StrictMode>
+      <Root />
+    </StrictMode>
+  );
+}
+
+void bootstrap();

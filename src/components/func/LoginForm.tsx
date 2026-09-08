@@ -1,7 +1,9 @@
 import { Loader2, MessageSquareText, Send, ShieldCheck } from "lucide-react";
-import { FC, useEffect, useRef, useState } from "react";
+import { FC, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
@@ -18,16 +20,18 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth.context";
 import type { OTPChannel } from "@/api/domains/auth";
 
-const phoneSchema = z.object({
-  phoneNumber: z.string().min(9, "Invalid phone number"),
-});
+const buildPhoneSchema = (t: TFunction) =>
+  z.object({
+    phoneNumber: z.string().min(9, t("loginForm.invalidPhoneNumber")),
+  });
 
-const codeSchema = z.object({
-  code: z
-    .string()
-    .length(6, "Code must be 6 digits")
-    .regex(/^\d+$/, "Code must contain only digits"),
-});
+const buildCodeSchema = (t: TFunction) =>
+  z.object({
+    code: z
+      .string()
+      .length(6, t("loginForm.codeMustBe6Digits"))
+      .regex(/^\d+$/, t("loginForm.codeMustBeDigitsOnly")),
+  });
 
 type Props = {
   /** Called after a successful code confirmation (e.g. to navigate). */
@@ -35,10 +39,14 @@ type Props = {
 };
 
 export const LoginForm: FC<Props> = ({ onSuccess }) => {
+  const { t } = useTranslation();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [channel, setChannel] = useState<OTPChannel | null>(null);
   const { login, confirmCode } = useAuth();
   const codeSectionRef = useRef<HTMLDivElement>(null);
+
+  const phoneSchema = useMemo(() => buildPhoneSchema(t), [t]);
+  const codeSchema = useMemo(() => buildCodeSchema(t), [t]);
 
   const phoneForm = useForm({
     resolver: zodResolver(phoneSchema),
@@ -74,7 +82,12 @@ export const LoginForm: FC<Props> = ({ onSuccess }) => {
     } catch {
       setChannel(null);
       toast.error(
-        `Could not send the ${selectedChannel === "sms" ? "SMS" : "Telegram"} code`
+        t("loginForm.couldNotSendCode", {
+          channel:
+            selectedChannel === "sms"
+              ? t("loginForm.sms")
+              : t("loginForm.telegram"),
+        })
       );
     }
   };
@@ -90,18 +103,25 @@ export const LoginForm: FC<Props> = ({ onSuccess }) => {
       await confirmCode(sessionId!, Number(data.code));
       onSuccess?.();
     } catch {
-      toast.error("Invalid verification code");
+      toast.error(t("loginForm.invalidVerificationCode"));
     }
   };
 
   return (
     <>
       <div className="px-6 pt-6 pb-4">
-        <h2 className="text-xl font-semibold text-gray-900">Sign In</h2>
+        <h2 className="text-xl font-semibold text-gray-900">
+          {t("loginForm.signIn")}
+        </h2>
         <p className="text-sm text-gray-500 mt-1">
           {sessionId
-            ? `Enter the 6-digit code sent via ${channel === "telegram" ? "Telegram" : "SMS"}`
-            : "Enter your phone number to get started"}
+            ? t("loginForm.enterCode", {
+                channel:
+                  channel === "telegram"
+                    ? t("loginForm.telegram")
+                    : t("loginForm.sms"),
+              })
+            : t("loginForm.enterPhoneNumber")}
         </p>
       </div>
 
@@ -121,12 +141,12 @@ export const LoginForm: FC<Props> = ({ onSuccess }) => {
                 render={({ field }) => (
                   <FormItem>
                     <label className="text-sm font-medium text-gray-700">
-                      Phone Number
+                      {t("loginForm.phoneNumber")}
                     </label>
                     <FormControl>
                       <PhoneInput
                         {...field}
-                        placeholder="Phone Number"
+                        placeholder={t("loginForm.phoneNumber")}
                         countries={["UZ"]}
                         defaultCountry="UZ"
                         required
@@ -149,7 +169,7 @@ export const LoginForm: FC<Props> = ({ onSuccess }) => {
                   ) : (
                     <>
                       <MessageSquareText size={18} />
-                      SMS
+                      {t("loginForm.sms")}
                     </>
                   )}
                 </Button>
@@ -165,7 +185,7 @@ export const LoginForm: FC<Props> = ({ onSuccess }) => {
                   ) : (
                     <>
                       <Send size={18} />
-                      Telegram
+                      {t("loginForm.telegram")}
                     </>
                   )}
                 </Button>
@@ -186,7 +206,7 @@ export const LoginForm: FC<Props> = ({ onSuccess }) => {
                   render={({ field }) => (
                     <FormItem>
                       <label className="text-sm font-medium text-gray-700">
-                        Verification Code
+                        {t("loginForm.verificationCodeLabel")}
                       </label>
                       <FormControl>
                         <Input
@@ -209,7 +229,7 @@ export const LoginForm: FC<Props> = ({ onSuccess }) => {
                         }}
                         className="text-sm font-medium text-[var(--color-primary)] hover:underline"
                       >
-                        Change number
+                        {t("loginForm.changeNumber")}
                       </button>
                     </FormItem>
                   )}
@@ -224,7 +244,7 @@ export const LoginForm: FC<Props> = ({ onSuccess }) => {
                   ) : (
                     <>
                       <ShieldCheck size={18} />
-                      Verify
+                      {t("loginForm.verify")}
                     </>
                   )}
                 </Button>

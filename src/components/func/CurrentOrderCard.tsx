@@ -2,21 +2,23 @@ import { FC } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, Coffee } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 import type { ActiveOrder } from "@/api/domains/orders";
+import { getDateFnsLocale } from "@/helpers/utils";
 
-/** Status → user-facing label shown in the pill. */
-const statusLabels: Record<string, string> = {
-  pending_payment: "Awaiting payment",
-  pending: "Confirmed",
-  preparing: "Preparing",
-  ready: "Ready",
+/** Status → user-facing label key shown in the pill. */
+const statusLabelKeys: Record<string, string> = {
+  pending_payment: "currentOrderCard.status.pendingPayment",
+  pending: "currentOrderCard.status.pending",
+  preparing: "currentOrderCard.status.preparing",
+  ready: "currentOrderCard.status.ready",
 };
 
 const relativeTime = (purchasedAt: string): string => {
   const date = new Date(purchasedAt);
   if (Number.isNaN(date.getTime())) return "";
-  return formatDistanceToNow(date, { addSuffix: true });
+  return formatDistanceToNow(date, { addSuffix: true, locale: getDateFnsLocale() });
 };
 
 interface CurrentOrderCardProps {
@@ -24,8 +26,11 @@ interface CurrentOrderCardProps {
 }
 
 export const CurrentOrderCard: FC<CurrentOrderCardProps> = ({ order }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const statusLabel = statusLabels[order.orderStatus] ?? "In progress";
+  const statusLabel = t(
+    statusLabelKeys[order.orderStatus] ?? "currentOrderCard.status.inProgress"
+  );
   const timeAgo = relativeTime(order.purchasedAt);
 
   return (
@@ -36,7 +41,7 @@ export const CurrentOrderCard: FC<CurrentOrderCardProps> = ({ order }) => {
     >
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
-        <span className="text-lg font-semibold">Current order</span>
+        <span className="text-lg font-semibold">{t("currentOrderCard.currentOrder")}</span>
         <span className="flex-shrink-0 rounded-full bg-white/15 px-3 py-1 text-xs font-medium">
           {statusLabel}
         </span>

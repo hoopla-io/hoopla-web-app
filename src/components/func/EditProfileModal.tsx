@@ -1,6 +1,7 @@
 import { FC, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { AuthApi } from "@/api/domains/auth";
@@ -23,6 +24,7 @@ import {
  * Shows a welcome message in the onboarding case, "Edit Profile" otherwise.
  */
 export const EditProfileModal: FC = () => {
+  const { t } = useTranslation();
   const { isEditProfileOpen, closeEditProfile } = useAuth();
   const { userInfo } = useGetMe();
   const queryClient = useQueryClient();
@@ -56,7 +58,7 @@ export const EditProfileModal: FC = () => {
         const isDefault = known.trim().toLowerCase() === DEFAULT_USER_NAME;
         setIsOnboarding(isDefault);
         setName(isDefault ? "" : known);
-        toast.error("Couldn't load your profile");
+        toast.error(t("editProfileModal.loadProfileError"));
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -75,10 +77,14 @@ export const EditProfileModal: FC = () => {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["get-me"] });
-      toast.success(isOnboarding ? "Welcome aboard!" : "Profile updated");
+      toast.success(
+        isOnboarding
+          ? t("editProfileModal.welcomeAboard")
+          : t("editProfileModal.profileUpdated")
+      );
       closeEditProfile();
     },
-    onError: () => toast.error("Failed to update profile"),
+    onError: () => toast.error(t("editProfileModal.updateProfileError")),
   });
 
   return (
@@ -92,12 +98,14 @@ export const EditProfileModal: FC = () => {
         <div className="w-full max-w-md mx-auto">
           <DrawerHeader className="text-left">
             <DrawerTitle>
-              {isOnboarding ? "Welcome to hoopla 👋" : "Edit Profile"}
+              {isOnboarding
+                ? t("editProfileModal.welcomeTitle")
+                : t("editProfileModal.editProfileTitle")}
             </DrawerTitle>
             <DrawerDescription>
               {isOnboarding
-                ? "Set up your profile so we know what to call you."
-                : "Update your personal information."}
+                ? t("editProfileModal.welcomeDescription")
+                : t("editProfileModal.editDescription")}
             </DrawerDescription>
           </DrawerHeader>
 
@@ -109,22 +117,22 @@ export const EditProfileModal: FC = () => {
             <div className="space-y-4 px-4 pt-1">
               <div>
                 <label className="text-sm font-medium text-gray-700">
-                  Name
+                  {t("editProfileModal.nameLabel")}
                 </label>
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Your name"
+                  placeholder={t("editProfileModal.namePlaceholder")}
                   autoFocus={isOnboarding}
                   className="h-11 rounded-xl mt-1"
                 />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700">
-                  Gender
+                  {t("editProfileModal.genderLabel")}
                 </label>
                 <div className="flex gap-2 mt-1">
-                  {["male", "female"].map((g) => (
+                  {(["male", "female"] as const).map((g) => (
                     <button
                       key={g}
                       onClick={() => setGender(g)}
@@ -134,14 +142,14 @@ export const EditProfileModal: FC = () => {
                           : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
                       }`}
                     >
-                      {g.charAt(0).toUpperCase() + g.slice(1)}
+                      {t(`editProfileModal.${g}`)}
                     </button>
                   ))}
                 </div>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700">
-                  Date of Birth
+                  {t("editProfileModal.dobLabel")}
                 </label>
                 <Input
                   type="date"
@@ -158,9 +166,9 @@ export const EditProfileModal: FC = () => {
                 {updateProfile.isPending ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : isOnboarding ? (
-                  "Get started"
+                  t("editProfileModal.getStarted")
                 ) : (
-                  "Save"
+                  t("common.save")
                 )}
               </Button>
             </div>

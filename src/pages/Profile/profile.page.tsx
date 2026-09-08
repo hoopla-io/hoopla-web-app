@@ -12,12 +12,15 @@ import {
   Gift,
   Loader2,
   MonitorSmartphone,
+  Languages,
+  Check,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
 import { FC, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 
 import {
   useDeleteAccount,
@@ -29,6 +32,13 @@ import { useRedeemGiftCard } from "@/api/hooks/gift-cards.hook";
 import { useAnimatedNumber } from "@/hooks/useAnimatedNumber";
 import { useAuth } from "@/context/auth.context";
 import { isEightHost, isEightBuild } from "@/helpers/eight";
+import {
+  getLanguage,
+  setLanguage,
+  LANGUAGE_OPTIONS,
+  type AppLanguage,
+} from "@/helpers/language";
+import { changeAppLanguage } from "@/i18n";
 import PaymentApi from "@/api/domains/payment";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,7 +61,7 @@ import {
   DrawerDescription,
 } from "@/components/ui/drawer";
 import { Page } from "@/components/Page";
-import { cn, formatBalance } from "@/helpers/utils";
+import { cn, formatBalance, getDateFnsLocale } from "@/helpers/utils";
 import { LoadingScreen } from "@/components/func/Loading";
 
 /**
@@ -87,6 +97,7 @@ const AnimatedBalance: FC<{ value: number }> = ({ value }) => {
 };
 
 export const ProfilePage: FC = () => {
+  const { t } = useTranslation();
   const { userInfo, isLoading } = useGetMe();
   const { openEditProfile } = useAuth();
   const queryClient = useQueryClient();
@@ -116,6 +127,17 @@ export const ProfilePage: FC = () => {
     []
   );
 
+  // Language state
+  const [languageOpen, setLanguageOpen] = useState(false);
+  const [language, setLanguageValue] = useState<AppLanguage>(getLanguage);
+
+  const handleSelectLanguage = (value: AppLanguage) => {
+    setLanguage(value);
+    setLanguageValue(value);
+    setLanguageOpen(false);
+    void changeAppLanguage(value);
+  };
+
   // Gift card redeem state
   const redeemGift = useRedeemGiftCard();
   const [giftOpen, setGiftOpen] = useState(false);
@@ -131,7 +153,12 @@ export const ProfilePage: FC = () => {
       {
         onSuccess: (data) => {
           const currency = (data.currency ?? userInfo?.currency ?? "").toUpperCase();
-          toast.success(`+${formatBalance(data.credited)} ${currency} added`.trim());
+          toast.success(
+            t("profile.giftCardCredited", {
+              amount: formatBalance(data.credited),
+              currency,
+            }).trim()
+          );
           setGiftOpen(false);
           setGiftCode("");
         },
@@ -140,7 +167,7 @@ export const ProfilePage: FC = () => {
           setGiftError(
             err?.message ??
               err?.response?.data?.message ??
-              "Couldn't redeem this gift card. Please try again."
+              t("profile.giftCardRedeemError")
           );
         },
       }
@@ -158,7 +185,7 @@ export const ProfilePage: FC = () => {
   const handleTopUp = async (paymentId: number) => {
     const amount = Number(topUpAmount);
     if (!amount || amount < 1000) {
-      toast.error("Minimum amount is 1,000 UZS");
+      toast.error(t("profile.minTopUpAmount", { amount: formatBalance(1000) }));
       return;
     }
     try {
@@ -190,13 +217,16 @@ export const ProfilePage: FC = () => {
         document.addEventListener("visibilitychange", onVisible);
       }
     } catch {
-      toast.error("Failed to initiate payment");
+      toast.error(t("profile.topUpFailed"));
     }
   };
 
   if (isLoading || !userInfo) {
     return (
-      <LoadingScreen header="Loading Profile" description="Please wait..." />
+      <LoadingScreen
+        header={t("profile.loadingHeader")}
+        description={t("common.pleaseWait")}
+      />
     );
   }
 
@@ -239,18 +269,20 @@ export const ProfilePage: FC = () => {
                   <Crown size={16} className="text-[var(--color-primary)]" />
                 </div>
                 <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  Plan
+                  {t("profile.plan")}
                 </span>
               </div>
               <p className="text-lg font-bold text-[var(--color-primary)]">
                 {userInfo.subscription.name}
               </p>
               <p className="text-xs text-gray-400 mt-1">
-                Until{" "}
-                {format(
-                  userInfo.subscription.endDateUnix * 1000,
-                  "MMM d, yyyy"
-                )}
+                {t("profile.until", {
+                  date: format(
+                    userInfo.subscription.endDateUnix * 1000,
+                    "MMM d, yyyy",
+                    { locale: getDateFnsLocale() }
+                  ),
+                })}
               </p>
             </div>
           ) : (
@@ -265,15 +297,15 @@ export const ProfilePage: FC = () => {
                   <Gift size={16} className="text-[var(--color-primary)]" />
                 </div>
                 <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  Gift card
+                  {t("profile.giftCard")}
                 </span>
               </div>
               <p className="text-base font-bold text-gray-900 leading-snug">
-                Have a code?
+                {t("profile.haveCode")}
               </p>
-              <p className="text-xs text-gray-400 mt-1">Add it to your balance</p>
+              <p className="text-xs text-gray-400 mt-1">{t("profile.addToBalance")}</p>
               <span className="mt-4 w-full h-9 rounded-xl text-sm font-medium bg-[var(--color-primary)] text-white flex items-center justify-center">
-                Activate
+                {t("profile.activate")}
               </span>
             </button>
           )}
@@ -287,7 +319,7 @@ export const ProfilePage: FC = () => {
                 />
               </div>
               <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                Balance
+                {t("profile.balance")}
               </span>
             </div>
             <p className="text-lg font-bold text-[var(--color-primary)]">
@@ -303,7 +335,7 @@ export const ProfilePage: FC = () => {
                 onClick={() => setTopUpOpen(true)}
                 className="mt-3 w-full h-9 rounded-xl text-sm font-medium bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)] transition-colors"
               >
-                Top Up
+                {t("profile.topUp")}
               </button>
             )}
           </div>
@@ -319,7 +351,7 @@ export const ProfilePage: FC = () => {
             >
               <span className="flex items-center gap-3">
                 <Wallet size={18} className="text-gray-400" />
-                Top up balance
+                {t("profile.topUpBalance")}
               </span>
               <ChevronRight size={18} className="text-gray-400" />
             </Button>
@@ -335,7 +367,7 @@ export const ProfilePage: FC = () => {
             >
               <span className="flex items-center gap-3">
                 <Gift size={18} className="text-gray-400" />
-                Use gift card
+                {t("profile.useGiftCard")}
               </span>
               <ChevronRight size={18} className="text-gray-400" />
             </Button>
@@ -348,11 +380,26 @@ export const ProfilePage: FC = () => {
             >
               <span className="flex items-center gap-3">
                 <MonitorSmartphone size={18} className="text-gray-400" />
-                Devices
+                {t("profile.devices")}
               </span>
               <ChevronRight size={18} className="text-gray-400" />
             </Button>
           </Link>
+
+          <Button
+            variant="outline"
+            className="w-full h-12 justify-between rounded-2xl bg-white border-none shadow-sm text-gray-700 hover:bg-gray-50 mt-2"
+            onClick={() => setLanguageOpen(true)}
+          >
+            <span className="flex items-center gap-3">
+              <Languages size={18} className="text-gray-400" />
+              {t("profile.language")}
+            </span>
+            <span className="flex items-center gap-1 text-gray-400">
+              {LANGUAGE_OPTIONS.find((opt) => opt.value === language)?.label}
+              <ChevronRight size={18} />
+            </span>
+          </Button>
 
           <Link to="/privacy-policy">
             <Button
@@ -361,7 +408,7 @@ export const ProfilePage: FC = () => {
             >
               <span className="flex items-center gap-3">
                 <ShieldCheck size={18} className="text-gray-400" />
-                Privacy Policy
+                {t("profile.privacyPolicy")}
               </span>
               <ChevronRight size={18} className="text-gray-400" />
             </Button>
@@ -374,7 +421,7 @@ export const ProfilePage: FC = () => {
             >
               <span className="flex items-center gap-3">
                 <FileText size={18} className="text-gray-400" />
-                Terms of Use
+                {t("profile.termsOfUse")}
               </span>
               <ChevronRight size={18} className="text-gray-400" />
             </Button>
@@ -393,25 +440,25 @@ export const ProfilePage: FC = () => {
                 className="w-full h-12 justify-start gap-3 rounded-2xl bg-white border-none shadow-sm text-gray-700 hover:bg-gray-50"
               >
                 <LogOut size={18} className="text-gray-400" />
-                Log out
+                {t("profile.logOut")}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent className="rounded-2xl max-w-sm">
               <AlertDialogHeader>
-                <AlertDialogTitle>Log out?</AlertDialogTitle>
+                <AlertDialogTitle>{t("profile.logOutConfirmTitle")}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Are you sure you want to log out of your account?
+                  {t("profile.logOutConfirmDescription")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel className="rounded-xl">
-                  Cancel
+                  {t("common.cancel")}
                 </AlertDialogCancel>
                 <AlertDialogAction
                   className="rounded-xl text-white"
                   onClick={() => logout()}
                 >
-                  Log out
+                  {t("profile.logOut")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -425,26 +472,25 @@ export const ProfilePage: FC = () => {
                 className="w-full h-12 justify-start gap-3 rounded-2xl bg-white border-none shadow-sm text-red-500 hover:bg-red-50 hover:text-red-600"
               >
                 <Trash size={18} />
-                Delete account
+                {t("profile.deleteAccount")}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent className="rounded-2xl max-w-sm">
               <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogTitle>{t("profile.deleteAccountConfirmTitle")}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This action cannot be undone. Your account and all data will be
-                  permanently removed from our servers.
+                  {t("profile.deleteAccountConfirmDescription")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel className="rounded-xl">
-                  Cancel
+                  {t("common.cancel")}
                 </AlertDialogCancel>
                 <AlertDialogAction
                   className="rounded-xl bg-red-500 text-white hover:bg-red-600"
                   onClick={() => deleteAccount()}
                 >
-                  Delete
+                  {t("profile.delete")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -456,15 +502,15 @@ export const ProfilePage: FC = () => {
           <DrawerContent className="pb-6">
             <div className="w-full max-w-md mx-auto">
               <DrawerHeader className="text-left">
-                <DrawerTitle>Top Up Balance</DrawerTitle>
+                <DrawerTitle>{t("profile.topUpDrawerTitle")}</DrawerTitle>
                 <DrawerDescription>
-                  Enter amount and select payment method
+                  {t("profile.topUpDrawerDescription")}
                 </DrawerDescription>
               </DrawerHeader>
               <div className="space-y-4 px-4 pt-1">
               <div>
                 <label className="text-sm font-medium text-gray-700">
-                  Amount (UZS)
+                  {t("profile.amountLabel")}
                 </label>
                 <Input
                   type="number"
@@ -492,7 +538,7 @@ export const ProfilePage: FC = () => {
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700">
-                  Payment Method
+                  {t("profile.paymentMethod")}
                 </label>
                 <div className="space-y-2 mt-2">
                   {paymentSystems.map((ps) => (
@@ -507,7 +553,7 @@ export const ProfilePage: FC = () => {
                         className="w-10 h-10 rounded-lg object-contain"
                       />
                       <span className="text-sm font-medium text-gray-900">
-                        Pay with {ps.name}
+                        {t("profile.payWith", { name: ps.name })}
                       </span>
                       <ChevronRight
                         size={16}
@@ -527,15 +573,15 @@ export const ProfilePage: FC = () => {
           <DrawerContent className="pb-6">
             <div className="w-full max-w-md mx-auto">
               <DrawerHeader className="text-left">
-                <DrawerTitle>Use gift card</DrawerTitle>
+                <DrawerTitle>{t("profile.useGiftCard")}</DrawerTitle>
                 <DrawerDescription>
-                  Enter your gift card code to add its value to your balance.
+                  {t("profile.giftCardDrawerDescription")}
                 </DrawerDescription>
               </DrawerHeader>
               <div className="space-y-4 px-4 pt-1">
                 <div>
                   <label className="text-sm font-medium text-gray-700">
-                    Gift card code
+                    {t("profile.giftCardCodeLabel")}
                   </label>
                   <Input
                     value={giftCode}
@@ -562,13 +608,44 @@ export const ProfilePage: FC = () => {
                   {redeemGift.isPending ? (
                     <Loader2 size={18} className="animate-spin" />
                   ) : (
-                    "Redeem"
+                    t("profile.redeem")
                   )}
                 </button>
                 <p className="text-center text-xs text-gray-400">
-                  The full value is added to your balance and spent like cashback
-                  on your next orders.
+                  {t("profile.giftCardHint")}
                 </p>
+              </div>
+            </div>
+          </DrawerContent>
+        </Drawer>
+        {/* Language Drawer */}
+        <Drawer open={languageOpen} onOpenChange={setLanguageOpen}>
+          <DrawerContent className="pb-6">
+            <div className="w-full max-w-md mx-auto">
+              <DrawerHeader className="text-left">
+                <DrawerTitle>{t("profile.language")}</DrawerTitle>
+                <DrawerDescription>
+                  {t("profile.languageDrawerDescription")}
+                </DrawerDescription>
+              </DrawerHeader>
+              <div className="space-y-2 px-4 pt-1">
+                {LANGUAGE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => handleSelectLanguage(opt.value)}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
+                  >
+                    <span className="text-sm font-medium text-gray-900">
+                      {opt.label}
+                    </span>
+                    {language === opt.value && (
+                      <Check
+                        size={16}
+                        className="text-[var(--color-primary)] ml-auto"
+                      />
+                    )}
+                  </button>
+                ))}
               </div>
             </div>
           </DrawerContent>

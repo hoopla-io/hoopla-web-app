@@ -2,6 +2,7 @@ import { CheckIcon, ChevronsUpDown } from "lucide-react";
 import * as React from "react";
 import * as RPNInput from "react-phone-number-input";
 import flags from "react-phone-number-input/flags";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -84,6 +85,7 @@ const CountrySelect = ({
   options: countryList,
   onChange,
 }: CountrySelectProps) => {
+  const { t } = useTranslation();
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -108,11 +110,11 @@ const CountrySelect = ({
       <PopoverContent className="w-[300px] p-0">
         <Command>
           <CommandInput
-            placeholder="Search country..."
+            placeholder={t("phoneInput.searchCountry")}
           />
           <CommandList className="border-none">
             <ScrollArea className="h-72">
-              <CommandEmpty>No country found.</CommandEmpty>
+              <CommandEmpty>{t("phoneInput.noCountryFound")}</CommandEmpty>
               <CommandGroup>
                 {countryList.map(({ value, label }) =>
                   value ? (

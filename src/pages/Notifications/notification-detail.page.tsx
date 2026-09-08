@@ -1,6 +1,7 @@
 import { FC } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { useNotificationDetail } from "@/api/hooks/notifications.hook";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
@@ -8,6 +9,7 @@ import { Page } from "@/components/Page";
 import { LoadingScreen } from "@/components/func/Loading";
 
 export const NotificationDetailPage: FC = () => {
+  const { t } = useTranslation();
   const { notificationId } = useParams();
   const navigate = useNavigate();
 
@@ -18,8 +20,8 @@ export const NotificationDetailPage: FC = () => {
   if (isLoading || !notification) {
     return (
       <LoadingScreen
-        header="Loading notification"
-        description="Please wait..."
+        header={t("notificationDetail.loadingHeader")}
+        description={t("common.pleaseWait")}
       />
     );
   }

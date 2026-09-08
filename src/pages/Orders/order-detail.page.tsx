@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 
 import {
   useOrderDetail,
@@ -35,53 +36,53 @@ import {
 import { Page } from "@/components/Page";
 import { beginBridgePayment } from "@/pages/PaymentWaiting/payment-waiting.page";
 import { LoadingScreen } from "@/components/func/Loading";
-import { formatBalance, cn } from "@/helpers/utils";
+import { formatMoney, cn, getDateFnsLocale } from "@/helpers/utils";
 
-const statusConfig: Record<string, { label: string; icon: typeof CheckCircle; color: string; bg: string }> = {
+const statusConfig: Record<string, { labelKey: string; icon: typeof CheckCircle; color: string; bg: string }> = {
   completed: {
-    label: "Completed",
+    labelKey: "orderDetail.status.completed",
     icon: CheckCircle,
     color: "text-green-600",
     bg: "bg-green-50",
   },
   cancelled: {
-    label: "Cancelled",
+    labelKey: "orderDetail.status.cancelled",
     icon: XCircle,
     color: "text-red-500",
     bg: "bg-red-50",
   },
   pending_payment: {
-    label: "Awaiting Payment",
+    labelKey: "orderDetail.status.pendingPayment",
     icon: Clock,
     color: "text-yellow-600",
     bg: "bg-yellow-50",
   },
   pending: {
-    label: "Preparing",
+    labelKey: "orderDetail.status.preparing",
     icon: Coffee,
     color: "text-blue-600",
     bg: "bg-blue-50",
   },
   paid: {
-    label: "Preparing",
+    labelKey: "orderDetail.status.preparing",
     icon: Coffee,
     color: "text-blue-600",
     bg: "bg-blue-50",
   },
   preparing: {
-    label: "Preparing",
+    labelKey: "orderDetail.status.preparing",
     icon: Coffee,
     color: "text-blue-600",
     bg: "bg-blue-50",
   },
   ready: {
-    label: "Ready",
+    labelKey: "orderDetail.status.ready",
     icon: CheckCircle,
     color: "text-emerald-600",
     bg: "bg-emerald-50",
   },
   error: {
-    label: "Error",
+    labelKey: "orderDetail.status.error",
     icon: AlertCircle,
     color: "text-red-500",
     bg: "bg-red-50",
@@ -89,6 +90,7 @@ const statusConfig: Record<string, { label: string; icon: typeof CheckCircle; co
 };
 
 export const OrderDetailPage: FC = () => {
+  const { t } = useTranslation();
   const { orderId } = useParams();
   const navigate = useNavigate();
 
@@ -113,8 +115,8 @@ export const OrderDetailPage: FC = () => {
 
   const handleCancelOrder = () => {
     cancelOrder.mutate(Number(orderId), {
-      onSuccess: () => toast.success("Order cancelled"),
-      onError: () => toast.error("Failed to cancel order"),
+      onSuccess: () => toast.success(t("orderDetail.toast.orderCancelled")),
+      onError: () => toast.error(t("orderDetail.toast.cancelFailed")),
     });
   };
 
@@ -124,14 +126,14 @@ export const OrderDetailPage: FC = () => {
     leaveFeedback.mutate(
       { orderItemId, rating },
       {
-        onSuccess: () => toast.success("Thanks for your feedback!"),
+        onSuccess: () => toast.success(t("orderDetail.toast.feedbackThanks")),
         onError: () => {
           setPendingRatings((prev) => {
             const next = { ...prev };
             delete next[orderItemId];
             return next;
           });
-          toast.error("Failed to submit feedback");
+          toast.error(t("orderDetail.toast.feedbackFailed"));
         },
       }
     );
@@ -139,12 +141,15 @@ export const OrderDetailPage: FC = () => {
 
   if (isLoading || !order) {
     return (
-      <LoadingScreen header="Loading order" description="Please wait..." />
+      <LoadingScreen
+        header={t("orderDetail.loadingHeader")}
+        description={t("common.pleaseWait")}
+      />
     );
   }
 
   const status = statusConfig[order.orderStatus] ?? {
-    label: "Processing",
+    labelKey: "orderDetail.status.processing",
     icon: Clock,
     color: "text-gray-500",
     bg: "bg-gray-100",
@@ -189,13 +194,15 @@ export const OrderDetailPage: FC = () => {
                   {order.shopName}
                 </h1>
                 <p className="mt-1 text-sm text-gray-500">
-                  {format(new Date(order.purchasedAt), "MMMM d, yyyy · HH:mm")}
+                  {format(new Date(order.purchasedAt), "MMMM d, yyyy · HH:mm", {
+                    locale: getDateFnsLocale(),
+                  })}
                 </p>
                 <span
                   className={`mt-2.5 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${status.bg} ${status.color}`}
                 >
                   <StatusIcon size={13} />
-                  {status.label}
+                  {t(status.labelKey)}
                 </span>
               </div>
             </div>
@@ -204,7 +211,7 @@ export const OrderDetailPage: FC = () => {
             {order.items && order.items.length > 0 && (
               <div className="p-4 border-t border-gray-100">
                 <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-                  Items
+                  {t("orderDetail.items")}
                 </h2>
                 <div className="space-y-1">
                   {order.items.map((drink) => {
@@ -251,7 +258,7 @@ export const OrderDetailPage: FC = () => {
                             )}
                           </div>
                           <span className="text-sm font-medium text-gray-900 flex-shrink-0">
-                            {formatBalance(drink.totalAmount)} UZS
+                            {formatMoney(drink.totalAmount, t)}
                           </span>
                         </button>
                         {hasModifiers && isExpanded && (
@@ -268,7 +275,7 @@ export const OrderDetailPage: FC = () => {
                                   )}
                                 </span>
                                 <span className="text-xs text-gray-500">
-                                  {formatBalance(mod.price * (mod.quantity || 1))} UZS
+                                  {formatMoney(mod.price * (mod.quantity || 1), t)}
                                 </span>
                               </div>
                             ))}
@@ -285,7 +292,7 @@ export const OrderDetailPage: FC = () => {
             {order.comment && (
               <div className="p-4 border-t border-gray-100">
                 <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                  Note to barista
+                  {t("orderDetail.noteToBarista")}
                 </h2>
                 <p className="text-sm text-gray-700">{order.comment}</p>
               </div>
@@ -294,43 +301,43 @@ export const OrderDetailPage: FC = () => {
             {/* Payment */}
             <div className="p-4 border-t border-gray-100">
               <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-                Payment
+                {t("orderDetail.payment")}
               </h2>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Total</span>
+                  <span className="text-gray-500">{t("orderDetail.total")}</span>
                   <span className="font-medium text-gray-900">
-                    {formatBalance(order.totalAmount)} UZS
+                    {formatMoney(order.totalAmount, t)}
                   </span>
                 </div>
                 {order.promoCode && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">
-                      Promocode{" "}
+                      {t("orderDetail.promocode")}{" "}
                       <span className="font-medium text-gray-700">
                         {order.promoCode}
                       </span>
                     </span>
                     {order.promoDiscount ? (
                       <span className="font-medium text-green-600">
-                        -{formatBalance(order.promoDiscount)} UZS
+                        -{formatMoney(order.promoDiscount, t)}
                       </span>
                     ) : null}
                   </div>
                 )}
                 {order.cashback_used > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Cashback used</span>
+                    <span className="text-gray-500">{t("orderDetail.cashbackUsed")}</span>
                     <span className="font-medium text-green-600">
-                      -{formatBalance(order.cashback_used)} UZS
+                      -{formatMoney(order.cashback_used, t)}
                     </span>
                   </div>
                 )}
                 {order.cashback_earned > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Cashback earned</span>
+                    <span className="text-gray-500">{t("orderDetail.cashbackEarned")}</span>
                     <span className="font-medium text-[var(--color-primary)]">
-                      +{formatBalance(order.cashback_earned)} UZS
+                      +{formatMoney(order.cashback_earned, t)}
                     </span>
                   </div>
                 )}
@@ -343,7 +350,7 @@ export const OrderDetailPage: FC = () => {
                       className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-primary)] hover:underline"
                     >
                       <Receipt size={14} />
-                      View fiscal receipt
+                      {t("orderDetail.viewFiscalReceipt")}
                     </a>
                   </div>
                 )}
@@ -363,24 +370,24 @@ export const OrderDetailPage: FC = () => {
                   {cancelOrder.isPending ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
-                    "Cancel Order"
+                    t("orderDetail.cancelOrder")
                   )}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent className="rounded-2xl max-w-sm">
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Cancel this order?</AlertDialogTitle>
+                  <AlertDialogTitle>{t("orderDetail.cancelDialogTitle")}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action cannot be undone. Your order will be cancelled.
+                    {t("orderDetail.cancelDialogDescription")}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel className="rounded-xl">Go back</AlertDialogCancel>
+                  <AlertDialogCancel className="rounded-xl">{t("common.back")}</AlertDialogCancel>
                   <AlertDialogAction
                     className="rounded-xl bg-red-500 text-white hover:bg-red-600"
                     onClick={handleCancelOrder}
                   >
-                    Yes, cancel
+                    {t("orderDetail.yesCancel")}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -391,7 +398,7 @@ export const OrderDetailPage: FC = () => {
           {order.orderStatus === "completed" && order.items.length > 0 && (
             <div className="bg-white rounded-2xl shadow-sm p-4">
               <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-                Feedback
+                {t("orderDetail.feedback")}
               </h2>
               <div className="divide-y divide-gray-100">
                 {order.items.map((item) => {
@@ -408,7 +415,7 @@ export const OrderDetailPage: FC = () => {
                           {[1, 2, 3, 4, 5].map((s) => (
                             <button
                               key={s}
-                              aria-label={`Rate ${item.name} ${s} stars`}
+                              aria-label={t("orderDetail.rateItemAria", { name: item.name, count: s })}
                               disabled={rating > 0}
                               onClick={() => handleRateItem(item.id, s)}
                               className="transition-transform active:scale-110"
@@ -450,9 +457,7 @@ export const OrderDetailPage: FC = () => {
               onClick={() => {
                 if (bridgeOrderId) {
                   if (!beginBridgePayment(bridgeOrderId, order.id, navigate)) {
-                    toast.error(
-                      "Couldn't open the payment window. Please reopen Hoopla from the app and try again."
-                    );
+                    toast.error(t("orderDetail.toast.paymentWindowFailed"));
                   }
                   return;
                 }
@@ -460,7 +465,7 @@ export const OrderDetailPage: FC = () => {
               }}
               className="flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] py-4 text-base font-semibold text-white shadow-[0_12px_30px_-8px_rgba(141,11,65,0.55)] transition-all active:scale-[0.99] active:bg-[var(--color-primary-dark)]"
             >
-              Complete payment
+              {t("orderDetail.completePayment")}
             </button>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { FC } from "react";
+import { useTranslation } from "react-i18next";
 
 import {
   AlertDialog,
@@ -29,26 +30,31 @@ export const CartConflictDialog: FC<CartConflictDialogProps> = ({
   onOpenChange,
   onConfirm,
   isPending,
-}) => (
-  <AlertDialog open={open} onOpenChange={onOpenChange}>
-    <AlertDialogContent className="rounded-2xl max-w-sm">
-      <AlertDialogHeader>
-        <AlertDialogTitle>You have items from another cafe</AlertDialogTitle>
-        <AlertDialogDescription>
-          Your cart already has items from a different cafe. Clear it to add
-          this drink instead?
-        </AlertDialogDescription>
-      </AlertDialogHeader>
-      <AlertDialogFooter>
-        <AlertDialogCancel className="rounded-xl">Go back</AlertDialogCancel>
-        <AlertDialogAction
-          className="rounded-xl bg-red-500 text-white hover:bg-red-600"
-          onClick={onConfirm}
-          disabled={isPending}
-        >
-          Clear cart &amp; add
-        </AlertDialogAction>
-      </AlertDialogFooter>
-    </AlertDialogContent>
-  </AlertDialog>
-);
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent className="rounded-2xl max-w-sm">
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t("cartConflictDialog.title")}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {t("cartConflictDialog.description")}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="rounded-xl">
+            {t("cartConflictDialog.goBack")}
+          </AlertDialogCancel>
+          <AlertDialogAction
+            className="rounded-xl bg-red-500 text-white hover:bg-red-600"
+            onClick={onConfirm}
+            disabled={isPending}
+          >
+            {t("cartConflictDialog.confirm")}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+};

@@ -2,6 +2,7 @@ import type React from "react";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 
 import {
   AuthApi,
@@ -42,6 +43,7 @@ interface AuthContextType extends AuthState {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   const [state, setState] = useState<AuthState>({
     isAuthenticated: false,
     isLoading: false,
@@ -108,7 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // caller (ProtectedRoute included) funnels through here, so the guard
     // belongs here rather than at each call site.
     if (isEightHost()) {
-      toast.error("Your session expired. Please reopen Hoopla from the app.");
+      toast.error(t("auth.sessionExpired"));
       return;
     }
     pendingAction.current = onSuccess ?? null;
@@ -172,7 +174,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // navigating the customer out of the host's WebView mid-checkout. Tell
       // them to relaunch instead, which re-runs the host's own login.
       if (isEightHost()) {
-        toast.error("Your session expired. Please reopen Hoopla from the app.");
+        toast.error(t("auth.sessionExpired"));
         return;
       }
 

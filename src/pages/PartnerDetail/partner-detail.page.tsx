@@ -1,6 +1,7 @@
 import { FC } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Coffee } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { useShops } from "@/api/hooks/shops.hook";
 import { usePartnerBanners } from "@/api/hooks/banners.hook";
@@ -12,6 +13,7 @@ import { LoadingScreen } from "@/components/func/Loading";
 import type { Banner } from "@/api/domains/banners";
 
 export const PartnerDetailPage: FC = () => {
+  const { t } = useTranslation();
   const { partnerId } = useParams();
   const navigate = useNavigate();
   const numericPartnerId = Number(partnerId);
@@ -27,7 +29,8 @@ export const PartnerDetailPage: FC = () => {
     (shop) => shop.partnerId === numericPartnerId
   );
 
-  const partnerName = partnerShops[0]?.name?.replace(/\s*\(.*\)$/, "") ?? "Partner";
+  const partnerName =
+    partnerShops[0]?.name?.replace(/\s*\(.*\)$/, "") ?? t("partnerDetail.fallbackName");
 
   const handleBannerClick = (banner: Banner) => {
     switch (banner.linkType) {
@@ -49,8 +52,8 @@ export const PartnerDetailPage: FC = () => {
   if (!userLocation || shopsLoading) {
     return (
       <LoadingScreen
-        header="Loading partner"
-        description="Please wait..."
+        header={t("partnerDetail.loadingHeader")}
+        description={t("common.pleaseWait")}
       />
     );
   }
@@ -79,7 +82,7 @@ export const PartnerDetailPage: FC = () => {
         {/* Shops list */}
         {partnerShops.length > 0 ? (
           <div className="space-y-3">
-            <h2 className="text-lg font-semibold text-gray-900">Locations</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t("partnerDetail.locations")}</h2>
             {partnerShops.map((shop) => (
               <ShopCard key={shop.shopId} shop={shop} />
             ))}
@@ -90,10 +93,10 @@ export const PartnerDetailPage: FC = () => {
               <Coffee size={28} className="text-gray-400" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900">
-              No locations found nearby
+              {t("partnerDetail.emptyTitle")}
             </h3>
             <p className="text-sm text-gray-500 mt-1">
-              This partner has no shops near your location
+              {t("partnerDetail.emptyDescription")}
             </p>
           </div>
         )}
