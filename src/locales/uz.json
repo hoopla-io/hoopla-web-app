@@ -185,6 +185,10 @@
     "toastFailed": "Fikr-mulohazani yuborib bo'lmadi"
   },
   "shopDetail": {
+    "searchMenuPlaceholder": "Menyudan qidirish...",
+    "clearSearchAria": "Qidiruvni tozalash",
+    "noDrinksFound": "Ichimliklar topilmadi",
+    "tryDifferentSearch": "Boshqa so'z bilan qidirib ko'ring",
     "loadingCafeHeader": "Kofeyna yuklanmoqda",
     "shareThisCafe": "Ushbu kofeynani ulashish",
     "todaysHours": "Bugungi ish vaqti",

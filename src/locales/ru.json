@@ -185,6 +185,10 @@
     "toastFailed": "Не удалось отправить отзыв"
   },
   "shopDetail": {
+    "searchMenuPlaceholder": "Поиск по меню...",
+    "clearSearchAria": "Очистить поиск",
+    "noDrinksFound": "Напитки не найдены",
+    "tryDifferentSearch": "Попробуйте другой запрос",
     "loadingCafeHeader": "Загрузка кофейни",
     "shareThisCafe": "Поделиться этой кофейней",
     "todaysHours": "Часы работы сегодня",

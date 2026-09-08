@@ -656,7 +656,7 @@ export const ShopDetailPage: FC = () => {
                   <input
                     value={searchInput}
                     onChange={(e) => handleSearchChange(e.target.value)}
-                    placeholder="Search menu..."
+                    placeholder={t("shopDetail.searchMenuPlaceholder")}
                     className="flex-1 bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
                   />
                   {drinksFetching && !drinksLoading && (
@@ -665,7 +665,7 @@ export const ShopDetailPage: FC = () => {
                   {searchInput !== "" && (
                     <button
                       onClick={clearSearch}
-                      aria-label="Clear search"
+                      aria-label={t("shopDetail.clearSearchAria")}
                       className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gray-500/10 text-gray-600 transition-all duration-200 hover:bg-gray-500/[0.16] active:scale-90"
                     >
                       <X size={14} />
@@ -684,10 +684,10 @@ export const ShopDetailPage: FC = () => {
                     <Coffee size={28} className="text-gray-400" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900">
-                    No drinks found
+                    {t("shopDetail.noDrinksFound")}
                   </h3>
                   <p className="text-sm text-gray-500 mt-1">
-                    Try a different search term
+                    {t("shopDetail.tryDifferentSearch")}
                   </p>
                 </div>
               ) : (

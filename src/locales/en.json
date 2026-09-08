@@ -185,6 +185,10 @@
     "toastFailed": "Failed to submit feedback"
   },
   "shopDetail": {
+    "searchMenuPlaceholder": "Search menu...",
+    "clearSearchAria": "Clear search",
+    "noDrinksFound": "No drinks found",
+    "tryDifferentSearch": "Try a different search term",
     "loadingCafeHeader": "Loading cafe",
     "shareThisCafe": "Share this cafe",
     "todaysHours": "Today's hours",
