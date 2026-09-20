@@ -251,8 +251,8 @@ export async function renderOrderStory(order: OrderDetail): Promise<Blob> {
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("canvas 2d context unavailable");
 
-  const [shopLogo] = await Promise.all([
-    loadImage(order.shopIconUrl),
+  const [partnerLogo] = await Promise.all([
+    loadImage(order.partnerLogoUrl),
     document.fonts?.load('700 76px "Eugusto"').catch(() => undefined),
   ]);
   const initial = order.shopName.trim().charAt(0).toUpperCase();
@@ -261,7 +261,7 @@ export async function renderOrderStory(order: OrderDetail): Promise<Blob> {
   const drinkLines = wrapLines(ctx, order.items[0]?.name ?? order.shopName, W - MARGIN * 2, 2);
   const k = drinkLines.length > 1 ? 0.86 : 1;
 
-  drawBackground(ctx, logoHue(shopLogo), k);
+  drawBackground(ctx, logoHue(partnerLogo), k);
 
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
@@ -276,7 +276,7 @@ export async function renderOrderStory(order: OrderDetail): Promise<Blob> {
   let cup3d: HTMLCanvasElement | null = null;
   try {
     const { renderStoryCup } = await import("@/helpers/story-cup-3d");
-    cup3d = renderStoryCup(shopLogo, initial);
+    cup3d = renderStoryCup(partnerLogo, initial);
   } catch {
     cup3d = null;
   }
@@ -290,7 +290,7 @@ export async function renderOrderStory(order: OrderDetail): Promise<Blob> {
   } else {
     const flat = await loadImage(cupUrl, false);
     if (!flat) throw new Error("story cup failed to load");
-    drawFlatCup(ctx, flat, shopLogo, initial, k);
+    drawFlatCup(ctx, flat, partnerLogo, initial, k);
   }
 
   ctx.textAlign = "left";

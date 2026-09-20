@@ -108,6 +108,7 @@ export interface OrderDetail {
   id: number;
   shopName: string;
   shopIconUrl: string | null;
+  partnerLogoUrl?: string | null;
   // Full backend status set. `paid`/`preparing`/`ready` were previously
   // missing here, which made the status pill fall through to a wrong default.
   orderStatus:
