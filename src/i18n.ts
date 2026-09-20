@@ -1,8 +1,7 @@
 // UI translation. Locale JSON is code-split per language (dynamic import, not
 // a static top-level import of all three) so an unselected language's
 // strings never enter the loaded bundle. `@/helpers/language.ts` owns the
-// persisted preference and the `X-App-Language` header; this module owns
-// turning that preference into rendered translations.
+// persisted preference; this module owns turning that preference into rendered translations.
 
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";

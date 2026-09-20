@@ -1,8 +1,6 @@
-// Customer's preferred language. Sent as `X-App-Language` on every request
-// (see http-client.tsx) so hoopla-api can localize server-driven content
-// (notifications, banners, feedback prompts, etc), and drives the app's own
-// UI language via i18next (see @/i18n.ts) — this module owns the persisted
-// preference; i18n.ts owns loading/rendering translations for it.
+// Customer's preferred language. Drives the app's own UI language via i18next
+// (see @/i18n.ts) — this module owns the persisted preference; i18n.ts owns
+// loading/rendering translations for it.
 
 export type AppLanguage = "uz" | "ru" | "en";
 
