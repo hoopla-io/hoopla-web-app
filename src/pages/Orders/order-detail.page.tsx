@@ -11,6 +11,7 @@ import {
   Star,
   Loader2,
   ChevronDown,
+  Instagram,
 } from "lucide-react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
@@ -36,6 +37,7 @@ import {
 import { Page } from "@/components/Page";
 import { beginBridgePayment } from "@/pages/PaymentWaiting/payment-waiting.page";
 import { LoadingScreen } from "@/components/func/Loading";
+import { OrderStorySheet } from "@/components/func/OrderStorySheet";
 import { formatMoney, cn, getDateFnsLocale } from "@/helpers/utils";
 
 const statusConfig: Record<string, { labelKey: string; icon: typeof CheckCircle; color: string; bg: string }> = {
@@ -100,6 +102,7 @@ export const OrderDetailPage: FC = () => {
   const leaveFeedback = useLeaveFeedback();
   const [pendingRatings, setPendingRatings] = useState<Record<number, number>>({});
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
+  const [storyOpen, setStoryOpen] = useState(false);
 
   const toggleExpanded = (id: number) => {
     setExpandedItems((prev) => {
@@ -162,6 +165,9 @@ export const OrderDetailPage: FC = () => {
   const bridgeOrderId = order.bridge_order_id;
   const showCompletePayment =
     order.orderStatus === "pending_payment" && (!!checkoutUrl || !!bridgeOrderId);
+  const canShareStory =
+    order.items.length > 0 &&
+    !["pending_payment", "cancelled", "error"].includes(order.orderStatus);
 
   return (
     <Page>
@@ -358,6 +364,17 @@ export const OrderDetailPage: FC = () => {
             </div>
           </div>
 
+          {canShareStory && (
+            <button
+              type="button"
+              onClick={() => setStoryOpen(true)}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[var(--color-primary-light)] to-[var(--color-primary-dark)] text-sm font-semibold text-white shadow-sm transition-all active:scale-[0.99]"
+            >
+              <Instagram size={18} />
+              {t("orderStory.button")}
+            </button>
+          )}
+
           {/* Cancel order */}
           {order.orderStatus === "pending_payment" && (
             <AlertDialog>
@@ -445,6 +462,10 @@ export const OrderDetailPage: FC = () => {
           )}
         </div>
       </div>
+
+      {canShareStory && (
+        <OrderStorySheet order={order} open={storyOpen} onOpenChange={setStoryOpen} />
+      )}
 
       {/* Complete payment — primary CTA for an order that wasn't paid at
           checkout; the invoice is still open so we can hand the shopper

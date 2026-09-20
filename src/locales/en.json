@@ -160,6 +160,19 @@
       "paymentWindowFailed": "Couldn't open the payment window. Please reopen Hoopla from the app and try again."
     }
   },
+  "orderStory": {
+    "button": "Share to story",
+    "title": "Share your order",
+    "description": "A story picture of this order you can post to Instagram.",
+    "kicker": "Today's order",
+    "moreItems": "+{{count}} more",
+    "share": "Share to Instagram story",
+    "save": "Save image",
+    "shareHint": "Pick Instagram in the share menu, then choose Story.",
+    "saveHint": "Save the picture (or press and hold it), then add it to your Instagram story.",
+    "renderFailed": "Couldn't create the story picture.",
+    "shareFailed": "Couldn't open the share menu."
+  },
   "orders": {
     "loadingHeader": "Loading orders",
     "title": "Order History",

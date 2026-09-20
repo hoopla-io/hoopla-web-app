@@ -160,6 +160,19 @@
       "paymentWindowFailed": "To'lov oynasini ochib bo'lmadi. Iltimos, Hoopla-ni ilovadan qaytadan oching va qayta urinib ko'ring."
     }
   },
+  "orderStory": {
+    "button": "Storisda ulashish",
+    "title": "Buyurtmangizni ulashing",
+    "description": "Ushbu buyurtmaning Instagram storis uchun rasmi.",
+    "kicker": "Bugungi buyurtmam",
+    "moreItems": "yana +{{count}}",
+    "share": "Instagram storisga ulashish",
+    "save": "Rasmni saqlash",
+    "shareHint": "Ulashish menyusida Instagramni, so'ng «Hikoya»ni tanlang.",
+    "saveHint": "Rasmni saqlang (yoki bosib turing), so'ng Instagram storisingizga qo'shing.",
+    "renderFailed": "Storis rasmini yaratib bo'lmadi.",
+    "shareFailed": "Ulashish menyusini ochib bo'lmadi."
+  },
   "orders": {
     "loadingHeader": "Buyurtmalar yuklanmoqda",
     "title": "Buyurtmalar tarixi",
