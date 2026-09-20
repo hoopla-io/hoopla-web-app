@@ -11,6 +11,7 @@ const CUP_TOP = 410;
 const CUP_W = 700;
 const CUP_H = 949;
 const BRAND_HUE = { h: 336, s: 72 };
+const KRAFT = "#c08a5e";
 const SANS = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
 
 function loadImage(url?: string | null, remote = true): Promise<HTMLImageElement | null> {
@@ -102,13 +103,13 @@ function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
   return [h * 60, s, l];
 }
 
-function logoHue(logo: HTMLImageElement | null): Hue {
-  if (!logo) return BRAND_HUE;
+function logoHue(logo: HTMLImageElement | null): Hue | null {
+  if (!logo) return null;
   try {
     const sample = document.createElement("canvas");
     sample.width = sample.height = 32;
     const sctx = sample.getContext("2d");
-    if (!sctx) return BRAND_HUE;
+    if (!sctx) return null;
     sctx.drawImage(logo, 0, 0, 32, 32);
     const px = sctx.getImageData(0, 0, 32, 32).data;
     let x = 0;
@@ -125,13 +126,13 @@ function logoHue(logo: HTMLImageElement | null): Hue {
       weight += k;
       saturation += s * k;
     }
-    if (weight < 12) return BRAND_HUE;
+    if (weight < 12) return null;
     return {
       h: Math.round(((Math.atan2(y, x) * 180) / Math.PI + 360) % 360),
       s: Math.round(Math.max(38, Math.min(70, (saturation / weight) * 85))),
     };
   } catch {
-    return BRAND_HUE;
+    return null;
   }
 }
 
@@ -261,7 +262,10 @@ export async function renderOrderStory(order: OrderDetail): Promise<Blob> {
   const drinkLines = wrapLines(ctx, order.items[0]?.name ?? order.shopName, W - MARGIN * 2, 2);
   const k = drinkLines.length > 1 ? 0.86 : 1;
 
-  drawBackground(ctx, logoHue(partnerLogo), k);
+  const cafeHue = logoHue(partnerLogo);
+  const sleeveColor = cafeHue ? `hsl(${cafeHue.h}, ${cafeHue.s}%, 30%)` : KRAFT;
+
+  drawBackground(ctx, BRAND_HUE, k);
 
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
@@ -276,7 +280,7 @@ export async function renderOrderStory(order: OrderDetail): Promise<Blob> {
   let cup3d: HTMLCanvasElement | null = null;
   try {
     const { renderStoryCup } = await import("@/helpers/story-cup-3d");
-    cup3d = renderStoryCup(partnerLogo, initial);
+    cup3d = renderStoryCup(partnerLogo, initial, sleeveColor);
   } catch {
     cup3d = null;
   }

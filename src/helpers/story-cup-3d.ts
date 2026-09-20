@@ -4,7 +4,6 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
 const WIDTH = 700;
 const HEIGHT = 949;
 const SEGMENTS = 96;
-const SLEEVE_COLOR = "#c08a5e";
 
 const bodyRadius = (y: number) => 0.62 + (y + 1.12) * (0.25 / 2.12);
 
@@ -19,12 +18,12 @@ function lathe(points: Array<[number, number]>, material: THREE.Material) {
   );
 }
 
-function sleeveTexture(logo: HTMLImageElement | null, initial: string) {
+function sleeveTexture(logo: HTMLImageElement | null, initial: string, sleeveColor: string) {
   const canvas = document.createElement("canvas");
   canvas.width = 2048;
   canvas.height = 380;
   const g = canvas.getContext("2d")!;
-  g.fillStyle = SLEEVE_COLOR;
+  g.fillStyle = sleeveColor;
   g.fillRect(0, 0, canvas.width, canvas.height);
   g.globalAlpha = 0.06;
   g.fillStyle = "#000";
@@ -62,7 +61,11 @@ function sleeveTexture(logo: HTMLImageElement | null, initial: string) {
   return texture;
 }
 
-export function renderStoryCup(logo: HTMLImageElement | null, initial: string): HTMLCanvasElement {
+export function renderStoryCup(
+  logo: HTMLImageElement | null,
+  initial: string,
+  sleeveColor: string
+): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
   const renderer = new THREE.WebGLRenderer({
     canvas,
@@ -101,7 +104,7 @@ export function renderStoryCup(logo: HTMLImageElement | null, initial: string): 
     clearcoatRoughness: 0.4,
     side: THREE.DoubleSide,
   });
-  const texture = sleeveTexture(logo, initial);
+  const texture = sleeveTexture(logo, initial, sleeveColor);
   const sleeve = new THREE.MeshStandardMaterial({
     map: texture,
     roughness: 0.9,
