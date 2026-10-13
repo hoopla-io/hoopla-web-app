@@ -274,7 +274,15 @@ export const OrderDetailPage: FC = () => {
                                 key={mod.id}
                                 className="flex items-center justify-between gap-3"
                               >
-                                <span className="text-xs text-gray-500">
+                                <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                                  {mod.imageUrl && (
+                                    <img
+                                      src={mod.imageUrl}
+                                      alt=""
+                                      loading="lazy"
+                                      className="h-4 w-4 flex-shrink-0 rounded object-contain"
+                                    />
+                                  )}
                                   {mod.name}
                                   {mod.quantity > 1 && (
                                     <span className="text-gray-400"> ×{mod.quantity}</span>

@@ -4,6 +4,7 @@ import type { SelectedModifier, CreateOrderResponse } from "@/api/domains/orders
 export interface CartItemModifier {
   name: string;
   price: number;
+  imageUrl?: string | null;
 }
 
 export interface CartItem {

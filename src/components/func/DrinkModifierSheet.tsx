@@ -353,6 +353,14 @@ const DrinkModifierSheetBody: FC<DrinkModifierSheetBodyProps> = ({
                               <Check size={14} className="text-white" />
                             )}
                           </span>
+                          {option.modificationImageUrl && (
+                            <img
+                              src={option.modificationImageUrl}
+                              alt=""
+                              loading="lazy"
+                              className="h-10 w-10 shrink-0 rounded-xl bg-gray-50 object-contain"
+                            />
+                          )}
                           <span
                             className={cn(
                               "truncate text-[15px] font-medium",

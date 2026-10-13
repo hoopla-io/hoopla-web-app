@@ -185,6 +185,7 @@ export interface ModifierOption {
   /** Usually equals the group key; included for completeness. */
   modificationKey?: string;
   modificationGroupId?: string | number;
+  modificationImageUrl?: string | null;
 }
 
 export interface ModifierGroup {

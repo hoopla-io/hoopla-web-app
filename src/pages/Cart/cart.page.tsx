@@ -399,7 +399,17 @@ export const CartPage: FC = () => {
                                 key={`${item.id}-${index}`}
                                 className="flex items-center justify-between gap-3 text-xs text-gray-400"
                               >
-                                <span className="truncate">{modifier.name}</span>
+                                <span className="flex min-w-0 items-center gap-1.5">
+                                  {modifier.imageUrl && (
+                                    <img
+                                      src={modifier.imageUrl}
+                                      alt=""
+                                      loading="lazy"
+                                      className="h-4 w-4 flex-shrink-0 rounded object-contain"
+                                    />
+                                  )}
+                                  <span className="truncate">{modifier.name}</span>
+                                </span>
                                 {modifier.price > 0 && (
                                   <span className="flex-shrink-0">
                                     +{formatBalance(modifier.price)}
