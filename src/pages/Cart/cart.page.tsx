@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   ChevronDown,
   ChevronRight,
+  Clock,
   Coffee,
   Loader2,
   Minus,
@@ -46,6 +47,7 @@ import {
 } from "@/api/hooks/cart.hook";
 import { useGetMe } from "@/api/hooks/profile.hook";
 import { formatBalance, formatMoney, cn } from "@/helpers/utils";
+import { isPickupTimeStillValid, pickupSlots } from "@/helpers/pickup-time";
 
 // Checkout dispatches to a slow external billing/POS service. If the request
 // still fails or times out client-side, the backend may already have created
@@ -114,6 +116,7 @@ export const CartPage: FC = () => {
   const [cashbackAmount, setCashbackAmount] = useState(0);
   const [comment, setComment] = useState("");
   const [commentDirty, setCommentDirty] = useState(false);
+  const [pickupTime, setPickupTime] = useState<string | null>(null);
 
   // Sync from the server once loaded — but never stomp text the customer is
   // actively typing (commentDirty), and only once per load, not on every
@@ -226,6 +229,15 @@ export const CartPage: FC = () => {
     }
   };
 
+  const slots = pickupSlots(shopDetail?.workingHours);
+  const slotDays = [0, 1]
+    .map((dayOffset) => ({
+      dayOffset,
+      slots: slots.filter((slot) => slot.dayOffset === dayOffset),
+    }))
+    .filter((day) => day.slots.length > 0);
+  const selectedSlotListed = slots.some((slot) => slot.value === pickupTime);
+
   const handleCommentBlur = () => {
     setCommentDirty(false);
     if (comment.trim() !== (cart?.comment ?? "")) {
@@ -258,8 +270,14 @@ export const CartPage: FC = () => {
       }
     }
 
+    if (pickupTime && !isPickupTimeStillValid(pickupTime)) {
+      setPickupTime(slots[0]?.value ?? null);
+      toast.error(t("cart.pickupTooSoon"));
+      return;
+    }
+
     checkout.mutate(
-      { useCashback, cashbackAmount: appliedCashback },
+      { useCashback, cashbackAmount: appliedCashback, pickupTime },
       {
         onSuccess: (data) => {
           // A host-platform order is paid in the host's native sheet, not by
@@ -592,6 +610,75 @@ export const CartPage: FC = () => {
                 )}
               </div>
             )}
+
+            <div className="mx-4 mt-3 bg-white rounded-2xl shadow-sm p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <Clock size={20} className="shrink-0 text-gray-400" />
+                <p className="font-medium text-gray-900">{t("cart.pickupLabel")}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-1 rounded-xl bg-gray-50 p-1">
+                <button
+                  type="button"
+                  onClick={() => setPickupTime(null)}
+                  className={cn(
+                    "rounded-lg py-2 text-sm font-medium transition-colors",
+                    pickupTime === null
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-500"
+                  )}
+                >
+                  {t("cart.pickupAsap")}
+                </button>
+                <button
+                  type="button"
+                  disabled={slots.length === 0}
+                  onClick={() => setPickupTime((current) => current ?? slots[0]?.value ?? null)}
+                  className={cn(
+                    "rounded-lg py-2 text-sm font-medium transition-colors disabled:opacity-50",
+                    pickupTime !== null
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-500"
+                  )}
+                >
+                  {t("cart.pickupLater")}
+                </button>
+              </div>
+              {slots.length === 0 && (
+                <p className="text-xs text-gray-500">{t("cart.pickupNoSlots")}</p>
+              )}
+              {pickupTime !== null && (
+                <>
+                  <label htmlFor="cart-pickup-time" className="sr-only">
+                    {t("cart.pickupLabel")}
+                  </label>
+                  <select
+                    id="cart-pickup-time"
+                    value={pickupTime}
+                    onChange={(e) => setPickupTime(e.target.value)}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-[var(--color-primary)]"
+                  >
+                    {!selectedSlotListed && (
+                      <option value={pickupTime} disabled>
+                        {t("cart.pickupChoose")}
+                      </option>
+                    )}
+                    {slotDays.map((day) => (
+                      <optgroup
+                        key={day.dayOffset}
+                        label={day.dayOffset === 0 ? t("cart.pickupToday") : t("cart.pickupTomorrow")}
+                      >
+                        {day.slots.map((slot) => (
+                          <option key={slot.value} value={slot.value}>
+                            {slot.time}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500">{t("cart.pickupHint")}</p>
+                </>
+              )}
+            </div>
 
             {/* Note to barista — one note for the whole cart. */}
             <div className="mx-4 mt-3">

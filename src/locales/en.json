@@ -101,7 +101,16 @@
     "clearCartTitle": "Clear your cart?",
     "clearCartDescription": "This removes everything in your cart. This action cannot be undone.",
     "goBack": "Go back",
-    "clearCartConfirm": "Clear cart"
+    "clearCartConfirm": "Clear cart",
+    "pickupLabel": "Pickup time",
+    "pickupAsap": "As soon as possible",
+    "pickupLater": "Schedule",
+    "pickupChoose": "Choose a time",
+    "pickupToday": "Today",
+    "pickupTomorrow": "Tomorrow",
+    "pickupHint": "We'll send the order to the cafe 10 minutes before this time.",
+    "pickupNoSlots": "The cafe has no open times in the next 24 hours.",
+    "pickupTooSoon": "That time is too soon. Please pick a later one."
   },
   "cartConflictDialog": {
     "title": "You have items from another cafe",
@@ -135,7 +144,8 @@
       "preparing": "Preparing",
       "ready": "Ready",
       "error": "Error",
-      "processing": "Processing"
+      "processing": "Processing",
+      "scheduled": "Scheduled"
     },
     "items": "Items",
     "noteToBarista": "Note to barista",
@@ -157,8 +167,17 @@
       "cancelFailed": "Failed to cancel order",
       "feedbackThanks": "Thanks for your feedback!",
       "feedbackFailed": "Failed to submit feedback",
-      "paymentWindowFailed": "Couldn't open the payment window. Please reopen Hoopla from the app and try again."
-    }
+      "paymentWindowFailed": "Couldn't open the payment window. Please reopen Hoopla from the app and try again.",
+      "forceSent": "The cafe got your order",
+      "forceNotScheduled": "The cafe already has this order",
+      "forceFailed": "Couldn't reach the cafe. Please try again."
+    },
+    "pickupTime": "Pickup time",
+    "pickupToday": "Today at {{time}}",
+    "pickupTomorrow": "Tomorrow at {{time}}",
+    "pickupOn": "{{date}} at {{time}}",
+    "onTheWay": "I'm on the way",
+    "onTheWayHint": "The cafe starts making your order right away. After that it can't be cancelled."
   },
   "orderStory": {
     "button": "Share to story",
@@ -189,7 +208,8 @@
       "pending": "Confirmed",
       "preparing": "Preparing",
       "ready": "Ready",
-      "inProgress": "In progress"
+      "inProgress": "In progress",
+      "scheduled": "Scheduled for {{time}}"
     }
   },
   "feedbackSheet": {

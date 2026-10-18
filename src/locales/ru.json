@@ -101,7 +101,16 @@
     "clearCartTitle": "Очистить корзину?",
     "clearCartDescription": "Это удалит всё содержимое корзины. Это действие нельзя отменить.",
     "goBack": "Назад",
-    "clearCartConfirm": "Очистить корзину"
+    "clearCartConfirm": "Очистить корзину",
+    "pickupLabel": "Время получения",
+    "pickupAsap": "Как можно скорее",
+    "pickupLater": "Ко времени",
+    "pickupChoose": "Выберите время",
+    "pickupToday": "Сегодня",
+    "pickupTomorrow": "Завтра",
+    "pickupHint": "Мы передадим заказ в кофейню за 10 минут до этого времени.",
+    "pickupNoSlots": "В ближайшие 24 часа кофейня не работает.",
+    "pickupTooSoon": "Это время слишком близко. Выберите более позднее."
   },
   "cartConflictDialog": {
     "title": "У вас есть товары из другой кофейни",
@@ -135,7 +144,8 @@
       "preparing": "Готовится",
       "ready": "Готов",
       "error": "Ошибка",
-      "processing": "Обрабатывается"
+      "processing": "Обрабатывается",
+      "scheduled": "Запланирован"
     },
     "items": "Позиции",
     "noteToBarista": "Комментарий бариста",
@@ -157,8 +167,17 @@
       "cancelFailed": "Не удалось отменить заказ",
       "feedbackThanks": "Спасибо за отзыв!",
       "feedbackFailed": "Не удалось отправить отзыв",
-      "paymentWindowFailed": "Не удалось открыть окно оплаты. Пожалуйста, откройте Hoopla заново и попробуйте снова."
-    }
+      "paymentWindowFailed": "Не удалось открыть окно оплаты. Пожалуйста, откройте Hoopla заново и попробуйте снова.",
+      "forceSent": "Кофейня получила заказ",
+      "forceNotScheduled": "Заказ уже в кофейне",
+      "forceFailed": "Не удалось связаться с кофейней. Попробуйте ещё раз."
+    },
+    "pickupTime": "Время получения",
+    "pickupToday": "Сегодня в {{time}}",
+    "pickupTomorrow": "Завтра в {{time}}",
+    "pickupOn": "{{date}} в {{time}}",
+    "onTheWay": "Я уже в пути",
+    "onTheWayHint": "Кофейня сразу начнёт готовить заказ. После этого его нельзя будет отменить."
   },
   "orderStory": {
     "button": "Поделиться в сторис",
@@ -189,7 +208,8 @@
       "pending": "Подтверждён",
       "preparing": "Готовится",
       "ready": "Готов",
-      "inProgress": "В процессе"
+      "inProgress": "В процессе",
+      "scheduled": "Ко времени {{time}}"
     }
   },
   "feedbackSheet": {

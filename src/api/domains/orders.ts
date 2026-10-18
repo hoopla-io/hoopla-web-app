@@ -43,10 +43,12 @@ export interface ActiveOrder {
   // accepts any future status the backend adds without widening to bare string.
   orderStatus:
     | "pending_payment"
+    | "scheduled"
     | "pending"
     | "preparing"
     | "ready"
     | (string & {});
+  pickupTime?: string | null;
   productPrice: number;
   purchasedAt: string;
   purchasedAtUnix: number;
@@ -115,6 +117,7 @@ export interface OrderDetail {
     | "completed"
     | "cancelled"
     | "pending_payment"
+    | "scheduled"
     | "paid"
     | "pending"
     | "preparing"
@@ -125,6 +128,7 @@ export interface OrderDetail {
   totalAmount: number;
   purchasedAt: string;
   purchasedAtUnix: number;
+  pickupTime?: string | null;
   items: OrderDetailItem[];
   cashback_used: number;
   cashback_earned: number;
@@ -278,7 +282,9 @@ export interface PaymentStatus {
 /** Statuses past which no further payment activity is expected — polling stops.
  * "pending_payment" is deliberately absent: that's the one we wait on. */
 const SETTLED_ORDER_STATUSES = [
+  "scheduled",
   "paid",
+  "dispatching",
   "pending",
   "preparing",
   "completed",
@@ -339,6 +345,13 @@ export const OrdersApi = {
 
   cancelOrder: async (orderId: number) => {
     const response = await httpClient.post(`/user/orders/${orderId}/cancel`);
+    return response.data;
+  },
+
+  forceOrder: async (orderId: number) => {
+    const response = await httpClient.post(`/user/orders/${orderId}/force`, undefined, {
+      timeout: 35000,
+    });
     return response.data;
   },
 

@@ -148,6 +148,19 @@ export function useCancelOrder() {
   });
 }
 
+export function useForceOrder() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (orderId: number) => OrdersApi.forceOrder(orderId),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["order-detail"] });
+      queryClient.invalidateQueries({ queryKey: ["active-orders"] });
+    },
+  });
+}
+
 export function useValidateOrder() {
   return useMutation({
     mutationFn: ({ drinkId, shopId }: { drinkId: number; shopId: number }) =>

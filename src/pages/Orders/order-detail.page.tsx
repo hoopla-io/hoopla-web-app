@@ -12,6 +12,8 @@ import {
   Loader2,
   ChevronDown,
   Instagram,
+  CalendarClock,
+  Navigation,
 } from "lucide-react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
@@ -20,6 +22,7 @@ import { useTranslation } from "react-i18next";
 import {
   useOrderDetail,
   useCancelOrder,
+  useForceOrder,
   useLeaveFeedback,
 } from "@/api/hooks/orders.hook";
 import { Button } from "@/components/ui/button";
@@ -39,6 +42,7 @@ import { beginBridgePayment } from "@/pages/PaymentWaiting/payment-waiting.page"
 import { LoadingScreen } from "@/components/func/Loading";
 import { OrderStorySheet } from "@/components/func/OrderStorySheet";
 import { formatMoney, cn, getDateFnsLocale } from "@/helpers/utils";
+import { formatPickupClock, formatPickupDate, pickupDayOffset } from "@/helpers/pickup-time";
 
 const statusConfig: Record<string, { labelKey: string; icon: typeof CheckCircle; color: string; bg: string }> = {
   completed: {
@@ -58,6 +62,18 @@ const statusConfig: Record<string, { labelKey: string; icon: typeof CheckCircle;
     icon: Clock,
     color: "text-yellow-600",
     bg: "bg-yellow-50",
+  },
+  scheduled: {
+    labelKey: "orderDetail.status.scheduled",
+    icon: CalendarClock,
+    color: "text-indigo-600",
+    bg: "bg-indigo-50",
+  },
+  dispatching: {
+    labelKey: "orderDetail.status.preparing",
+    icon: Coffee,
+    color: "text-blue-600",
+    bg: "bg-blue-50",
   },
   pending: {
     labelKey: "orderDetail.status.preparing",
@@ -98,6 +114,7 @@ export const OrderDetailPage: FC = () => {
 
   const { order, isLoading } = useOrderDetail(Number(orderId));
   const cancelOrder = useCancelOrder();
+  const forceOrder = useForceOrder();
 
   const leaveFeedback = useLeaveFeedback();
   const [pendingRatings, setPendingRatings] = useState<Record<number, number>>({});
@@ -120,6 +137,20 @@ export const OrderDetailPage: FC = () => {
     cancelOrder.mutate(Number(orderId), {
       onSuccess: () => toast.success(t("orderDetail.toast.orderCancelled")),
       onError: () => toast.error(t("orderDetail.toast.cancelFailed")),
+    });
+  };
+
+  const handleForceOrder = () => {
+    forceOrder.mutate(Number(orderId), {
+      onSuccess: () => toast.success(t("orderDetail.toast.forceSent")),
+      onError: (err: any) => {
+        const status = err?.status ?? err?.response?.status;
+        toast.error(
+          status === 409
+            ? t("orderDetail.toast.forceNotScheduled")
+            : t("orderDetail.toast.forceFailed")
+        );
+      },
     });
   };
 
@@ -165,6 +196,21 @@ export const OrderDetailPage: FC = () => {
   const bridgeOrderId = order.bridge_order_id;
   const showCompletePayment =
     order.orderStatus === "pending_payment" && (!!checkoutUrl || !!bridgeOrderId);
+  const isScheduled = order.orderStatus === "scheduled";
+  const canCancel = order.orderStatus === "pending_payment" || isScheduled;
+  const pickupLabel = order.pickupTime
+    ? t(
+        pickupDayOffset(order.pickupTime) === 0
+          ? "orderDetail.pickupToday"
+          : pickupDayOffset(order.pickupTime) === 1
+            ? "orderDetail.pickupTomorrow"
+            : "orderDetail.pickupOn",
+        {
+          time: formatPickupClock(order.pickupTime),
+          date: formatPickupDate(order.pickupTime),
+        }
+      )
+    : null;
   const canShareStory =
     order.items.length > 0 &&
     !["pending_payment", "cancelled", "error"].includes(order.orderStatus);
@@ -212,6 +258,16 @@ export const OrderDetailPage: FC = () => {
                 </span>
               </div>
             </div>
+
+            {pickupLabel && (
+              <div className="flex items-center gap-3 border-t border-gray-100 p-4">
+                <CalendarClock size={18} className="shrink-0 text-[var(--color-primary)]" />
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-500">{t("orderDetail.pickupTime")}</p>
+                  <p className="text-sm font-semibold text-gray-900">{pickupLabel}</p>
+                </div>
+              </div>
+            )}
 
             {/* Items */}
             {order.items && order.items.length > 0 && (
@@ -383,14 +439,37 @@ export const OrderDetailPage: FC = () => {
             </button>
           )}
 
+          {isScheduled && (
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={handleForceOrder}
+                disabled={forceOrder.isPending}
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] text-sm font-semibold text-white shadow-sm transition-all active:scale-[0.99] active:bg-[var(--color-primary-dark)] disabled:opacity-60"
+              >
+                {forceOrder.isPending ? (
+                  <Loader2 size={18} className="animate-spin" />
+                ) : (
+                  <>
+                    <Navigation size={18} />
+                    {t("orderDetail.onTheWay")}
+                  </>
+                )}
+              </button>
+              <p className="px-2 text-center text-xs text-gray-500">
+                {t("orderDetail.onTheWayHint")}
+              </p>
+            </div>
+          )}
+
           {/* Cancel order */}
-          {order.orderStatus === "pending_payment" && (
+          {canCancel && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
                   variant="destructive"
                   className="w-full h-11 rounded-xl"
-                  disabled={cancelOrder.isPending}
+                  disabled={cancelOrder.isPending || forceOrder.isPending}
                 >
                   {cancelOrder.isPending ? (
                     <Loader2 className="w-5 h-5 animate-spin" />

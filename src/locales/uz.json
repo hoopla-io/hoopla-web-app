@@ -101,7 +101,16 @@
     "clearCartTitle": "Savatni tozalaysizmi?",
     "clearCartDescription": "Bu savatdagi barcha mahsulotlarni o'chiradi. Bu amalni orqaga qaytarib bo'lmaydi.",
     "goBack": "Orqaga",
-    "clearCartConfirm": "Savatni tozalash"
+    "clearCartConfirm": "Savatni tozalash",
+    "pickupLabel": "Olib ketish vaqti",
+    "pickupAsap": "Imkon qadar tez",
+    "pickupLater": "Vaqtga",
+    "pickupChoose": "Vaqtni tanlang",
+    "pickupToday": "Bugun",
+    "pickupTomorrow": "Ertaga",
+    "pickupHint": "Buyurtmani shu vaqtdan 10 daqiqa oldin kofexonaga yuboramiz.",
+    "pickupNoSlots": "Keyingi 24 soatda kofexona ishlamaydi.",
+    "pickupTooSoon": "Bu vaqt juda yaqin. Kechroq vaqtni tanlang."
   },
   "cartConflictDialog": {
     "title": "Boshqa kofeynadan mahsulotlaringiz bor",
@@ -135,7 +144,8 @@
       "preparing": "Tayyorlanmoqda",
       "ready": "Tayyor",
       "error": "Xatolik",
-      "processing": "Qayta ishlanmoqda"
+      "processing": "Qayta ishlanmoqda",
+      "scheduled": "Rejalashtirilgan"
     },
     "items": "Mahsulotlar",
     "noteToBarista": "Baristaga izoh",
@@ -157,8 +167,17 @@
       "cancelFailed": "Buyurtmani bekor qilib bo'lmadi",
       "feedbackThanks": "Fikringiz uchun rahmat!",
       "feedbackFailed": "Fikr-mulohazani yuborib bo'lmadi",
-      "paymentWindowFailed": "To'lov oynasini ochib bo'lmadi. Iltimos, Hoopla-ni ilovadan qaytadan oching va qayta urinib ko'ring."
-    }
+      "paymentWindowFailed": "To'lov oynasini ochib bo'lmadi. Iltimos, Hoopla-ni ilovadan qaytadan oching va qayta urinib ko'ring.",
+      "forceSent": "Kofexona buyurtmani qabul qildi",
+      "forceNotScheduled": "Buyurtma allaqachon kofexonada",
+      "forceFailed": "Kofexona bilan bog'lanib bo'lmadi. Qayta urinib ko'ring."
+    },
+    "pickupTime": "Olib ketish vaqti",
+    "pickupToday": "Bugun {{time}} da",
+    "pickupTomorrow": "Ertaga {{time}} da",
+    "pickupOn": "{{date}}, {{time}}",
+    "onTheWay": "Yo'ldaman",
+    "onTheWayHint": "Kofexona buyurtmani darhol tayyorlashni boshlaydi. Shundan keyin uni bekor qilib bo'lmaydi."
   },
   "orderStory": {
     "button": "Storisda ulashish",
@@ -189,7 +208,8 @@
       "pending": "Tasdiqlangan",
       "preparing": "Tayyorlanmoqda",
       "ready": "Tayyor",
-      "inProgress": "Jarayonda"
+      "inProgress": "Jarayonda",
+      "scheduled": "{{time}} ga rejalashtirilgan"
     }
   },
   "feedbackSheet": {

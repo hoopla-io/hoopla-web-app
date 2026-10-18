@@ -6,10 +6,12 @@ import { useTranslation } from "react-i18next";
 
 import type { ActiveOrder } from "@/api/domains/orders";
 import { getDateFnsLocale } from "@/helpers/utils";
+import { formatPickupClock } from "@/helpers/pickup-time";
 
 /** Status → user-facing label key shown in the pill. */
 const statusLabelKeys: Record<string, string> = {
   pending_payment: "currentOrderCard.status.pendingPayment",
+  dispatching: "currentOrderCard.status.pending",
   pending: "currentOrderCard.status.pending",
   preparing: "currentOrderCard.status.preparing",
   ready: "currentOrderCard.status.ready",
@@ -28,9 +30,10 @@ interface CurrentOrderCardProps {
 export const CurrentOrderCard: FC<CurrentOrderCardProps> = ({ order }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const statusLabel = t(
-    statusLabelKeys[order.orderStatus] ?? "currentOrderCard.status.inProgress"
-  );
+  const statusLabel =
+    order.orderStatus === "scheduled" && order.pickupTime
+      ? t("currentOrderCard.status.scheduled", { time: formatPickupClock(order.pickupTime) })
+      : t(statusLabelKeys[order.orderStatus] ?? "currentOrderCard.status.inProgress");
   const timeAgo = relativeTime(order.purchasedAt);
 
   return (

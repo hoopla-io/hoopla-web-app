@@ -52,6 +52,7 @@ export interface AddCartItemRequest {
 export interface CartCheckoutRequest {
   useCashback?: boolean;
   cashbackAmount?: number;
+  pickupTime?: string | null;
 }
 
 /** Same response shape as create-order — cart-checkout reuses it. */
@@ -124,6 +125,7 @@ export const CartApi = {
         {
           use_cashback: data.useCashback ?? false,
           cashback_amount: data.cashbackAmount ?? 0,
+          pickup_time: data.pickupTime ?? null,
         },
         { timeout: 35000 }
       );
