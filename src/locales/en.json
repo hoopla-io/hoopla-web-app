@@ -108,7 +108,7 @@
     "pickupChoose": "Choose a time",
     "pickupToday": "Today",
     "pickupTomorrow": "Tomorrow",
-    "pickupHint": "We'll send the order to the cafe 10 minutes before this time.",
+    "pickupHint": "We'll send the order to the cafe 5 minutes before this time.",
     "pickupNoSlots": "The cafe has no open times in the next 24 hours.",
     "pickupTooSoon": "That time is too soon. Please pick a later one."
   },

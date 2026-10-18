@@ -108,7 +108,7 @@
     "pickupChoose": "Vaqtni tanlang",
     "pickupToday": "Bugun",
     "pickupTomorrow": "Ertaga",
-    "pickupHint": "Buyurtmani shu vaqtdan 10 daqiqa oldin kofexonaga yuboramiz.",
+    "pickupHint": "Buyurtmani shu vaqtdan 5 daqiqa oldin kofexonaga yuboramiz.",
     "pickupNoSlots": "Keyingi 24 soatda kofexona ishlamaydi.",
     "pickupTooSoon": "Bu vaqt juda yaqin. Kechroq vaqtni tanlang."
   },
