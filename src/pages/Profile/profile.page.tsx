@@ -373,6 +373,23 @@ export const ProfilePage: FC = () => {
             </Button>
           )}
 
+          {/* Rahmat's card form opens outside the app, which the Anor host
+              WebView can't do. */}
+          {!isEightBuild() && (
+            <Link to="/cards">
+              <Button
+                variant="outline"
+                className="w-full h-12 justify-between rounded-2xl bg-white border-none shadow-sm text-gray-700 hover:bg-gray-50 mt-2"
+              >
+                <span className="flex items-center gap-3">
+                  <CreditCard size={18} className="text-gray-400" />
+                  {t("profile.cards")}
+                </span>
+                <ChevronRight size={18} className="text-gray-400" />
+              </Button>
+            </Link>
+          )}
+
           <Link to="/devices">
             <Button
               variant="outline"
