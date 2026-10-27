@@ -258,6 +258,14 @@
     "emptyTitle": "Kofeynalar topilmadi",
     "emptyDescription": "Boshqa qidiruv so'zini sinab ko'ring"
   },
+  "usualDrinks": {
+    "title": "Odatdagi buyurtmangiz",
+    "add": "Savatga qo'shish",
+    "shopClosed": "Kofeyna yopiq",
+    "productStopped": "Hozir mavjud emas",
+    "modifierStopped": "Ba'zi qo'shimchalar mavjud emas",
+    "unavailable": "Hozir mavjud emas"
+  },
   "map": {
     "findingLocationHeader": "Joylashuvingiz aniqlanmoqda",
     "loadingMapDescription": "Xarita yuklanmoqda...",

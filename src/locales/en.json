@@ -258,6 +258,14 @@
     "emptyTitle": "No cafes found",
     "emptyDescription": "Try a different search term"
   },
+  "usualDrinks": {
+    "title": "Your usual",
+    "add": "Add to cart",
+    "shopClosed": "Cafe is closed",
+    "productStopped": "Not available now",
+    "modifierStopped": "Some add-ons unavailable",
+    "unavailable": "Not available now"
+  },
   "map": {
     "findingLocationHeader": "Finding your location",
     "loadingMapDescription": "Loading the map...",

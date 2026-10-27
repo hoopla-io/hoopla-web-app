@@ -258,6 +258,14 @@
     "emptyTitle": "Кофейни не найдены",
     "emptyDescription": "Попробуйте изменить запрос"
   },
+  "usualDrinks": {
+    "title": "Ваше обычное",
+    "add": "Добавить в корзину",
+    "shopClosed": "Кофейня закрыта",
+    "productStopped": "Сейчас недоступно",
+    "modifierStopped": "Часть добавок недоступна",
+    "unavailable": "Сейчас недоступно"
+  },
   "map": {
     "findingLocationHeader": "Определяем ваше местоположение",
     "loadingMapDescription": "Загружаем карту...",

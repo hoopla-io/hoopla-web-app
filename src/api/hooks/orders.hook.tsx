@@ -4,6 +4,7 @@ import {
   OrdersApi,
   type Order,
   type ActiveOrder,
+  type UsualDrink,
   type OrderDetail,
   type PendingFeedbackOrder,
   type CreateOrderRequest,
@@ -73,6 +74,23 @@ export function useActiveOrders() {
   );
 
   return { activeOrders: data ?? [], isLoading, isError };
+}
+
+export function useUsualDrinks() {
+  const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
+
+  const { data, isLoading } = useQuery<UsualDrink[]>(
+    {
+      queryKey: ["usual-drinks"],
+      queryFn: () => OrdersApi.getUsual(),
+      enabled: isAuthenticated,
+      staleTime: 60000,
+    },
+    queryClient
+  );
+
+  return { usualDrinks: data ?? [], isLoading };
 }
 
 export function useOrderDetail(orderId: number) {

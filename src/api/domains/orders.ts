@@ -56,6 +56,32 @@ export interface ActiveOrder {
   hasFeedback: boolean;
 }
 
+export interface UsualDrinkModifier {
+  id: number;
+  name: string;
+  price: number;
+  imageUrl: string | null;
+}
+
+/** A drink the customer keeps ordering, as returned by GET /user/orders/usual. */
+export interface UsualDrink {
+  shopId: number;
+  shopName: string;
+  shopIconUrl: string | null;
+  productId: number;
+  productName: string;
+  productImageUrl: string | null;
+  modifiers: UsualDrinkModifier[];
+  quantity: number;
+  price: number;
+  totalAmount: number;
+  timesOrdered: number;
+  lastOrderedAt: string | null;
+  lastOrderedAtUnix: number;
+  available: boolean;
+  unavailableReason: "shop_closed" | "product_stopped" | "modifier_stopped" | (string & {}) | null;
+}
+
 export interface PendingFeedbackDrink {
   orderItemId: number;
   drinkId: number;
@@ -326,6 +352,11 @@ export const OrdersApi = {
   getActive: async () => {
     const response: any = await httpClient.get("/user/orders/active");
     return (response.data ?? []).map(adaptOrderListItem) as ActiveOrder[];
+  },
+
+  getUsual: async () => {
+    const response: any = await httpClient.get("/user/orders/usual");
+    return (response.data ?? []) as UsualDrink[];
   },
 
   getDetail: async (orderId: number) => {

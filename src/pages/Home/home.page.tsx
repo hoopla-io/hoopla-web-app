@@ -7,9 +7,10 @@ import { useShops } from "@/api/hooks/shops.hook";
 import { useCategories } from "@/api/hooks/categories.hook";
 import { useMainBanners } from "@/api/hooks/banners.hook";
 import { useStoryList } from "@/api/hooks/stories.hook";
-import { useActiveOrders } from "@/api/hooks/orders.hook";
+import { useActiveOrders, useUsualDrinks } from "@/api/hooks/orders.hook";
 import ShopCard from "@/components/func/ShopCard";
 import { CategoryChips } from "@/components/func/CategoryChips";
+import { UsualDrinks } from "@/components/func/UsualDrinks";
 import { CurrentOrdersCarousel } from "@/components/func/CurrentOrdersCarousel";
 import { BannerCarousel } from "@/components/func/BannerCarousel";
 import { StoryCircles } from "@/components/func/StoryCircles";
@@ -33,6 +34,7 @@ export const HomePage: FC = () => {
   const { banners, isLoading: bannersLoading } = useMainBanners();
   const { stories, isLoading: storiesLoading } = useStoryList();
   const { activeOrders } = useActiveOrders();
+  const { usualDrinks } = useUsualDrinks();
   const observerRef = useRef<HTMLDivElement>(null);
 
   const { shops, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
@@ -117,6 +119,9 @@ export const HomePage: FC = () => {
               onSelect={setSelectedCategoryId}
               isLoading={categoriesLoading}
             />
+
+            {/* Usual drinks */}
+            <UsualDrinks drinks={usualDrinks} />
           </>
         )}
 
