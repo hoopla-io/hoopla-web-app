@@ -27,7 +27,15 @@ import {
   useGetMe,
   useLogOut,
 } from "@/api/hooks/profile.hook";
-import { usePaymentSystems } from "@/api/hooks/payments.hook";
+import {
+  useConfirmRahmatTopUp,
+  usePaymentMethods,
+  usePaymentSystems,
+  useRahmatTopUp,
+  type PaymentMethod,
+} from "@/api/hooks/payments.hook";
+import { cardLast4, paymentMethodKey } from "@/components/func/PaymentMethodPicker";
+import { PaymentOtpDrawer } from "@/components/func/PaymentOtpDrawer";
 import { useRedeemGiftCard } from "@/api/hooks/gift-cards.hook";
 import { useAnimatedNumber } from "@/hooks/useAnimatedNumber";
 import { useAuth } from "@/context/auth.context";
@@ -117,6 +125,11 @@ export const ProfilePage: FC = () => {
   // Tracks the one-shot "refetch balance when the user returns" listener so it
   // never stacks across top-ups and is cleaned up if the page unmounts first.
   const topUpReturnRef = useRef<(() => void) | null>(null);
+  const { methods: topUpMethods } = usePaymentMethods("top_up", topUpOpen && !isEightBuild());
+  const rahmatTopUp = useRahmatTopUp();
+  const confirmTopUp = useConfirmRahmatTopUp();
+  const [topUpOtp, setTopUpOtp] = useState<{ paymentId: string; phone?: string } | null>(null);
+  const [topUpOtpError, setTopUpOtpError] = useState<string | null>(null);
 
   useEffect(
     () => () => {
@@ -197,28 +210,106 @@ export const ProfilePage: FC = () => {
         window.open(result.checkoutUrl, "_blank");
         setTopUpOpen(false);
         setTopUpAmount("");
-        // Payment happens in another tab/app. When the user comes back, pull the
-        // fresh balance once so the count-up animation reflects the top-up.
-        // Replace any prior pending listener so they never stack.
-        if (topUpReturnRef.current) {
-          document.removeEventListener(
-            "visibilitychange",
-            topUpReturnRef.current
-          );
-        }
-        const onVisible = () => {
-          if (document.visibilityState === "visible") {
-            queryClient.invalidateQueries({ queryKey: ["get-me"] });
-            document.removeEventListener("visibilitychange", onVisible);
-            topUpReturnRef.current = null;
-          }
-        };
-        topUpReturnRef.current = onVisible;
-        document.addEventListener("visibilitychange", onVisible);
+        refreshBalanceOnReturn();
       }
     } catch {
       toast.error(t("profile.topUpFailed"));
     }
+  };
+
+  // Payment happens in another tab/app. When the user comes back, pull the
+  // fresh balance once so the count-up animation reflects the top-up.
+  // Replace any prior pending listener so they never stack.
+  const refreshBalanceOnReturn = () => {
+    if (topUpReturnRef.current) {
+      document.removeEventListener("visibilitychange", topUpReturnRef.current);
+    }
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        queryClient.invalidateQueries({ queryKey: ["get-me"] });
+        document.removeEventListener("visibilitychange", onVisible);
+        topUpReturnRef.current = null;
+      }
+    };
+    topUpReturnRef.current = onVisible;
+    document.addEventListener("visibilitychange", onVisible);
+  };
+
+  const finishTopUp = (status: string) => {
+    setTopUpOpen(false);
+    setTopUpAmount("");
+    if (status === "success") toast.success(t("payment.topUpSuccess"));
+    else toast(t("payment.topUpPending"));
+  };
+
+  const handleRahmatTopUp = (method: PaymentMethod) => {
+    const amount = Number(topUpAmount);
+    if (!amount || amount < 1000) {
+      toast.error(t("profile.minTopUpAmount", { amount: formatBalance(1000) }));
+      return;
+    }
+
+    const tg = window.Telegram?.WebApp;
+    const insideTelegram = !!tg?.initData && !!tg.openLink;
+    // Open the tab inside the click so mobile browsers don't block it as a
+    // popup; the app link arrives after the request resolves.
+    const tab = method.type === "app" && !insideTelegram ? window.open("", "_blank") : null;
+
+    rahmatTopUp.mutate(
+      method.type === "card"
+        ? { amount, cardId: method.id! }
+        : { amount, paymentMethod: method.method! },
+      {
+        onSuccess: (result) => {
+          if (result.checkoutUrl) {
+            if (insideTelegram) tg!.openLink!(result.checkoutUrl);
+            else if (tab) tab.location.href = result.checkoutUrl;
+            else window.open(result.checkoutUrl, "_blank");
+            setTopUpOpen(false);
+            setTopUpAmount("");
+            refreshBalanceOnReturn();
+            return;
+          }
+
+          if (result.otpRequired) {
+            setTopUpOpen(false);
+            setTopUpOtpError(null);
+            setTopUpOtp({ paymentId: result.paymentId, phone: result.phone });
+            return;
+          }
+
+          finishTopUp(result.status);
+        },
+        onError: (err: any) => {
+          tab?.close();
+          toast.error(err?.message ?? t("profile.topUpFailed"));
+        },
+      }
+    );
+  };
+
+  const handleConfirmTopUp = (otp: string) => {
+    if (!topUpOtp) return;
+
+    setTopUpOtpError(null);
+    confirmTopUp.mutate(
+      { paymentId: topUpOtp.paymentId, otp },
+      {
+        onSuccess: (result) => {
+          setTopUpOtp(null);
+          finishTopUp(result.status);
+        },
+        onError: (err: any) => {
+          if (err?.status === 422) {
+            setTopUpOtpError(t("payment.wrongCode"));
+            return;
+          }
+
+          setTopUpOtp(null);
+          toast.error(err?.message ?? t("payment.declined"));
+        },
+      }
+    );
   };
 
   if (isLoading || !userInfo) {
@@ -558,6 +649,35 @@ export const ProfilePage: FC = () => {
                   {t("profile.paymentMethod")}
                 </label>
                 <div className="space-y-2 mt-2">
+                  {topUpMethods.map((method) => (
+                    <button
+                      key={paymentMethodKey(method)}
+                      onClick={() => handleRahmatTopUp(method)}
+                      disabled={rahmatTopUp.isPending}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    >
+                      {method.logoUrl ? (
+                        <img
+                          src={method.logoUrl}
+                          alt={method.name}
+                          className="w-10 h-10 rounded-lg object-contain"
+                        />
+                      ) : (
+                        <div className="flex w-10 h-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-[10px] font-semibold uppercase text-gray-600">
+                          {method.type === "card" ? method.ps : method.name.slice(0, 4)}
+                        </div>
+                      )}
+                      <span className="text-sm font-medium text-gray-900">
+                        {method.type === "card"
+                          ? t("payment.savedCard", { last4: cardLast4(method.cardPan) })
+                          : t("profile.payWith", { name: method.name })}
+                      </span>
+                      <ChevronRight
+                        size={16}
+                        className="text-gray-400 ml-auto"
+                      />
+                    </button>
+                  ))}
                   {paymentSystems.map((ps) => (
                     <button
                       key={ps.id}
@@ -584,6 +704,15 @@ export const ProfilePage: FC = () => {
             </div>
           </DrawerContent>
         </Drawer>
+
+        <PaymentOtpDrawer
+          open={topUpOtp !== null}
+          onOpenChange={(open) => !open && setTopUpOtp(null)}
+          phone={topUpOtp?.phone}
+          pending={confirmTopUp.isPending}
+          error={topUpOtpError}
+          onSubmit={handleConfirmTopUp}
+        />
 
         {/* Gift Card Drawer */}
         <Drawer open={giftOpen} onOpenChange={handleGiftOpenChange}>

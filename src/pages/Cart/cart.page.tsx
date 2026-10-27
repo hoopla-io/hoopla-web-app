@@ -20,7 +20,15 @@ import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 
 import { Page } from "@/components/Page";
-import { startEightPayment } from "@/helpers/eight";
+import { isEightBuild, startEightPayment } from "@/helpers/eight";
+import {
+  PaymentMethodPicker,
+  openPaymentLink,
+  paymentMethodKey,
+} from "@/components/func/PaymentMethodPicker";
+import { PaymentOtpDrawer } from "@/components/func/PaymentOtpDrawer";
+import { usePaymentMethods } from "@/api/hooks/payments.hook";
+import { useConfirmOrderPayment } from "@/api/hooks/orders.hook";
 import { beginBridgePayment } from "@/pages/PaymentWaiting/payment-waiting.page";
 import { LoadingScreen } from "@/components/func/Loading";
 import { OrdersApi } from "@/api/domains/orders";
@@ -117,6 +125,21 @@ export const CartPage: FC = () => {
   const [comment, setComment] = useState("");
   const [commentDirty, setCommentDirty] = useState(false);
   const [pickupTime, setPickupTime] = useState<string | null>(null);
+  // The Anor build pays in the host's own sheet, so it never offers Rahmat methods.
+  const { methods } = usePaymentMethods("order", !isEightBuild());
+  const [paymentKey, setPaymentKey] = useState<string | null>(null);
+  const [otpOrder, setOtpOrder] = useState<{ orderId: number; phone?: string } | null>(null);
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const confirmPayment = useConfirmOrderPayment();
+
+  useEffect(() => {
+    if (methods.length === 0) return;
+    setPaymentKey((current) =>
+      current && methods.some((method) => paymentMethodKey(method) === current)
+        ? current
+        : paymentMethodKey(methods[0])
+    );
+  }, [methods]);
 
   // Sync from the server once loaded — but never stomp text the customer is
   // actively typing (commentDirty), and only once per load, not on every
@@ -276,8 +299,16 @@ export const CartPage: FC = () => {
       return;
     }
 
+    const method = methods.find((item) => paymentMethodKey(item) === paymentKey);
+
     checkout.mutate(
-      { useCashback, cashbackAmount: appliedCashback, pickupTime },
+      {
+        useCashback,
+        cashbackAmount: appliedCashback,
+        pickupTime,
+        cardId: method?.type === "card" ? method.id : undefined,
+        paymentMethod: method?.type === "app" ? method.method : undefined,
+      },
       {
         onSuccess: (data) => {
           // A host-platform order is paid in the host's native sheet, not by
@@ -289,6 +320,24 @@ export const CartPage: FC = () => {
               // the waiting screen regardless — it can re-arm the sheet.
               navigate(`/orders/${data.order_id}/awaiting-payment`, { replace: true });
             }
+            return;
+          }
+
+          if (data.payment_id && data.otp_required) {
+            setOtpError(null);
+            setOtpOrder({ orderId: data.order_id, phone: data.phone });
+            return;
+          }
+
+          if (data.payment_id && data.checkout_url) {
+            if (openPaymentLink(data.checkout_url)) {
+              navigate(`/orders/${data.order_id}/awaiting-payment`, { replace: true });
+            }
+            return;
+          }
+
+          if (data.payment_id && data.payment_status !== "success") {
+            navigate(`/orders/${data.order_id}/awaiting-payment`, { replace: true });
             return;
           }
 
@@ -329,6 +378,43 @@ export const CartPage: FC = () => {
         },
       }
     );
+  };
+
+  const handleConfirmPayment = (otp: string) => {
+    if (!otpOrder) return;
+
+    setOtpError(null);
+    confirmPayment.mutate(
+      { orderId: otpOrder.orderId, otp },
+      {
+        onSuccess: () => {
+          setOtpOrder(null);
+          toast.success(t("cart.orderPlaced"));
+          navigate(`/orders/${otpOrder.orderId}`, { replace: true });
+        },
+        onError: (err: any) => {
+          const message = err?.message ?? err?.response?.data?.message ?? t("payment.declined");
+          // A wrong code can be typed again; any other refusal cancels the order.
+          if (err?.status === 422) {
+            setOtpError(t("payment.wrongCode"));
+            return;
+          }
+
+          setOtpOrder(null);
+          toast.error(message);
+        },
+      }
+    );
+  };
+
+  const handleOtpOpenChange = (open: boolean) => {
+    if (open || !otpOrder) return;
+
+    // The order waits for the code until it expires; the customer can still
+    // cancel it from its page.
+    const orderId = otpOrder.orderId;
+    setOtpOrder(null);
+    navigate(`/orders/${orderId}`, { replace: true });
   };
 
   // Disables checkout while any cart-mutating request is in flight, so the
@@ -680,6 +766,14 @@ export const CartPage: FC = () => {
               )}
             </div>
 
+            {!isEightBuild() && methods.length > 0 && afterPromo - appliedCashback > 0 && (
+              <PaymentMethodPicker
+                methods={methods}
+                selected={paymentKey}
+                onSelect={setPaymentKey}
+              />
+            )}
+
             {/* Note to barista — one note for the whole cart. */}
             <div className="mx-4 mt-3">
               <label htmlFor="cart-comment" className="sr-only">
@@ -772,6 +866,15 @@ export const CartPage: FC = () => {
           </div>
         </div>
       )}
+
+      <PaymentOtpDrawer
+        open={otpOrder !== null}
+        onOpenChange={handleOtpOpenChange}
+        phone={otpOrder?.phone}
+        pending={confirmPayment.isPending}
+        error={otpError}
+        onSubmit={handleConfirmPayment}
+      />
 
       {/* Clear-cart confirmation */}
       <AlertDialog open={confirmClear} onOpenChange={setConfirmClear}>
