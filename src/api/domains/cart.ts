@@ -53,6 +53,10 @@ export interface CartCheckoutRequest {
   useCashback?: boolean;
   cashbackAmount?: number;
   pickupTime?: string | null;
+  /** Saved card to charge; omit both this and paymentMethod for the Rahmat page. */
+  cardId?: number;
+  /** Payment app code from GET /user/pay/methods, e.g. "uzum". */
+  paymentMethod?: string;
 }
 
 /** Same response shape as create-order — cart-checkout reuses it. */
@@ -126,6 +130,8 @@ export const CartApi = {
           use_cashback: data.useCashback ?? false,
           cashback_amount: data.cashbackAmount ?? 0,
           pickup_time: data.pickupTime ?? null,
+          card_id: data.cardId,
+          payment_method: data.paymentMethod,
         },
         { timeout: 35000 }
       );
@@ -134,7 +140,7 @@ export const CartApi = {
       // Same as OrdersApi.createOrder: a 402 with payment data is a success,
       // not a failure — the customer still needs to complete payment.
       const errorData = error?.data ?? error?.response?.data?.data;
-      if (errorData?.checkout_url || errorData?.bridge_order_id) {
+      if (errorData?.checkout_url || errorData?.bridge_order_id || errorData?.payment_id) {
         return errorData as CartCheckoutResponse;
       }
       throw error;

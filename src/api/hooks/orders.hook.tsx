@@ -186,3 +186,17 @@ export function useCreateOrder() {
     },
   });
 }
+
+export function useConfirmOrderPayment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ orderId, otp }: { orderId: number; otp: string }) =>
+      OrdersApi.confirmPayment(orderId, otp),
+    onSettled: (_data, _error, { orderId }) => {
+      queryClient.invalidateQueries({ queryKey: ["order-detail", orderId] });
+      queryClient.invalidateQueries({ queryKey: ["active-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+    },
+  });
+}

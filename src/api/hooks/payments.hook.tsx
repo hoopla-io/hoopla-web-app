@@ -1,5 +1,8 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import PaymentApi from "@/api/domains/payment";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import PaymentApi, {
+  type PaymentMethod,
+  type RahmatTopUpRequest,
+} from "@/api/domains/payment";
 import { useAuth } from "@/context/auth.context";
 import { AuthApi } from "../domains/auth";
 
@@ -89,3 +92,48 @@ export function useQr() {
     isErrorOrders,
   };
 }
+
+/** Saved cards and payment apps for a cart checkout or a wallet top-up. */
+export function usePaymentMethods(purpose: "order" | "top_up", enabled = true) {
+  const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
+
+  const { data, isLoading } = useQuery<PaymentMethod[]>(
+    {
+      queryKey: ["payment-methods", purpose],
+      queryFn: () => PaymentApi.getMethods(purpose),
+      staleTime: 60000,
+      enabled: isAuthenticated && enabled,
+    },
+    queryClient
+  );
+
+  return { methods: data ?? [], isLoading };
+}
+
+export function useRahmatTopUp() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: RahmatTopUpRequest) => PaymentApi.rahmatTopUp(data),
+    onSuccess: (result) => {
+      if (result.status === "success") {
+        queryClient.invalidateQueries({ queryKey: ["get-me"] });
+      }
+    },
+  });
+}
+
+export function useConfirmRahmatTopUp() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ paymentId, otp }: { paymentId: string; otp: string }) =>
+      PaymentApi.confirmRahmatTopUp(paymentId, otp),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["get-me"] });
+    },
+  });
+}
+
+export type { PaymentMethod };

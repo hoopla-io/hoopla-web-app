@@ -470,5 +470,21 @@
     "confirmingTitle": "To'lovingiz tasdiqlanmoqda",
     "confirmingDescription": "Ochilgan oynada to'lovni yakunlang. Bu avtomatik yangilanadi.",
     "bridgeUnavailable": "To'lov oynasini ochib bo'lmadi. Iltimos, Hoopla'ni ilova orqali qaytadan oching."
+  },
+  "payment": {
+    "methodTitle": "To'lov usuli",
+    "savedCard": "Karta •{{last4}}",
+    "otherCard": "Boshqa karta",
+    "otherCardHint": "Rahmat sahifasida to'lash",
+    "orPayWithApp": "yoki ilova orqali to'lang",
+    "otpTitle": "To'lovni tasdiqlash",
+    "otpDescription": "{{phone}} raqamiga yuborilgan SMS kodni kiriting",
+    "otpDescriptionNoPhone": "Bank yuborgan SMS kodni kiriting",
+    "otpPlaceholder": "SMS kod",
+    "confirm": "Tasdiqlash",
+    "wrongCode": "Kod noto'g'ri. Qaytadan urinib ko'ring.",
+    "declined": "To'lov amalga oshmadi. Boshqa usulni sinab ko'ring.",
+    "topUpSuccess": "Balans to'ldirildi",
+    "topUpPending": "To'lov ko'rib chiqilmoqda — balans avtomatik yangilanadi"
   }
 }

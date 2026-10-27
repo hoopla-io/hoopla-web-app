@@ -470,5 +470,21 @@
     "confirmingTitle": "Confirming your payment",
     "confirmingDescription": "Finish paying in the window that opened. This updates automatically.",
     "bridgeUnavailable": "Couldn't open the payment window. Please reopen Hoopla from the app."
+  },
+  "payment": {
+    "methodTitle": "Payment method",
+    "savedCard": "Card •{{last4}}",
+    "otherCard": "Another card",
+    "otherCardHint": "Pay on the Rahmat page",
+    "orPayWithApp": "or pay with an app",
+    "otpTitle": "Confirm payment",
+    "otpDescription": "Enter the SMS code sent to {{phone}}",
+    "otpDescriptionNoPhone": "Enter the SMS code your bank sent",
+    "otpPlaceholder": "SMS code",
+    "confirm": "Confirm",
+    "wrongCode": "Wrong code. Try again.",
+    "declined": "The payment didn't go through. Try another method.",
+    "topUpSuccess": "Balance topped up",
+    "topUpPending": "Your top-up is processing — the balance will update automatically"
   }
 }

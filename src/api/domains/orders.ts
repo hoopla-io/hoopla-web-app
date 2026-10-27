@@ -271,6 +271,13 @@ export interface CreateOrderResponse {
    * platform's native sheet (Eight). Pass it to the host bridge, don't
    * navigate to it — it's an id, not a URL. */
   bridge_order_id?: string;
+  /** Set when the order is paid with a saved card or a payment app. */
+  payment_id?: string;
+  payment_status?: string;
+  /** The saved card needs the SMS code sent to OrdersApi.confirmPayment. */
+  otp_required?: boolean;
+  /** Masked phone the SMS code went to, e.g. "*3929". */
+  phone?: string;
 }
 
 export interface PaymentStatus {
@@ -329,6 +336,17 @@ export const OrdersApi = {
 
   /** Cheap status-only read, for polling while a payment completes out of band
    * (a host platform's native sheet, where we get no callback of our own). */
+  /** Confirms a saved-card payment with the SMS code the card holder got. */
+  confirmPayment: async (orderId: number, otp: string) => {
+    const response: any = await httpClient.post(
+      `/user/orders/${orderId}/confirm-payment`,
+      { otp },
+      { timeout: 35000 }
+    );
+
+    return (response.data ?? response) as PaymentStatus;
+  },
+
   getPaymentStatus: async (orderId: number) => {
     const response: any = await httpClient.get(
       `/user/orders/${orderId}/payment-status`
